@@ -38,6 +38,19 @@ Gradle modules (declared in `settings.gradle.kts`):
 
 There is no `build-logic`/convention-plugin module: every module applies Kotlin/Android/Compose/Ktor plugins directly via `alias(libs.plugins.xxx)` in its own `build.gradle.kts`, using the version catalog at `gradle/libs.versions.toml`.
 
+## Git workflow
+
+- New branches are created from `develop` by default, not `master`.
+- Feature branches merge into `develop` by default, not `master`. Only merge into `master` when explicitly told to.
+- `develop` is the repo's default branch on GitHub (PR base, deletion-protected).
+- `git add` (by explicit path, never `-A`/`.`) every new or modified file that belongs in the project as soon as it's created/edited — don't leave it untracked for later, and don't wait to be asked. Skip files that are temp/incidental (build output, IDE crash artifacts, etc.); ask first if it's genuinely unclear whether a file belongs. Staging is not committing — commits and pushes still require an explicit ask each time.
+- When told to "commit" without being told what to commit, stage and commit *all* outstanding changes in the working tree (run `git status` first), not just whatever was staged incrementally during the current task — unless the outstanding changes are clearly separate, unrelated work, in which case ask before bundling them in.
+
+## Coding guidelines
+
+- Prefer non-deprecated functions and classes. If the only option is deprecated, or the deprecated one is genuinely the better choice, ask before using it rather than picking silently.
+- Avoid hardcoded resources (colors, strings, dimensions, etc.) — create or reuse a shared resource (theme color, string resource, dimension constant, ...) where possible instead of inlining a literal. When planning work and a hardcoded value looks necessary, call it out explicitly in the plan rather than letting it pass silently.
+
 ## Never
 - Thread.sleep() → use delay()
 - GlobalScope → use viewModelScope
