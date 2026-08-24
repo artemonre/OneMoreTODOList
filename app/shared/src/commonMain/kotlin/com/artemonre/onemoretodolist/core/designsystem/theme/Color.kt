@@ -55,3 +55,55 @@ val DarkColorScheme = darkColorScheme(
     errorContainer = Color(0xFF93000A),
     onErrorContainer = Color(0xFFFFDAD6)
 )
+
+val SlateLightColorScheme = lightColorScheme(
+    primary = Color(0xFF47617A),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFCBE6FF),
+    onPrimaryContainer = Color(0xFF001E31),
+    secondary = Color(0xFF546070),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFD8E4F5),
+    onSecondaryContainer = Color(0xFF111C29),
+    tertiary = Color(0xFF6B5778),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFF1DBFF),
+    onTertiaryContainer = Color(0xFF251432),
+    background = Color(0xFFF8FAFD),
+    onBackground = Color(0xFF191C1E),
+    surface = Color(0xFFF8FAFD),
+    onSurface = Color(0xFF191C1E),
+    surfaceVariant = Color(0xFFDCE3EA),
+    onSurfaceVariant = Color(0xFF41474D),
+    outline = Color(0xFF71787E),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002)
+)
+
+val SlateDarkColorScheme = darkColorScheme(
+    primary = Color(0xFFAFCAE6),
+    onPrimary = Color(0xFF15334A),
+    primaryContainer = Color(0xFF2E4A62),
+    onPrimaryContainer = Color(0xFFCBE6FF),
+    secondary = Color(0xFFBCC8DA),
+    onSecondary = Color(0xFF263240),
+    secondaryContainer = Color(0xFF3C4857),
+    onSecondaryContainer = Color(0xFFD8E4F5),
+    tertiary = Color(0xFFD7BEE4),
+    onTertiary = Color(0xFF3B2947),
+    tertiaryContainer = Color(0xFF523F5E),
+    onTertiaryContainer = Color(0xFFF1DBFF),
+    background = Color(0xFF111416),
+    onBackground = Color(0xFFE1E2E5),
+    surface = Color(0xFF111416),
+    onSurface = Color(0xFFE1E2E5),
+    surfaceVariant = Color(0xFF41474D),
+    onSurfaceVariant = Color(0xFFC0C7CD),
+    outline = Color(0xFF8B9198),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6)
+)

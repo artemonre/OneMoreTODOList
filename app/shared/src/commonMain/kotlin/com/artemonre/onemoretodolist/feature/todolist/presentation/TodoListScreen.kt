@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -56,7 +57,7 @@ fun TodoListScreen(
                 headlineContent = { Text(item.title) },
                 supportingContent = { Text(item.formattedDate) },
                 leadingContent = {
-                    Checkbox(
+                    AppCheckToggle(
                         checked = item.isDone,
                         onCheckedChange = { onAction(TodoListAction.OnToggleDone(item.id)) }
                     )
@@ -69,7 +70,7 @@ fun TodoListScreen(
 @Preview
 @Composable
 private fun TodoListScreenPreview() {
-    AppTheme {
+    AppTheme(themeConfig = ThemeConfig()) {
         TodoListScreen(
             state = TodoListState(
                 items = listOf(

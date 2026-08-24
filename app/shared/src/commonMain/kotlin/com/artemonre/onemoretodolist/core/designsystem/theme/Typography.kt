@@ -5,6 +5,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.artemonre.onemoretodolist.core.theme.domain.FontOption
 
 val AppTypography = Typography(
     displayLarge = TextStyle(
@@ -112,4 +113,28 @@ val AppTypography = Typography(
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     )
+)
+
+fun FontOption.toFontFamily(): FontFamily = when (this) {
+    FontOption.Default -> FontFamily.Default
+    FontOption.Serif -> FontFamily.Serif
+    FontOption.Monospace -> FontFamily.Monospace
+}
+
+fun appTypography(fontFamily: FontFamily): Typography = AppTypography.copy(
+    displayLarge = AppTypography.displayLarge.copy(fontFamily = fontFamily),
+    displayMedium = AppTypography.displayMedium.copy(fontFamily = fontFamily),
+    displaySmall = AppTypography.displaySmall.copy(fontFamily = fontFamily),
+    headlineLarge = AppTypography.headlineLarge.copy(fontFamily = fontFamily),
+    headlineMedium = AppTypography.headlineMedium.copy(fontFamily = fontFamily),
+    headlineSmall = AppTypography.headlineSmall.copy(fontFamily = fontFamily),
+    titleLarge = AppTypography.titleLarge.copy(fontFamily = fontFamily),
+    titleMedium = AppTypography.titleMedium.copy(fontFamily = fontFamily),
+    titleSmall = AppTypography.titleSmall.copy(fontFamily = fontFamily),
+    bodyLarge = AppTypography.bodyLarge.copy(fontFamily = fontFamily),
+    bodyMedium = AppTypography.bodyMedium.copy(fontFamily = fontFamily),
+    bodySmall = AppTypography.bodySmall.copy(fontFamily = fontFamily),
+    labelLarge = AppTypography.labelLarge.copy(fontFamily = fontFamily),
+    labelMedium = AppTypography.labelMedium.copy(fontFamily = fontFamily),
+    labelSmall = AppTypography.labelSmall.copy(fontFamily = fontFamily)
 )

@@ -7,6 +7,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.theme.data.themeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.todoListModule
 import com.artemonre.onemoretodolist.feature.todolist.navigation.TodoListRoute
 import com.artemonre.onemoretodolist.feature.todolist.navigation.todoListEntries
@@ -29,7 +30,7 @@ private val navSavedStateConfiguration = SavedStateConfiguration {
 
 @Composable
 fun App() {
-    KoinApplication(configuration = koinConfiguration { modules(todoListModule) }) {
+    KoinApplication(configuration = koinConfiguration { modules(todoListModule, themeModule) }) {
         AppTheme {
             val backStack = rememberNavBackStack(navSavedStateConfiguration, TodoListRoute.List)
             NavDisplay(

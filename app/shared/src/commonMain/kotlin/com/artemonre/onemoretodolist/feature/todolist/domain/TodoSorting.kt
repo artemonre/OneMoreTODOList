@@ -1,0 +1,12 @@
+package com.artemonre.onemoretodolist.feature.todolist.domain
+
+fun List<TodoItem>.sortedByOption(option: TodoSortOption): List<TodoItem> = when (option) {
+    // Prioritized items first (ranked by priorityOrder), then everything else oldest to newest.
+    TodoSortOption.Date -> sortedWith(
+        compareBy<TodoItem> { it.priorityOrder == null }
+            .thenBy { it.priorityOrder }
+            .thenBy { it.date }
+    )
+    TodoSortOption.Manual -> sortedBy { it.sortOrder }
+    TodoSortOption.Title -> sortedBy { it.title }
+}

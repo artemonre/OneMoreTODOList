@@ -7,5 +7,7 @@ data class TodoItem(
     val title: String,
     val isDone: Boolean,
     val sortOrder: Int,
-    val date: LocalDate
+    val date: LocalDate,
+    // Rank among other prioritized items; null means not prioritized. Only affects TodoSortOption.Date.
+    val priorityOrder: Int? = null
 )
