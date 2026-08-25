@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 
@@ -53,8 +55,9 @@ fun AddTodoBottomSheet(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Title") },
+                label = { Text("A todo text") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(12.dp))
@@ -64,7 +67,7 @@ fun AddTodoBottomSheet(
                     onCheckedChange = { isPrioritized = it }
                 )
                 Spacer(Modifier.width(12.dp))
-                Text("Prioritized")
+                Text("Put on top")
             }
             Spacer(Modifier.height(20.dp))
             Row(
@@ -76,8 +79,7 @@ fun AddTodoBottomSheet(
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
-                    onClick = { onConfirm(title.trim(), isPrioritized) },
-                    enabled = title.isNotBlank()
+                    onClick = { onConfirm(title.trim(), isPrioritized) }
                 ) {
                     Text("OK")
                 }

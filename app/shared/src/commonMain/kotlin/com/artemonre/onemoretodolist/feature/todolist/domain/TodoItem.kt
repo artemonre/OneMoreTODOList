@@ -8,6 +8,8 @@ data class TodoItem(
     val isDone: Boolean,
     val sortOrder: Int,
     val date: LocalDate,
-    // Rank among other prioritized items; null means not prioritized. Only affects TodoSortOption.Date.
-    val priorityOrder: Int? = null
+    // Rank among other prioritized items; null means not prioritized, lower sorts first.
+    // New values are assigned as (currentMin ?: 1.0) * 0.9, always positive, never needing
+    // to renumber existing items. Only affects TodoSortOption.Date.
+    val priorityOrder: Double? = null
 )

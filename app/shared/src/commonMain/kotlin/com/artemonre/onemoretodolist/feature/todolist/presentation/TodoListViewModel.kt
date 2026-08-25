@@ -13,8 +13,11 @@ import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.format.char
 
 class TodoListViewModel : ViewModel() {
 
@@ -46,18 +49,23 @@ class TodoListViewModel : ViewModel() {
     private fun addTodo(title: String, isPrioritized: Boolean) {
         val newItem = TodoItem(
             id = (nextId++).toString(),
-            title = title,
+            title = title.ifBlank { defaultTitle() },
             isDone = false,
             sortOrder = (todos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
             date = Clock.System.todayIn(TimeZone.currentSystemDefault()),
             priorityOrder = if (isPrioritized) {
-                (todos.mapNotNull { it.priorityOrder }.maxOrNull() ?: -1) + 1
+                (todos.mapNotNull { it.priorityOrder }.minOrNull() ?: 1.0) * 0.9
             } else {
                 null
             }
         )
         todos = todos + newItem
         _state.update { buildState(it.sortOption) }
+    }
+
+    private fun defaultTitle(): String {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        return "Todo added at ${timeFormat.format(now.time)}"
     }
 
     private fun toggleDone(id: String) {
@@ -95,7 +103,13 @@ class TodoListViewModel : ViewModel() {
             isDone = false,
             sortOrder = 2,
             date = LocalDate(2026, 8, 25),
-            priorityOrder = 0
+            priorityOrder = 1.0
         )
     )
+}
+
+private val timeFormat = LocalTime.Format {
+    hour()
+    char(':')
+    minute()
 }
