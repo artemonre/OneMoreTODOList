@@ -1,6 +1,7 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
@@ -9,13 +10,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlin.time.Clock
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 class TodoListViewModel : ViewModel() {
 
     // Placeholder until feature.todolist.data provides a real repository - the single
     // source of truth for both toggling done and re-sorting.
     private var todos: List<TodoItem> = sampleTodos()
+    private var nextId: Int = todos.size + 1
 
     private val _state = MutableStateFlow(buildState(TodoSortOption.Date))
     val state = _state.asStateFlow()
@@ -28,7 +34,30 @@ class TodoListViewModel : ViewModel() {
             is TodoListAction.OnTodoClick -> Unit
             is TodoListAction.OnToggleDone -> toggleDone(action.id)
             is TodoListAction.OnSortOptionSelected -> changeSortOption(action.option)
+            is TodoListAction.OnAddTodoClick -> {
+                viewModelScope.launch {
+                    _events.send(TodoListEvent.ShowAddTodoSheet)
+                }
+            }
+            is TodoListAction.OnConfirmAddTodo -> addTodo(action.title, action.isPrioritized)
         }
+    }
+
+    private fun addTodo(title: String, isPrioritized: Boolean) {
+        val newItem = TodoItem(
+            id = (nextId++).toString(),
+            title = title,
+            isDone = false,
+            sortOrder = (todos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
+            date = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+            priorityOrder = if (isPrioritized) {
+                (todos.mapNotNull { it.priorityOrder }.maxOrNull() ?: -1) + 1
+            } else {
+                null
+            }
+        )
+        todos = todos + newItem
+        _state.update { buildState(it.sortOption) }
     }
 
     private fun toggleDone(id: String) {
