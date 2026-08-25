@@ -3,31 +3,42 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
+import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
-import kotlin.time.Clock
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.format.char
 
-class TodoListViewModel : ViewModel() {
+private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
 
-    // Placeholder until feature.todolist.data provides a real repository - the single
-    // source of truth for both toggling done and re-sorting.
-    private var todos: List<TodoItem> = sampleTodos()
-    private var nextId: Int = todos.size + 1
+class TodoListViewModel(
+    private val todoLocalDataSource: TodoLocalDataSource
+) : ViewModel() {
 
-    private val _state = MutableStateFlow(buildState(TodoSortOption.Date))
-    val state = _state.asStateFlow()
+    private val todos = todoLocalDataSource.observeTodos()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), emptyList())
+
+    private val sortOption = MutableStateFlow(TodoSortOption.Date)
+
+    val state = combine(todos, sortOption) { todos, sortOption ->
+        TodoListState(
+            sortOption = sortOption,
+            items = todos.sortedByOption(sortOption).map { it.toTodoItemUi() }
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), TodoListState())
 
     private val _events = Channel<TodoListEvent>()
     val events = _events.receiveAsFlow()
@@ -36,7 +47,7 @@ class TodoListViewModel : ViewModel() {
         when (action) {
             is TodoListAction.OnTodoClick -> Unit
             is TodoListAction.OnToggleDone -> toggleDone(action.id)
-            is TodoListAction.OnSortOptionSelected -> changeSortOption(action.option)
+            is TodoListAction.OnSortOptionSelected -> sortOption.value = action.option
             is TodoListAction.OnAddTodoClick -> {
                 viewModelScope.launch {
                     _events.send(TodoListEvent.ShowAddTodoSheet)
@@ -46,21 +57,24 @@ class TodoListViewModel : ViewModel() {
         }
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     private fun addTodo(title: String, isPrioritized: Boolean) {
+        val currentTodos = todos.value
         val newItem = TodoItem(
-            id = (nextId++).toString(),
+            id = Uuid.random().toString(),
             title = title.ifBlank { defaultTitle() },
             isDone = false,
-            sortOrder = (todos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
+            sortOrder = (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
             date = Clock.System.todayIn(TimeZone.currentSystemDefault()),
             priorityOrder = if (isPrioritized) {
-                (todos.mapNotNull { it.priorityOrder }.minOrNull() ?: 1.0) * 0.9
+                (currentTodos.mapNotNull { it.priorityOrder }.minOrNull() ?: 1.0) * 0.9
             } else {
                 null
             }
         )
-        todos = todos + newItem
-        _state.update { buildState(it.sortOption) }
+        viewModelScope.launch {
+            todoLocalDataSource.upsertTodo(newItem)
+        }
     }
 
     private fun defaultTitle(): String {
@@ -69,43 +83,11 @@ class TodoListViewModel : ViewModel() {
     }
 
     private fun toggleDone(id: String) {
-        todos = todos.map { if (it.id == id) it.copy(isDone = !it.isDone) else it }
-        _state.update { buildState(it.sortOption) }
+        val item = todos.value.firstOrNull { it.id == id } ?: return
+        viewModelScope.launch {
+            todoLocalDataSource.upsertTodo(item.copy(isDone = !item.isDone))
+        }
     }
-
-    private fun changeSortOption(option: TodoSortOption) {
-        _state.update { buildState(option) }
-    }
-
-    private fun buildState(sortOption: TodoSortOption): TodoListState = TodoListState(
-        sortOption = sortOption,
-        items = todos.sortedByOption(sortOption).map { it.toTodoItemUi() }
-    )
-
-    private fun sampleTodos(): List<TodoItem> = listOf(
-        TodoItem(
-            id = "1",
-            title = "Buy groceries",
-            isDone = false,
-            sortOrder = 0,
-            date = LocalDate(2026, 8, 24)
-        ),
-        TodoItem(
-            id = "2",
-            title = "Write project architecture",
-            isDone = true,
-            sortOrder = 1,
-            date = LocalDate(2026, 8, 23)
-        ),
-        TodoItem(
-            id = "3",
-            title = "Review pull request",
-            isDone = false,
-            sortOrder = 2,
-            date = LocalDate(2026, 8, 25),
-            priorityOrder = 1.0
-        )
-    )
 }
 
 private val timeFormat = LocalTime.Format {

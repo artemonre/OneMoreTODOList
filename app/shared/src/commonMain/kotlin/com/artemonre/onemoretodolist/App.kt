@@ -15,6 +15,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.koin.compose.KoinApplication
+import org.koin.core.module.Module
 import org.koin.dsl.koinConfiguration
 
 // Every feature's NavKey subtypes must be registered here so the back stack can be
@@ -29,8 +30,12 @@ private val navSavedStateConfiguration = SavedStateConfiguration {
 }
 
 @Composable
-fun App() {
-    KoinApplication(configuration = koinConfiguration { modules(todoListModule, themeModule) }) {
+fun App(platformModules: List<Module>) {
+    KoinApplication(
+        configuration = koinConfiguration {
+            modules(todoListModule, themeModule, *platformModules.toTypedArray())
+        }
+    ) {
         AppTheme {
             val backStack = rememberNavBackStack(navSavedStateConfiguration, TodoListRoute.List)
             NavDisplay(
