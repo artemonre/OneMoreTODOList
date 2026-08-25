@@ -18,16 +18,22 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 @Composable
 fun AppCheckToggle(
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .size(24.dp)
-            .toggleable(
-                value = checked,
-                onValueChange = onCheckedChange,
-                role = Role.Checkbox
+            .then(
+                if (onCheckedChange != null) {
+                    Modifier.toggleable(
+                        value = checked,
+                        onValueChange = onCheckedChange,
+                        role = Role.Checkbox
+                    )
+                } else {
+                    Modifier
+                }
             )
             .then(
                 if (checked) {

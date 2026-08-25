@@ -7,8 +7,15 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -98,6 +105,10 @@ fun TodoListScreen(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
+                contentPadding = WindowInsets.safeDrawing
+                    .only(WindowInsetsSides.Vertical)
+                    .add(WindowInsets(bottom = 8.dp))
+                    .asPaddingValues(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(state.items, key = { it.id }) { item ->
@@ -123,7 +134,7 @@ fun TodoListScreen(
 
         AnimatedVisibility(
             visible = !showScrollToTop,
-            modifier = Modifier.align(actionAlignment).padding(16.dp),
+            modifier = Modifier.align(actionAlignment).safeDrawingPadding().padding(16.dp),
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
@@ -134,7 +145,7 @@ fun TodoListScreen(
 
         AnimatedVisibility(
             visible = showScrollToTop,
-            modifier = Modifier.align(actionAlignment).padding(16.dp),
+            modifier = Modifier.align(actionAlignment).safeDrawingPadding().padding(16.dp),
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
