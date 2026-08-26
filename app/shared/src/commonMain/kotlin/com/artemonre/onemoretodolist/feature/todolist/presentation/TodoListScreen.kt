@@ -13,8 +13,9 @@ import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -57,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,16 +75,26 @@ import com.artemonre.onemoretodolist.core.theme.domain.ActionPlacement
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlin.math.roundToInt
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val SCROLL_TO_TOP_THRESHOLD = 10
 private val SWIPE_ACTION_WIDTH = 56.dp
 
-// Matches Material3's ElevatedCardTokens.ContainerElevation; the plain (non-onClick) ElevatedCard
-// overload can't animate its own elevation param reactively, so the press-driven shadow is drawn
-// manually via Modifier.shadow() instead of Card's built-in elevation system.
-private val CARD_ELEVATION = 1.dp
+// The plain (non-onClick) ElevatedCard overload can't animate its own elevation param
+// reactively, so the press-driven shadow is drawn manually via Modifier.shadow() instead of
+// Card's built-in elevation system. Kept above Material3's 1.dp ElevatedCard default so the
+// press-flatten effect reads more clearly.
+private val CARD_ELEVATION = 2.dp
+
+// A fast tap can release before the shadow has had any frames to visibly animate down and back
+// up. Holding the pressed visual for at least this long (measured from touch-down, only topping
+// up whatever's left once release actually happens) guarantees it's always perceptible.
+private val CARD_PRESS_MIN_VISIBLE_DURATION = 150.milliseconds
 
 private enum class SwipeAnchor { Closed, Open }
 
@@ -222,8 +234,7 @@ private fun SwipeableTodoRow(
     val revealedWidthPx = with(density) { (SWIPE_ACTION_WIDTH * 2).toPx() }
 
     val cardShape = RoundedCornerShape(4.dp)
-    val cardInteractionSource = remember { MutableInteractionSource() }
-    val isCardPressed by cardInteractionSource.collectIsPressedAsState()
+    var isCardPressed by remember { mutableStateOf(false) }
     val cardElevation by animateDpAsState(if (isCardPressed) 0.dp else CARD_ELEVATION)
 
     val swipeState = remember(revealedWidthPx) {
@@ -273,8 +284,30 @@ private fun SwipeableTodoRow(
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }
                 .anchoredDraggable(state = swipeState, orientation = Orientation.Horizontal)
                 .shadow(elevation = cardElevation, shape = cardShape)
+                // Raw pointer down/up drives the visual only, immediately and independent of any
+                // scroll-vs-tap disambiguation. clickable (below) still owns onItemClick and all
+                // of Compose's built-in tap/scroll/drag safety for the actual action - inside a
+                // LazyColumn, clickable intentionally delays/suppresses its own Press interaction
+                // until it's sure a gesture isn't the start of a scroll, so a fast tap never
+                // reaches clickable's interactionSource in time to drive a press effect from it.
+                .pointerInput(Unit) {
+                    // awaitEachGesture runs in a restricted suspend scope that can't call
+                    // kotlinx.coroutines.delay directly, so the minimum-visible-duration wait
+                    // is done in a plain coroutine launched off it instead.
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false)
+                        val pressStartMark = TimeSource.Monotonic.markNow()
+                        isCardPressed = true
+                        waitForUpOrCancellation()
+                        coroutineScope.launch {
+                            val remaining = CARD_PRESS_MIN_VISIBLE_DURATION - pressStartMark.elapsedNow()
+                            if (remaining > Duration.ZERO) delay(remaining)
+                            isCardPressed = false
+                        }
+                    }
+                }
                 .clickable(
-                    interactionSource = cardInteractionSource,
+                    interactionSource = null,
                     indication = null,
                     onClick = onItemClick
                 ),
