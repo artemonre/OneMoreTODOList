@@ -58,3 +58,4 @@ Gradle modules (declared in `settings.gradle.kts`):
 - Broad catch(Exception) → handle specific types
 - !! operator → handle nullability explicitly
 - Don't run the app or perform manual testing (launching emulators/simulators, clicking through the UI) unless explicitly asked.
+- Don't start building/editing when the user asks a question without an explicit call to action — just answer the question. Only move to implementation once they actually ask for a change.

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
+import com.artemonre.onemoretodolist.feature.todolist.navigation.todoListTab
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -12,7 +13,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            App(platformModules = listOf(androidTodoDataModule(applicationContext)))
+            App(
+                platformModules = listOf(androidTodoDataModule(applicationContext)),
+                contentTabs = listOf(todoListTab())
+            )
         }
     }
 }

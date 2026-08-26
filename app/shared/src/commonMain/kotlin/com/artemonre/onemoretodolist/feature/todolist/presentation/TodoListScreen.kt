@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -106,7 +106,7 @@ fun TodoListScreen(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = WindowInsets.safeDrawing
-                    .only(WindowInsetsSides.Vertical)
+                    .only(WindowInsetsSides.Top)
                     .add(WindowInsets(bottom = 8.dp))
                     .asPaddingValues(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -134,7 +134,9 @@ fun TodoListScreen(
 
         AnimatedVisibility(
             visible = !showScrollToTop,
-            modifier = Modifier.align(actionAlignment).safeDrawingPadding().padding(16.dp),
+            modifier = Modifier.align(actionAlignment)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                .padding(16.dp),
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
@@ -145,7 +147,9 @@ fun TodoListScreen(
 
         AnimatedVisibility(
             visible = showScrollToTop,
-            modifier = Modifier.align(actionAlignment).safeDrawingPadding().padding(16.dp),
+            modifier = Modifier.align(actionAlignment)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                .padding(16.dp),
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
