@@ -18,7 +18,7 @@ import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.colorspace.ColorSpaces
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,29 +33,48 @@ private val SEGMENT_SHAPE_RADIUS = 12.dp
 // shadow's own footprint in with a small negative spread makes it hug the edge instead of
 // surrounding the whole shape like a halo, so it reads as the surface itself bending rather than
 // a separate object floating above it.
-private val OUTER_SHADOW_RADIUS = 3.dp
-private val OUTER_SHADOW_OFFSET = 2.dp
-private val OUTER_SHADOW_SPREAD = (-1).dp
-private val INNER_SHADOW_RADIUS = 3.dp
-private val INNER_SHADOW_OFFSET = 2.dp
-private const val OUTER_DARK_ALPHA = 0.22f
-private const val OUTER_LIGHT_ALPHA = 0.35f
-private const val INNER_DARK_ALPHA = 0.32f
-private const val INNER_LIGHT_ALPHA = 0.4f
+private val OUTER_SHADOW_RADIUS = 4.dp
+private val OUTER_SHADOW_OFFSET = 3.dp
+private val OUTER_SHADOW_SPREAD = (-0.5).dp
+private val INNER_SHADOW_RADIUS = 4.dp
+private val INNER_SHADOW_OFFSET = 3.dp
+
+// Dark/light corners share one alpha per shadow pair rather than an asymmetric one - an
+// asymmetric alpha was previously compensating for the old color math's asymmetry (see
+// withOklabLightnessDelta below); with that fixed, matching alpha is what keeps both corners
+// reading as equally present.
+private const val OUTER_SHADOW_ALPHA = 0.36f
+private const val INNER_SHADOW_ALPHA = 0.45f
 
 // Shadow tints are mixed from the surface color itself rather than pure black/white - a shadow
 // that shares the surface's hue reads as the same material bending, not a separate card floating
-// above it with a cast shadow. Both directions share one fraction rather than a dark/light pair -
-// background is now roughly centered (mid-tone in both themes, see Color.kt), so light and dark
-// headroom are roughly mirror images of each other; a single shared fraction keeps the dominant
-// shadow corner's swing consistent between light and dark theme instead of one theme's blend
-// eating a much larger slice of its (larger) headroom than the other's.
-private const val SHADOW_BLEND = 0.35f
+// above it with a cast shadow. The dark/light pair is an additive step in Oklab lightness (see
+// withOklabLightnessDelta), not a lerp toward black/white - a lerp-toward-white blend is only
+// ratio-consistent when the surface is already close to white, so the same fraction reads as a
+// bold highlight on a light-theme surface but blows out into a glaring one on a dark-theme
+// surface (lerp-toward-black has the opposite bias). An additive perceptual-lightness step reads
+// as the same visible swing in both themes.
+private const val SHADOW_LIGHTNESS_DELTA = 0.16f
 
-// The segment fill is a hair lighter than the surrounding surface, constant regardless of
-// selection - it reads as material that's simply closer to the light, not a state cue. State is
-// communicated entirely by the shadow pair below; the fill doesn't participate.
-private const val FILL_LIGHT_BLEND = 0.05f
+/**
+ * Shifts this color's Oklab lightness by [delta] (clamped to Oklab's valid L range, `[0, 1]`),
+ * keeping hue/chroma (a, b) fixed, and returns the result back in sRGB. An additive step in a
+ * perceptually uniform lightness channel reads as the same visible brightness change regardless
+ * of how light or dark this color already is - unlike a lerp toward white/black by a fixed
+ * fraction, which is only ratio-consistent in the direction whose endpoint matches this color's
+ * own extreme, and over/undershoots in the other direction.
+ */
+internal fun Color.withOklabLightnessDelta(delta: Float): Color {
+    val oklab = convert(ColorSpaces.Oklab)
+    val newLightness = (oklab.red + delta).coerceIn(0f, 1f)
+    return Color(
+        red = newLightness,
+        green = oklab.green,
+        blue = oklab.blue,
+        alpha = oklab.alpha,
+        colorSpace = ColorSpaces.Oklab
+    ).convert(ColorSpaces.Srgb)
+}
 
 /**
  * A single-choice control styled like a neumorphic ("soft UI") toggle group: unselected segments
@@ -64,9 +83,9 @@ private const val FILL_LIGHT_BLEND = 0.05f
  * as inner shadows instead). The two are cross-faded by an animated float, so switching selection
  * animates smoothly from "popped out" to "popped in".
  *
- * The segment fill is a flat tint a hair lighter than the surface it visually sits on (here,
- * [MaterialTheme.colorScheme]'s background), constant across selection - the shadows are what
- * give it shape and communicate state, not the fill.
+ * The segment fill matches the surface it visually sits on exactly (here,
+ * [MaterialTheme.colorScheme]'s background) - the shadows alone give it shape and communicate
+ * state, not the fill.
  */
 @Composable
 fun <T> NeumorphicSegmentedControl(
@@ -114,9 +133,8 @@ private fun NeumorphicSegment(
 ) {
     val progress by animateFloatAsState(if (isSelected) 1f else 0f)
     val surfaceColor = MaterialTheme.colorScheme.background
-    val darkShadowColor = lerp(surfaceColor, Color.Black, SHADOW_BLEND)
-    val lightShadowColor = lerp(surfaceColor, Color.White, SHADOW_BLEND)
-    val fillColor = lerp(surfaceColor, Color.White, FILL_LIGHT_BLEND)
+    val darkShadowColor = surfaceColor.withOklabLightnessDelta(-SHADOW_LIGHTNESS_DELTA)
+    val lightShadowColor = surfaceColor.withOklabLightnessDelta(SHADOW_LIGHTNESS_DELTA)
 
     Text(
         text = label,
@@ -133,27 +151,27 @@ private fun NeumorphicSegment(
                 radius = OUTER_SHADOW_RADIUS.toPx()
                 spread = OUTER_SHADOW_SPREAD.toPx()
                 offset = Offset(OUTER_SHADOW_OFFSET.toPx(), OUTER_SHADOW_OFFSET.toPx())
-                alpha = OUTER_DARK_ALPHA * (1f - progress)
+                alpha = OUTER_SHADOW_ALPHA * (1f - progress)
             }
             .dropShadow(shape) {
                 color = lightShadowColor
                 radius = OUTER_SHADOW_RADIUS.toPx()
                 spread = OUTER_SHADOW_SPREAD.toPx()
                 offset = Offset(-OUTER_SHADOW_OFFSET.toPx(), -OUTER_SHADOW_OFFSET.toPx())
-                alpha = OUTER_LIGHT_ALPHA * (1f - progress)
+                alpha = OUTER_SHADOW_ALPHA * (1f - progress)
             }
-            .background(fillColor, shape)
+            .background(surfaceColor, shape)
             .innerShadow(shape) {
                 color = darkShadowColor
                 radius = INNER_SHADOW_RADIUS.toPx()
                 offset = Offset(INNER_SHADOW_OFFSET.toPx(), INNER_SHADOW_OFFSET.toPx())
-                alpha = INNER_DARK_ALPHA * progress
+                alpha = INNER_SHADOW_ALPHA * progress
             }
             .innerShadow(shape) {
                 color = lightShadowColor
                 radius = INNER_SHADOW_RADIUS.toPx()
                 offset = Offset(-INNER_SHADOW_OFFSET.toPx(), -INNER_SHADOW_OFFSET.toPx())
-                alpha = INNER_LIGHT_ALPHA * progress
+                alpha = INNER_SHADOW_ALPHA * progress
             }
             .clip(shape)
             .clickable(
