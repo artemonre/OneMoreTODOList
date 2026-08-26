@@ -5,11 +5,11 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.artemonre.onemoretodolist.core.container.NavigationTab
-import com.artemonre.onemoretodolist.feature.settings.presentation.SettingsScreen
+import com.artemonre.onemoretodolist.feature.settings.presentation.SettingsRoot
 
 fun EntryProviderScope<NavKey>.settingsEntries() {
     entry(SettingsRoute.Main) {
-        SettingsScreen()
+        SettingsRoot()
     }
 }
 
