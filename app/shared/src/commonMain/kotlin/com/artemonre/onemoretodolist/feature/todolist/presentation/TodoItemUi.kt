@@ -8,7 +8,7 @@ import kotlinx.datetime.format.char
 
 data class TodoItemUi(
     val id: String,
-    val title: String,
+    val text: String,
     val status: TodoStatus,
     val sortOrder: Int,
     val formattedDate: String,
@@ -17,7 +17,7 @@ data class TodoItemUi(
 
 fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
     id = id,
-    title = title,
+    text = text,
     status = status,
     sortOrder = sortOrder,
     formattedDate = dateFormat.format(date),

@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalDate
 
 data class TodoItem(
     val id: String,
-    val title: String,
+    val text: String,
     val status: TodoStatus,
     val sortOrder: Int,
     val date: LocalDate,

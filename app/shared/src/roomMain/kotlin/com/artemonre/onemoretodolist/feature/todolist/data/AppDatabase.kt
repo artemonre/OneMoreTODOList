@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.data
 
+import androidx.room3.AutoMigration
 import androidx.room3.ColumnTypeConverters
 import androidx.room3.ConstructedBy
 import androidx.room3.Database
@@ -8,7 +9,13 @@ import androidx.room3.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.Dispatchers
 
-@Database(entities = [TodoEntity::class], version = 1)
+@Database(
+    entities = [TodoEntity::class],
+    version = 2,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class)
+    ]
+)
 @ColumnTypeConverters(TodoDateConverters::class)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {

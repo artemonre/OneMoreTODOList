@@ -8,5 +8,5 @@ fun List<TodoItem>.sortedByOption(option: TodoSortOption): List<TodoItem> = when
             .thenBy { it.date }
     )
     TodoSortOption.Manual -> sortedBy { it.sortOrder }
-    TodoSortOption.Title -> sortedBy { it.title }
+    TodoSortOption.Text -> sortedBy { it.text }
 }

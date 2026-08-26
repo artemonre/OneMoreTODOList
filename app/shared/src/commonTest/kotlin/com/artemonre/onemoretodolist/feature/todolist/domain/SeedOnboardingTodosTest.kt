@@ -25,16 +25,16 @@ class SeedOnboardingTodosTest {
         val todos = dataSource.observeTodos().first()
 
         assertEquals(3, todos.size)
-        assertTodoExists(todos, title = "First todo item", date = today, priorityOrder = null)
+        assertTodoExists(todos, text = "First todo item", date = today, priorityOrder = null)
         assertTodoExists(
             todos,
-            title = "Sorted by date items put from latest to newest",
+            text = "Sorted by date items put from latest to newest",
             date = today.plus(1, DateTimeUnit.DAY),
             priorityOrder = null
         )
         assertTodoExists(
             todos,
-            title = "If prioritized (Put to top) it goes to the top of the list",
+            text = "If prioritized (Put to top) it goes to the top of the list",
             date = today,
             priorityOrder = 1.0
         )
@@ -44,7 +44,7 @@ class SeedOnboardingTodosTest {
     fun `does nothing when the data source already has todos`() = runTest {
         val existing = TodoItem(
             id = "existing",
-            title = "Already here",
+            text = "Already here",
             status = TodoStatus.Active,
             sortOrder = 0,
             date = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -59,13 +59,13 @@ class SeedOnboardingTodosTest {
 
     private fun assertTodoExists(
         todos: List<TodoItem>,
-        title: String,
+        text: String,
         date: LocalDate,
         priorityOrder: Double?
     ) {
         assertTrue(
-            todos.any { it.title == title && it.date == date && it.priorityOrder == priorityOrder },
-            "Expected a todo titled \"$title\" dated $date with priorityOrder $priorityOrder, got $todos"
+            todos.any { it.text == text && it.date == date && it.priorityOrder == priorityOrder },
+            "Expected a todo with text \"$text\" dated $date with priorityOrder $priorityOrder, got $todos"
         )
     }
 }

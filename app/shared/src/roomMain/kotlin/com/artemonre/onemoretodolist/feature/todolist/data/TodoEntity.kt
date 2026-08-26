@@ -8,7 +8,7 @@ import kotlinx.datetime.LocalDate
 @Entity(tableName = "todo_items")
 data class TodoEntity(
     @PrimaryKey val id: String,
-    val title: String,
+    val text: String,
     val status: TodoStatus,
     val sortOrder: Int,
     val date: LocalDate,

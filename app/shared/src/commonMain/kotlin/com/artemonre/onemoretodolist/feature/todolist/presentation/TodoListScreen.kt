@@ -1,16 +1,20 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -36,6 +40,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -51,6 +56,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,6 +78,11 @@ import org.koin.compose.viewmodel.koinViewModel
 
 private const val SCROLL_TO_TOP_THRESHOLD = 10
 private val SWIPE_ACTION_WIDTH = 56.dp
+
+// Matches Material3's ElevatedCardTokens.ContainerElevation; the plain (non-onClick) ElevatedCard
+// overload can't animate its own elevation param reactively, so the press-driven shadow is drawn
+// manually via Modifier.shadow() instead of Card's built-in elevation system.
+private val CARD_ELEVATION = 1.dp
 
 private enum class SwipeAnchor { Closed, Open }
 
@@ -98,8 +109,8 @@ fun TodoListRoot(
     if (showAddTodoSheet) {
         TodoFormBottomSheet(
             editingItem = null,
-            onConfirm = { title, isPrioritized ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(title, isPrioritized))
+            onConfirm = { text, isPrioritized ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized))
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false }
@@ -109,8 +120,8 @@ fun TodoListRoot(
     editingTodo?.let { item ->
         TodoFormBottomSheet(
             editingItem = item,
-            onConfirm = { title, isPrioritized ->
-                viewModel.onAction(TodoListAction.OnConfirmEditTodo(item.id, title, isPrioritized))
+            onConfirm = { text, isPrioritized ->
+                viewModel.onAction(TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized))
                 editingTodo = null
             },
             onDismiss = { editingTodo = null }
@@ -132,6 +143,7 @@ fun TodoListScreen(
         ActionPlacement.Start -> Alignment.BottomStart
         ActionPlacement.End -> Alignment.BottomEnd
     }
+    var detailItem by remember { mutableStateOf<TodoItemUi?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (state.items.isEmpty()) {
@@ -155,7 +167,8 @@ fun TodoListScreen(
                         modifier = Modifier.animateItem(),
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                         onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
-                        onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) }
+                        onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
+                        onItemClick = { detailItem = item }
                     )
                 }
             }
@@ -189,6 +202,10 @@ fun TodoListScreen(
             }
         }
     }
+
+    detailItem?.let { item ->
+        TodoDetailDialog(item = item, onDismiss = { detailItem = null })
+    }
 }
 
 @Composable
@@ -197,11 +214,17 @@ private fun SwipeableTodoRow(
     onToggleDone: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onItemClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val revealedWidthPx = with(density) { (SWIPE_ACTION_WIDTH * 2).toPx() }
+
+    val cardShape = RoundedCornerShape(4.dp)
+    val cardInteractionSource = remember { MutableInteractionSource() }
+    val isCardPressed by cardInteractionSource.collectIsPressedAsState()
+    val cardElevation by animateDpAsState(if (isCardPressed) 0.dp else CARD_ELEVATION)
 
     val swipeState = remember(revealedWidthPx) {
         AnchoredDraggableState(
@@ -248,12 +271,19 @@ private fun SwipeableTodoRow(
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }
-                .anchoredDraggable(state = swipeState, orientation = Orientation.Horizontal),
-            shape = RoundedCornerShape(4.dp)
+                .anchoredDraggable(state = swipeState, orientation = Orientation.Horizontal)
+                .shadow(elevation = cardElevation, shape = cardShape)
+                .clickable(
+                    interactionSource = cardInteractionSource,
+                    indication = null,
+                    onClick = onItemClick
+                ),
+            shape = cardShape,
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
         ) {
-            val titleStyle = MaterialTheme.typography.bodyLarge
+            val textStyle = MaterialTheme.typography.bodyLarge
             val dateStyle = MaterialTheme.typography.labelSmall
-            val titleRowHeight = with(density) { titleStyle.lineHeight.toDp() * 2 }
+            val textRowHeight = with(density) { textStyle.lineHeight.toDp() * 2 }
             val dateHeight = with(density) { dateStyle.lineHeight.toDp() }
             val dateSpacing = 4.dp
 
@@ -261,7 +291,7 @@ private fun SwipeableTodoRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 14.dp)
-                    .height(titleRowHeight + dateSpacing + dateHeight)
+                    .height(textRowHeight + dateSpacing + dateHeight)
             ) {
                 Row(
                     modifier = Modifier
@@ -275,8 +305,8 @@ private fun SwipeableTodoRow(
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = item.title,
-                        style = titleStyle,
+                        text = item.text,
+                        style = textStyle,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         textDecoration = if (item.status == TodoStatus.Done) {
@@ -307,8 +337,8 @@ private fun TodoListScreenPreview() {
         TodoListScreen(
             state = TodoListState(
                 items = listOf(
-                    TodoItemUi(id = "1", title = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "Aug 24, 2026"),
-                    TodoItemUi(id = "2", title = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature", status = TodoStatus.Done, sortOrder = 1, formattedDate = "Aug 23, 2026")
+                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "Aug 24, 2026"),
+                    TodoItemUi(id = "2", text = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature", status = TodoStatus.Done, sortOrder = 1, formattedDate = "Aug 23, 2026")
                 )
             ),
             onAction = {}

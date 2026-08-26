@@ -22,21 +22,21 @@ class SeedOnboardingTodos(
         listOf(
             TodoItem(
                 id = Uuid.random().toString(),
-                title = "First todo item",
+                text = "First todo item",
                 status = TodoStatus.Active,
                 sortOrder = 0,
                 date = today
             ),
             TodoItem(
                 id = Uuid.random().toString(),
-                title = "Sorted by date items put from latest to newest",
+                text = "Sorted by date items put from latest to newest",
                 status = TodoStatus.Active,
                 sortOrder = 1,
                 date = today.plus(1, DateTimeUnit.DAY)
             ),
             TodoItem(
                 id = Uuid.random().toString(),
-                title = "If prioritized (Put to top) it goes to the top of the list",
+                text = "If prioritized (Put to top) it goes to the top of the list",
                 status = TodoStatus.Active,
                 sortOrder = 2,
                 date = today,

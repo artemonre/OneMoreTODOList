@@ -4,7 +4,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 
 fun TodoEntity.toTodoItem(): TodoItem = TodoItem(
     id = id,
-    title = title,
+    text = text,
     status = status,
     sortOrder = sortOrder,
     date = date,
@@ -13,7 +13,7 @@ fun TodoEntity.toTodoItem(): TodoItem = TodoItem(
 
 fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
     id = id,
-    title = title,
+    text = text,
     status = status,
     sortOrder = sortOrder,
     date = date,

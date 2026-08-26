@@ -38,17 +38,17 @@ import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 @Composable
 fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
-    onConfirm: (title: String, isPrioritized: Boolean) -> Unit,
+    onConfirm: (text: String, isPrioritized: Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var title by remember { mutableStateOf(editingItem?.title.orEmpty()) }
+    var text by remember { mutableStateOf(editingItem?.text.orEmpty()) }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
-    val titleFocusRequester = remember { FocusRequester() }
+    val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
-        titleFocusRequester.requestFocus()
+        textFocusRequester.requestFocus()
         keyboardController?.show()
     }
 
@@ -68,14 +68,14 @@ fun TodoFormBottomSheet(
             )
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
+                value = text,
+                onValueChange = { text = it },
                 label = { Text("A todo text") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(titleFocusRequester)
+                    .focusRequester(textFocusRequester)
             )
             Spacer(Modifier.height(12.dp))
             Row(
@@ -106,7 +106,7 @@ fun TodoFormBottomSheet(
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
-                    onClick = { onConfirm(title.trim(), isPrioritized) }
+                    onClick = { onConfirm(text.trim(), isPrioritized) }
                 ) {
                     Text(if (editingItem != null) "Save" else "OK")
                 }

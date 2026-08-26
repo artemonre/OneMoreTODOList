@@ -54,19 +54,19 @@ class TodoListViewModel(
                     _events.send(TodoListEvent.ShowAddTodoSheet)
                 }
             }
-            is TodoListAction.OnConfirmAddTodo -> addTodo(action.title, action.isPrioritized)
+            is TodoListAction.OnConfirmAddTodo -> addTodo(action.text, action.isPrioritized)
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
-            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.title, action.isPrioritized)
+            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized)
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
         }
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private fun addTodo(title: String, isPrioritized: Boolean) {
+    private fun addTodo(text: String, isPrioritized: Boolean) {
         val currentTodos = todos.value
         val newItem = TodoItem(
             id = Uuid.random().toString(),
-            title = title.ifBlank { defaultTitle() },
+            text = text.ifBlank { defaultText() },
             status = TodoStatus.Active,
             sortOrder = (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
             date = Clock.System.todayIn(TimeZone.currentSystemDefault()),
@@ -84,11 +84,11 @@ class TodoListViewModel(
         }
     }
 
-    private fun editTodo(id: String, title: String, isPrioritized: Boolean) {
+    private fun editTodo(id: String, text: String, isPrioritized: Boolean) {
         val currentTodos = todos.value
         val item = currentTodos.firstOrNull { it.id == id } ?: return
         val updated = item.copy(
-            title = title.ifBlank { item.title },
+            text = text.ifBlank { item.text },
             priorityOrder = if (isPrioritized) {
                 item.priorityOrder ?: prioritize(isPrioritized = true, currentTodos = currentTodos)
             } else {
@@ -114,7 +114,7 @@ class TodoListViewModel(
         }
     }
 
-    private fun defaultTitle(): String {
+    private fun defaultText(): String {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         return "Todo added at ${timeFormat.format(now.time)}"
     }
