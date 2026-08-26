@@ -45,7 +45,7 @@ class SeedOnboardingTodosTest {
         val existing = TodoItem(
             id = "existing",
             title = "Already here",
-            isDone = false,
+            status = TodoStatus.Active,
             sortOrder = 0,
             date = Clock.System.todayIn(TimeZone.currentSystemDefault())
         )

@@ -5,7 +5,7 @@ import kotlinx.datetime.LocalDate
 data class TodoItem(
     val id: String,
     val title: String,
-    val isDone: Boolean,
+    val status: TodoStatus,
     val sortOrder: Int,
     val date: LocalDate,
     // Rank among other prioritized items; null means not prioritized, lower sorts first.

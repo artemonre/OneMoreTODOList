@@ -25,4 +25,9 @@ class FakeTodoLocalDataSource(
         }
         return Result.Success(Unit)
     }
+
+    override suspend fun deleteTodo(id: String): EmptyResult<DataError.Local> {
+        todos.update { current -> current.filterNot { it.id == id } }
+        return Result.Success(Unit)
+    }
 }

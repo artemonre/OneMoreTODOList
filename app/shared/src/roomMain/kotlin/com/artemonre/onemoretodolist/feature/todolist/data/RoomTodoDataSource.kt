@@ -23,4 +23,15 @@ class RoomTodoDataSource(private val dao: TodoDao) : TodoLocalDataSource {
             Result.Error(DataError.Local.UNKNOWN)
         }
     }
+
+    override suspend fun deleteTodo(id: String): EmptyResult<DataError.Local> {
+        return try {
+            dao.delete(id)
+            Result.Success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.Error(DataError.Local.UNKNOWN)
+        }
+    }
 }

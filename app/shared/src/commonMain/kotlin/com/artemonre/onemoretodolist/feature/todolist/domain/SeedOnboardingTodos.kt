@@ -1,4 +1,4 @@
-package com.artemonre.onemoretodolist.feature.todolist.domain
+﻿package com.artemonre.onemoretodolist.feature.todolist.domain
 
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -23,21 +23,21 @@ class SeedOnboardingTodos(
             TodoItem(
                 id = Uuid.random().toString(),
                 title = "First todo item",
-                isDone = false,
+                status = TodoStatus.Active,
                 sortOrder = 0,
                 date = today
             ),
             TodoItem(
                 id = Uuid.random().toString(),
                 title = "Sorted by date items put from latest to newest",
-                isDone = false,
+                status = TodoStatus.Active,
                 sortOrder = 1,
                 date = today.plus(1, DateTimeUnit.DAY)
             ),
             TodoItem(
                 id = Uuid.random().toString(),
                 title = "If prioritized (Put to top) it goes to the top of the list",
-                isDone = false,
+                status = TodoStatus.Active,
                 sortOrder = 2,
                 date = today,
                 priorityOrder = 1.0

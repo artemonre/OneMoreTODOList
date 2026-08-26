@@ -18,26 +18,39 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 
+// editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTodoBottomSheet(
+fun TodoFormBottomSheet(
+    editingItem: TodoItemUi?,
     onConfirm: (title: String, isPrioritized: Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var title by remember { mutableStateOf("") }
-    var isPrioritized by remember { mutableStateOf(false) }
+    var title by remember { mutableStateOf(editingItem?.title.orEmpty()) }
+    var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
+    val titleFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        titleFocusRequester.requestFocus()
+        keyboardController?.show()
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -50,7 +63,7 @@ fun AddTodoBottomSheet(
                 .padding(bottom = 16.dp)
         ) {
             Text(
-                text = "Add todo",
+                text = if (editingItem != null) "Edit todo" else "Add todo",
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(Modifier.height(16.dp))
@@ -60,7 +73,9 @@ fun AddTodoBottomSheet(
                 label = { Text("A todo text") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(titleFocusRequester)
             )
             Spacer(Modifier.height(12.dp))
             Row(
@@ -93,7 +108,7 @@ fun AddTodoBottomSheet(
                 Button(
                     onClick = { onConfirm(title.trim(), isPrioritized) }
                 ) {
-                    Text("OK")
+                    Text(if (editingItem != null) "Save" else "OK")
                 }
             }
         }
