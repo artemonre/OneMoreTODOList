@@ -1,4 +1,4 @@
-package com.artemonre.onemoretodolist.core.designsystem.components
+package com.artemonre.onemoretodolist.core.designsystem.components.neumorphic
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 
 private val SEGMENT_SHAPE_RADIUS = 12.dp
 
@@ -187,7 +188,23 @@ private fun NeumorphicSegment(
 @Preview
 @Composable
 private fun NeumorphicSegmentedControlPreview() {
-    AppTheme(themeConfig = ThemeConfig()) {
+    AppTheme(themeConfig = ThemeConfig(mode = ThemeMode.Light)) {
+        NeumorphicSegmentedControl(
+            options = listOf("System", "Light", "Dark"),
+            selectedOption = "Light",
+            onOptionSelected = {},
+            label = { it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun NeumorphicSegmentedControlDarkPreview() {
+    AppTheme(themeConfig = ThemeConfig(mode = ThemeMode.Dark)) {
         NeumorphicSegmentedControl(
             options = listOf("System", "Light", "Dark"),
             selectedOption = "Light",

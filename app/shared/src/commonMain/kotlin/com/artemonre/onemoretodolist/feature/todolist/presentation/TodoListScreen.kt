@@ -1,38 +1,29 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,8 +32,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,16 +46,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.components.material.TodoItemCard
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalActionPlacement
@@ -75,26 +60,11 @@ import com.artemonre.onemoretodolist.core.theme.domain.ActionPlacement
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlin.math.roundToInt
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.TimeSource
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val SCROLL_TO_TOP_THRESHOLD = 10
 private val SWIPE_ACTION_WIDTH = 56.dp
-
-// The plain (non-onClick) ElevatedCard overload can't animate its own elevation param
-// reactively, so the press-driven shadow is drawn manually via Modifier.shadow() instead of
-// Card's built-in elevation system. Kept above Material3's 1.dp ElevatedCard default so the
-// press-flatten effect reads more clearly.
-private val CARD_ELEVATION = 2.dp
-
-// A fast tap can release before the shadow has had any frames to visibly animate down and back
-// up. Holding the pressed visual for at least this long (measured from touch-down, only topping
-// up whatever's left once release actually happens) guarantees it's always perceptible.
-private val CARD_PRESS_MIN_VISIBLE_DURATION = 150.milliseconds
 
 private enum class SwipeAnchor { Closed, Open }
 
@@ -233,10 +203,6 @@ private fun SwipeableTodoRow(
     val density = LocalDensity.current
     val revealedWidthPx = with(density) { (SWIPE_ACTION_WIDTH * 2).toPx() }
 
-    val cardShape = RoundedCornerShape(4.dp)
-    var isCardPressed by remember { mutableStateOf(false) }
-    val cardElevation by animateDpAsState(if (isCardPressed) 0.dp else CARD_ELEVATION)
-
     val swipeState = remember(revealedWidthPx) {
         AnchoredDraggableState(
             initialValue = SwipeAnchor.Closed,
@@ -278,88 +244,17 @@ private fun SwipeableTodoRow(
             }
         }
 
-        ElevatedCard(
+        TodoItemCard(
+            text = item.text,
+            isDone = item.status == TodoStatus.Done,
+            formattedDate = item.formattedDate,
+            onToggleDone = onToggleDone,
+            onClick = onItemClick,
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }
                 .anchoredDraggable(state = swipeState, orientation = Orientation.Horizontal)
-                .shadow(elevation = cardElevation, shape = cardShape)
-                // Raw pointer down/up drives the visual only, immediately and independent of any
-                // scroll-vs-tap disambiguation. clickable (below) still owns onItemClick and all
-                // of Compose's built-in tap/scroll/drag safety for the actual action - inside a
-                // LazyColumn, clickable intentionally delays/suppresses its own Press interaction
-                // until it's sure a gesture isn't the start of a scroll, so a fast tap never
-                // reaches clickable's interactionSource in time to drive a press effect from it.
-                .pointerInput(Unit) {
-                    // awaitEachGesture runs in a restricted suspend scope that can't call
-                    // kotlinx.coroutines.delay directly, so the minimum-visible-duration wait
-                    // is done in a plain coroutine launched off it instead.
-                    awaitEachGesture {
-                        awaitFirstDown(requireUnconsumed = false)
-                        val pressStartMark = TimeSource.Monotonic.markNow()
-                        isCardPressed = true
-                        waitForUpOrCancellation()
-                        coroutineScope.launch {
-                            val remaining = CARD_PRESS_MIN_VISIBLE_DURATION - pressStartMark.elapsedNow()
-                            if (remaining > Duration.ZERO) delay(remaining)
-                            isCardPressed = false
-                        }
-                    }
-                }
-                .clickable(
-                    interactionSource = null,
-                    indication = null,
-                    onClick = onItemClick
-                ),
-            shape = cardShape,
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
-        ) {
-            val textStyle = MaterialTheme.typography.bodyLarge
-            val dateStyle = MaterialTheme.typography.labelSmall
-            val textRowHeight = with(density) { textStyle.lineHeight.toDp() * 2 }
-            val dateHeight = with(density) { dateStyle.lineHeight.toDp() }
-            val dateSpacing = 4.dp
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-                    .height(textRowHeight + dateSpacing + dateHeight)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterStart),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AppCheckToggle(
-                        checked = item.status == TodoStatus.Done,
-                        onCheckedChange = { onToggleDone() }
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = item.text,
-                        style = textStyle,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        textDecoration = if (item.status == TodoStatus.Done) {
-                            TextDecoration.LineThrough
-                        } else {
-                            TextDecoration.None
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Text(
-                    text = item.formattedDate,
-                    style = dateStyle,
-                    color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 8.dp, y = 8.dp)
-                )
-            }
-        }
+        )
     }
 }
 

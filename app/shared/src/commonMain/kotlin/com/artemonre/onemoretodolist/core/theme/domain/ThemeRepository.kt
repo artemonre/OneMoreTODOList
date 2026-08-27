@@ -13,3 +13,4 @@ suspend fun ThemeRepository.updateIconSet(iconSet: IconSetOption) = update { it.
 suspend fun ThemeRepository.updateFont(font: FontOption) = update { it.copy(font = font) }
 suspend fun ThemeRepository.updateBackground(background: BackgroundOption) = update { it.copy(background = background) }
 suspend fun ThemeRepository.updateActionPlacement(placement: ActionPlacement) = update { it.copy(actionPlacement = placement) }
+suspend fun ThemeRepository.updateUiStyle(uiStyle: UiStyleOption) = update { it.copy(uiStyle = uiStyle) }

@@ -1,4 +1,4 @@
-package com.artemonre.onemoretodolist.core.designsystem.components
+package com.artemonre.onemoretodolist.core.designsystem.components.neumorphic
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.colorspace.ColorSpaces

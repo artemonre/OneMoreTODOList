@@ -6,10 +6,18 @@ data class ThemeConfig(
     val iconSet: IconSetOption = IconSetOption.Default,
     val font: FontOption = FontOption.Default,
     val background: BackgroundOption = BackgroundOption.Solid,
-    val actionPlacement: ActionPlacement = ActionPlacement.End
+    val actionPlacement: ActionPlacement = ActionPlacement.End,
+    val uiStyle: UiStyleOption = UiStyleOption.Material
 )
 
 enum class ThemeMode { System, Light, Dark }
+
+// The visual/component design language, independent of ThemeMode's light/dark color scheme -
+// e.g. Material is the flat, standard-elevation look the todo list screen uses; Neumorphic is
+// the soft-UI raised/pressed shadow look (designsystem/components/neumorphic). Not yet wired to
+// swap actual screen components - this is the setting the eventual per-style component switch
+// will read.
+enum class UiStyleOption { Material, Neumorphic }
 
 enum class ColorPaletteOption { Indigo, Slate }
 

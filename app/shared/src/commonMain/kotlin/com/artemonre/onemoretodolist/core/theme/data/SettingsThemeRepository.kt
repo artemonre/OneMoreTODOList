@@ -8,6 +8,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.IconSetOption
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
+import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 import com.russhwolf.settings.ExperimentalSettingsApi
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.coroutines.getStringFlow
@@ -21,6 +22,7 @@ private const val KEY_ICON_SET = "theme_icon_set"
 private const val KEY_FONT = "theme_font"
 private const val KEY_BACKGROUND = "theme_background"
 private const val KEY_ACTION_PLACEMENT = "theme_action_placement"
+private const val KEY_UI_STYLE = "theme_ui_style"
 
 @OptIn(ExperimentalSettingsApi::class)
 class SettingsThemeRepository(
@@ -33,7 +35,8 @@ class SettingsThemeRepository(
         settings.getStringFlow(KEY_ICON_SET, IconSetOption.Default.name),
         settings.getStringFlow(KEY_FONT, FontOption.Default.name),
         settings.getStringFlow(KEY_BACKGROUND, BackgroundOption.Solid.name),
-        settings.getStringFlow(KEY_ACTION_PLACEMENT, ActionPlacement.End.name)
+        settings.getStringFlow(KEY_ACTION_PLACEMENT, ActionPlacement.End.name),
+        settings.getStringFlow(KEY_UI_STYLE, UiStyleOption.Material.name)
     ) { values ->
         ThemeConfig(
             mode = values[0].toEnumOrDefault(ThemeMode.System),
@@ -41,7 +44,8 @@ class SettingsThemeRepository(
             iconSet = values[2].toEnumOrDefault(IconSetOption.Default),
             font = values[3].toEnumOrDefault(FontOption.Default),
             background = values[4].toEnumOrDefault(BackgroundOption.Solid),
-            actionPlacement = values[5].toEnumOrDefault(ActionPlacement.End)
+            actionPlacement = values[5].toEnumOrDefault(ActionPlacement.End),
+            uiStyle = values[6].toEnumOrDefault(UiStyleOption.Material)
         )
     }
 
@@ -53,6 +57,7 @@ class SettingsThemeRepository(
         settings.putString(KEY_FONT, next.font.name)
         settings.putString(KEY_BACKGROUND, next.background.name)
         settings.putString(KEY_ACTION_PLACEMENT, next.actionPlacement.name)
+        settings.putString(KEY_UI_STYLE, next.uiStyle.name)
     }
 }
 
