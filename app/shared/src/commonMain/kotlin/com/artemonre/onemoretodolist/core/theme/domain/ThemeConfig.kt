@@ -13,11 +13,12 @@ data class ThemeConfig(
 enum class ThemeMode { System, Light, Dark }
 
 // The visual/component design language, independent of ThemeMode's light/dark color scheme -
-// e.g. Material is the flat, standard-elevation look the todo list screen uses; Neumorphic is
-// the soft-UI raised/pressed shadow look (designsystem/components/neumorphic). Not yet wired to
-// swap actual screen components - this is the setting the eventual per-style component switch
-// will read.
-enum class UiStyleOption { Material, Neumorphic }
+// e.g. Material is the flat, standard-elevation look with no customizations; Neumorphic is the
+// soft-UI raised/pressed shadow look (designsystem/components/neumorphic); Paper is the
+// press-flattening card look the todo list screen currently uses (designsystem/components/paper).
+// Not yet wired to swap actual screen components - this is the setting the eventual per-style
+// component switch will read.
+enum class UiStyleOption { Material, Neumorphic, Paper }
 
 enum class ColorPaletteOption { Indigo, Slate }
 

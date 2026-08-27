@@ -5,7 +5,7 @@ fun List<TodoItem>.sortedByOption(option: TodoSortOption): List<TodoItem> = when
     TodoSortOption.Date -> sortedWith(
         compareBy<TodoItem> { it.priorityOrder == null }
             .thenBy { it.priorityOrder }
-            .thenBy { it.date }
+            .thenBy { it.creationDate }
     )
     TodoSortOption.Manual -> sortedBy { it.sortOrder }
     TodoSortOption.Text -> sortedBy { it.text }

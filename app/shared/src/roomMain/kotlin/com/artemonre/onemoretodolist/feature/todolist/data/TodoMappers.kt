@@ -7,7 +7,9 @@ fun TodoEntity.toTodoItem(): TodoItem = TodoItem(
     text = text,
     status = status,
     sortOrder = sortOrder,
-    date = date,
+    creationDate = creationDate,
+    lastEditDate = lastEditDate,
+    completionDate = completionDate,
     priorityOrder = priorityOrder
 )
 
@@ -16,6 +18,8 @@ fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
     text = text,
     status = status,
     sortOrder = sortOrder,
-    date = date,
+    creationDate = creationDate,
+    lastEditDate = lastEditDate,
+    completionDate = completionDate,
     priorityOrder = priorityOrder
 )

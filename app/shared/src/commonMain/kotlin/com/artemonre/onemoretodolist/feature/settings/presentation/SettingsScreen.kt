@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.settings.presentation
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,12 +21,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
 import com.artemonre.onemoretodolist.core.designsystem.components.neumorphic.NeumorphicSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
+import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 import org.koin.compose.viewmodel.koinViewModel
+
+// Only Indigo is offered today - Slate exists in ColorPalettes.kt but isn't ready to present as
+// a user-facing choice yet. Add it here once it is.
+private val AVAILABLE_PALETTES = listOf(ColorPaletteOption.Indigo)
 
 @Composable
 fun SettingsRoot(
@@ -60,6 +68,29 @@ fun SettingsScreen(
                 .padding(top = 12.dp)
         )
         Text(
+            text = "Palette",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 24.dp)
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(top = 12.dp)
+        ) {
+            val isDarkTheme = when (state.themeMode) {
+                ThemeMode.System -> isSystemInDarkTheme()
+                ThemeMode.Light -> false
+                ThemeMode.Dark -> true
+            }
+            AVAILABLE_PALETTES.forEach { option ->
+                val palette = option.toColorPalette()
+                PaletteSwatch(
+                    colorScheme = if (isDarkTheme) palette.dark else palette.light,
+                    selected = option == state.palette,
+                    onClick = { onAction(SettingsAction.OnPaletteSelected(option)) }
+                )
+            }
+        }
+        Text(
             text = "UI Style",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 24.dp)
@@ -88,6 +119,7 @@ private fun ThemeMode.displayName(): String = when (this) {
 private fun UiStyleOption.displayName(): String = when (this) {
     UiStyleOption.Material -> "Material"
     UiStyleOption.Neumorphic -> "Neumorphic"
+    UiStyleOption.Paper -> "Paper"
 }
 
 @Preview
@@ -95,7 +127,11 @@ private fun UiStyleOption.displayName(): String = when (this) {
 private fun SettingsScreenPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         SettingsScreen(
-            state = SettingsState(themeMode = ThemeMode.System, uiStyle = UiStyleOption.Material),
+            state = SettingsState(
+                themeMode = ThemeMode.System,
+                palette = ColorPaletteOption.Indigo,
+                uiStyle = UiStyleOption.Material
+            ),
             onAction = {}
         )
     }

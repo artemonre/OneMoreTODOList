@@ -51,7 +51,7 @@ Gradle modules (declared in `settings.gradle.kts`):
 
 - Prefer non-deprecated functions and classes. If the only option is deprecated, or the deprecated one is genuinely the better choice, ask before using it rather than picking silently.
 - Avoid hardcoded resources (colors, strings, dimensions, etc.) — create or reuse a shared resource (theme color, string resource, dimension constant, ...) where possible instead of inlining a literal. When planning work and a hardcoded value looks necessary, call it out explicitly in the plan rather than letting it pass silently.
-- Treat the app as released once its version is 1+. Before that, Room entities can be edited freely in place (schema version stays at 1, no migration needed). Once released, never change a Room entity without a migration (bump the `@Database` version and add an `AutoMigration`, or a manual `Migration` when the change is too complex for auto-migration — e.g. column renames/type changes) — and always test the migration.
+- Treat the app as released once `versionName` (not `versionCode`) moves past `1.0.0` — semantic versioning, major.minor.patch. While `versionName` is still `1.0`/`1.0.0`, Room entities can be edited freely in place (schema version stays at 1, no migration needed). Once `versionName` is past `1.0.0`, never change a Room entity without a migration (bump the `@Database` version and add an `AutoMigration`, or a manual `Migration` when the change is too complex for auto-migration — e.g. column renames/type changes) — and always test the migration.
 
 ## Never
 - Thread.sleep() → use delay()

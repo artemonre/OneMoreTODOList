@@ -11,6 +11,8 @@ data class TodoEntity(
     val text: String,
     val status: TodoStatus,
     val sortOrder: Int,
-    val date: LocalDate,
+    val creationDate: LocalDate,
+    val lastEditDate: LocalDate,
+    val completionDate: LocalDate?,
     val priorityOrder: Double?
 )

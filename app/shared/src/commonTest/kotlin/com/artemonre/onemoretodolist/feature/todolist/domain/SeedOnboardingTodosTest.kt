@@ -42,12 +42,14 @@ class SeedOnboardingTodosTest {
 
     @Test
     fun `does nothing when the data source already has todos`() = runTest {
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val existing = TodoItem(
             id = "existing",
             text = "Already here",
             status = TodoStatus.Active,
             sortOrder = 0,
-            date = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            creationDate = today,
+            lastEditDate = today
         )
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(existing))
         val seedOnboardingTodos = SeedOnboardingTodos(dataSource)
@@ -64,7 +66,7 @@ class SeedOnboardingTodosTest {
         priorityOrder: Double?
     ) {
         assertTrue(
-            todos.any { it.text == text && it.date == date && it.priorityOrder == priorityOrder },
+            todos.any { it.text == text && it.creationDate == date && it.priorityOrder == priorityOrder },
             "Expected a todo with text \"$text\" dated $date with priorityOrder $priorityOrder, got $todos"
         )
     }

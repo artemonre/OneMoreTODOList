@@ -20,7 +20,7 @@ fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
     text = text,
     status = status,
     sortOrder = sortOrder,
-    formattedDate = dateFormat.format(date),
+    formattedDate = dateFormat.format(creationDate),
     isPrioritized = priorityOrder != null
 )
 

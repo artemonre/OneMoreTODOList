@@ -11,9 +11,10 @@ import kotlinx.coroutines.Dispatchers
 
 @Database(
     entities = [TodoEntity::class],
-    version = 2,
+    version = 4,
     autoMigrations = [
-        AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class)
+        AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class),
+        AutoMigration(from = 3, to = 4)
     ]
 )
 @ColumnTypeConverters(TodoDateConverters::class)
@@ -31,6 +32,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 
 fun getRoomDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase {
     return builder
+        .addMigrations(MIGRATION_2_3)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()

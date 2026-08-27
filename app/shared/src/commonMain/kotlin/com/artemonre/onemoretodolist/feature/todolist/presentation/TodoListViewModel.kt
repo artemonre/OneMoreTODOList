@@ -64,12 +64,14 @@ class TodoListViewModel(
     @OptIn(ExperimentalUuidApi::class)
     private fun addTodo(text: String, isPrioritized: Boolean) {
         val currentTodos = todos.value
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val newItem = TodoItem(
             id = Uuid.random().toString(),
             text = text.ifBlank { defaultText() },
             status = TodoStatus.Active,
             sortOrder = (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
-            date = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+            creationDate = today,
+            lastEditDate = today,
             priorityOrder = prioritize(isPrioritized, currentTodos)
         )
         viewModelScope.launch {
@@ -89,6 +91,7 @@ class TodoListViewModel(
         val item = currentTodos.firstOrNull { it.id == id } ?: return
         val updated = item.copy(
             text = text.ifBlank { item.text },
+            lastEditDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
             priorityOrder = if (isPrioritized) {
                 item.priorityOrder ?: prioritize(isPrioritized = true, currentTodos = currentTodos)
             } else {
@@ -121,8 +124,14 @@ class TodoListViewModel(
 
     private fun toggleDone(id: String) {
         val item = todos.value.firstOrNull { it.id == id } ?: return
+        val newStatus = item.status.toggled()
+        val completionDate = if (newStatus == TodoStatus.Done) {
+            Clock.System.todayIn(TimeZone.currentSystemDefault())
+        } else {
+            null
+        }
         viewModelScope.launch {
-            todoLocalDataSource.upsertTodo(item.copy(status = item.status.toggled()))
+            todoLocalDataSource.upsertTodo(item.copy(status = newStatus, completionDate = completionDate))
         }
     }
 }
