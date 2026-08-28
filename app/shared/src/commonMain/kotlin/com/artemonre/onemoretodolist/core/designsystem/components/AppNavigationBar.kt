@@ -22,8 +22,7 @@ fun <T> AppNavigationBar(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
-        // No Neumorphic or Paper navigation bar yet - fall back to Material.
-        UiStyleOption.Neumorphic -> MaterialNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
+        // No Paper navigation bar yet - fall back to Material.
         UiStyleOption.Paper -> MaterialNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
     }
 }

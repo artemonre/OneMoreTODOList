@@ -45,7 +45,7 @@ fun <T> MaterialChipGroup(
 private fun MaterialChipGroupPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         MaterialChipGroup(
-            options = listOf("Material", "Neumorphic", "Paper"),
+            options = listOf("Material", "Paper"),
             selectedOption = "Material",
             onOptionSelected = {},
             label = { it },

@@ -132,7 +132,6 @@ private fun FontOption.displayName(): String = when (this) {
 
 private fun UiStyleOption.displayName(): String = when (this) {
     UiStyleOption.Material -> "Material"
-    UiStyleOption.Neumorphic -> "Neumorphic"
     UiStyleOption.Paper -> "Paper"
 }
 

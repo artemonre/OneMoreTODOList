@@ -3,7 +3,6 @@ package com.artemonre.onemoretodolist.core.designsystem.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialSegmentedControl
-import com.artemonre.onemoretodolist.core.designsystem.components.neumorphic.NeumorphicSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -21,7 +20,6 @@ fun <T> AppSegmentedControl(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialSegmentedControl(options, selectedOption, onOptionSelected, label, modifier)
-        UiStyleOption.Neumorphic -> NeumorphicSegmentedControl(options, selectedOption, onOptionSelected, label, modifier)
         // No Paper segmented control yet - fall back to Material.
         UiStyleOption.Paper -> MaterialSegmentedControl(options, selectedOption, onOptionSelected, label, modifier)
     }

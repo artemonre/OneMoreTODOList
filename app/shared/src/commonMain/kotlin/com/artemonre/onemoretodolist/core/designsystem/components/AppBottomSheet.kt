@@ -19,8 +19,7 @@ fun AppBottomSheet(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialBottomSheet(onDismissRequest, modifier, content)
-        // No Neumorphic or Paper bottom sheet yet - fall back to Material.
-        UiStyleOption.Neumorphic -> MaterialBottomSheet(onDismissRequest, modifier, content)
+        // No Paper bottom sheet yet - fall back to Material.
         UiStyleOption.Paper -> MaterialBottomSheet(onDismissRequest, modifier, content)
     }
 }

@@ -3,7 +3,6 @@ package com.artemonre.onemoretodolist.core.designsystem.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialChipGroup
-import com.artemonre.onemoretodolist.core.designsystem.components.neumorphic.NeumorphicChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -21,7 +20,6 @@ fun <T> AppChipGroup(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier)
-        UiStyleOption.Neumorphic -> NeumorphicChipGroup(options, selectedOption, onOptionSelected, label, modifier)
         // No Paper chips yet - fall back to Material.
         UiStyleOption.Paper -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier)
     }

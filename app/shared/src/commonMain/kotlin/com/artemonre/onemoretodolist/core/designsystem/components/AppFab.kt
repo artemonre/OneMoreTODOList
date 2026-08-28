@@ -21,8 +21,7 @@ fun AppFab(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialFab(onClick, icon, contentDescription, modifier)
-        // No Neumorphic or Paper FAB yet - fall back to Material.
-        UiStyleOption.Neumorphic -> MaterialFab(onClick, icon, contentDescription, modifier)
+        // No Paper FAB yet - fall back to Material.
         UiStyleOption.Paper -> MaterialFab(onClick, icon, contentDescription, modifier)
     }
 }

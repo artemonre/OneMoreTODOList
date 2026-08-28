@@ -19,8 +19,6 @@ fun AppCheckToggle(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialCheckbox(checked, onCheckedChange, modifier)
-        // No Neumorphic checkbox yet - fall back to Material.
-        UiStyleOption.Neumorphic -> MaterialCheckbox(checked, onCheckedChange, modifier)
         UiStyleOption.Paper -> PaperCheckbox(checked, onCheckedChange, modifier)
     }
 }

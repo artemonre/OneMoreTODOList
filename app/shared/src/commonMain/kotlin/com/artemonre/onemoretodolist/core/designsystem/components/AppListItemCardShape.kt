@@ -16,7 +16,5 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 fun appListItemCardShape(): Shape = when (LocalUiStyle.current) {
     // The Material card is an ElevatedCard - match its shape, not the plain Card's.
     UiStyleOption.Material -> CardDefaults.elevatedShape
-    // Falls back to the Material card - match its shape too.
-    UiStyleOption.Neumorphic -> CardDefaults.elevatedShape
     UiStyleOption.Paper -> PaperListItemCardShape
 }

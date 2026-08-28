@@ -20,8 +20,6 @@ fun AppListItemCard(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialListItemCard(onClick, modifier, content)
-        // No Neumorphic list item card yet - fall back to Material.
-        UiStyleOption.Neumorphic -> MaterialListItemCard(onClick, modifier, content)
         UiStyleOption.Paper -> PaperListItemCard(onClick, modifier, content)
     }
 }
