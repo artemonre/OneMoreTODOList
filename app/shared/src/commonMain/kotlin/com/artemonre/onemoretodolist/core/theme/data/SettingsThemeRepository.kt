@@ -31,7 +31,7 @@ class SettingsThemeRepository(
 
     override val themeConfig: Flow<ThemeConfig> = combine(
         settings.getStringFlow(KEY_MODE, ThemeMode.System.name),
-        settings.getStringFlow(KEY_PALETTE, ColorPaletteOption.Indigo.name),
+        settings.getStringFlow(KEY_PALETTE, ColorPaletteOption.Default.name),
         settings.getStringFlow(KEY_ICON_SET, IconSetOption.Default.name),
         settings.getStringFlow(KEY_FONT, FontOption.Default.name),
         settings.getStringFlow(KEY_BACKGROUND, BackgroundOption.Solid.name),
@@ -40,7 +40,7 @@ class SettingsThemeRepository(
     ) { values ->
         ThemeConfig(
             mode = values[0].toEnumOrDefault(ThemeMode.System),
-            palette = values[1].toEnumOrDefault(ColorPaletteOption.Indigo),
+            palette = values[1].toEnumOrDefault(ColorPaletteOption.Default),
             iconSet = values[2].toEnumOrDefault(IconSetOption.Default),
             font = values[3].toEnumOrDefault(FontOption.Default),
             background = values[4].toEnumOrDefault(BackgroundOption.Solid),

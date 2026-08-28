@@ -7,7 +7,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
 data class SettingsState(
     val themeMode: ThemeMode = ThemeMode.System,
-    val palette: ColorPaletteOption = ColorPaletteOption.Indigo,
+    val palette: ColorPaletteOption = ColorPaletteOption.Default,
     val font: FontOption = FontOption.Default,
     val uiStyle: UiStyleOption = UiStyleOption.Material
 )

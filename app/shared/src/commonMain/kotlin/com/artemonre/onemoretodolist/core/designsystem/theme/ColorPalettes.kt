@@ -8,10 +8,10 @@ data class ColorPalette(
     val dark: ColorScheme
 )
 
-private val IndigoPalette = ColorPalette(light = LightColorScheme, dark = DarkColorScheme)
+private val DefaultPalette = ColorPalette(light = LightColorSchemeDefault, dark = DarkColorSchemeDefault)
 private val SlatePalette = ColorPalette(light = SlateLightColorScheme, dark = SlateDarkColorScheme)
 
 fun ColorPaletteOption.toColorPalette(): ColorPalette = when (this) {
-    ColorPaletteOption.Indigo -> IndigoPalette
+    ColorPaletteOption.Default -> DefaultPalette
     ColorPaletteOption.Slate -> SlatePalette
 }

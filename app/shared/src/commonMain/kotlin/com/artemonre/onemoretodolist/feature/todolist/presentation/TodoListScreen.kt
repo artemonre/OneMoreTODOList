@@ -140,7 +140,7 @@ fun TodoListScreen(
                     .only(WindowInsetsSides.Top)
                     .add(WindowInsets(top = 8.dp, bottom = 8.dp))
                     .asPaddingValues(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(state.items, key = { it.id }) { item ->
                     SwipeableTodoRow(

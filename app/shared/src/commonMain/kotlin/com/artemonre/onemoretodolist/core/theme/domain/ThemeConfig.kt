@@ -2,7 +2,7 @@ package com.artemonre.onemoretodolist.core.theme.domain
 
 data class ThemeConfig(
     val mode: ThemeMode = ThemeMode.System,
-    val palette: ColorPaletteOption = ColorPaletteOption.Indigo,
+    val palette: ColorPaletteOption = ColorPaletteOption.Default,
     val iconSet: IconSetOption = IconSetOption.Default,
     val font: FontOption = FontOption.Default,
     val background: BackgroundOption = BackgroundOption.Solid,
@@ -17,7 +17,7 @@ enum class ThemeMode { System, Light, Dark }
 // press-flattening card look the todo list screen currently uses (designsystem/components/paper).
 enum class UiStyleOption { Material, Paper }
 
-enum class ColorPaletteOption { Indigo, Slate }
+enum class ColorPaletteOption { Default, Slate }
 
 enum class IconSetOption { Default, Rounded }
 

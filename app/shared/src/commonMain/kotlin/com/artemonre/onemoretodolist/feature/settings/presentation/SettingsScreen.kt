@@ -32,9 +32,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 import org.koin.compose.viewmodel.koinViewModel
 
-// Only Indigo is offered today - Slate exists in ColorPalettes.kt but isn't ready to present as
-// a user-facing choice yet. Add it here once it is.
-private val AVAILABLE_PALETTES = listOf(ColorPaletteOption.Indigo)
+private val AVAILABLE_PALETTES = listOf(ColorPaletteOption.Default, ColorPaletteOption.Slate)
 
 @Composable
 fun SettingsRoot(
@@ -142,7 +140,7 @@ private fun SettingsScreenPreview() {
         SettingsScreen(
             state = SettingsState(
                 themeMode = ThemeMode.System,
-                palette = ColorPaletteOption.Indigo,
+                palette = ColorPaletteOption.Default,
                 font = FontOption.Default,
                 uiStyle = UiStyleOption.Material
             ),
