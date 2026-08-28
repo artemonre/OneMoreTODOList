@@ -26,6 +26,7 @@ import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
 import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
+import com.artemonre.onemoretodolist.core.theme.domain.FontOption
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
@@ -91,6 +92,18 @@ fun SettingsScreen(
             }
         }
         Text(
+            text = "Font",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 24.dp)
+        )
+        AppChipGroup(
+            options = FontOption.entries,
+            selectedOption = state.font,
+            onOptionSelected = { onAction(SettingsAction.OnFontSelected(it)) },
+            label = { it.displayName() },
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        Text(
             text = "UI Style",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 24.dp)
@@ -111,6 +124,12 @@ private fun ThemeMode.displayName(): String = when (this) {
     ThemeMode.Dark -> "Dark"
 }
 
+private fun FontOption.displayName(): String = when (this) {
+    FontOption.Default -> "Roboto"
+    FontOption.Serif -> "Times New Roman"
+    FontOption.Monospace -> "JetBrains Mono"
+}
+
 private fun UiStyleOption.displayName(): String = when (this) {
     UiStyleOption.Material -> "Material"
     UiStyleOption.Neumorphic -> "Neumorphic"
@@ -125,6 +144,7 @@ private fun SettingsScreenPreview() {
             state = SettingsState(
                 themeMode = ThemeMode.System,
                 palette = ColorPaletteOption.Indigo,
+                font = FontOption.Default,
                 uiStyle = UiStyleOption.Material
             ),
             onAction = {}
