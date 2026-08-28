@@ -11,6 +11,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.artemonre.onemoretodolist.core.theme.domain.ActionPlacement
 import com.artemonre.onemoretodolist.core.theme.domain.IconSetOption
+import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
 data class AppIcons(
     val checkIcon: ImageVector,
@@ -37,3 +38,5 @@ fun IconSetOption.toAppIcons(): AppIcons = when (this) {
 val LocalAppIcons = staticCompositionLocalOf { DefaultAppIcons }
 
 val LocalActionPlacement = staticCompositionLocalOf { ActionPlacement.End }
+
+val LocalUiStyle = staticCompositionLocalOf { UiStyleOption.Material }

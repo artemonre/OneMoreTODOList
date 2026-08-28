@@ -5,11 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List as ListIcon
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +17,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
+import com.artemonre.onemoretodolist.core.designsystem.components.AppNavigationBar
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.settings.navigation.SettingsRoute
@@ -79,16 +76,13 @@ fun ContainerScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            NavigationBar {
-                state.tabs.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        selected = index == state.selectedTabIndex,
-                        onClick = { onAction(ContainerAction.OnTabSelected(index)) },
-                        icon = { Icon(imageVector = tab.icon, contentDescription = tab.label) },
-                        label = { Text(tab.label) }
-                    )
-                }
-            }
+            AppNavigationBar(
+                items = state.tabs,
+                selectedIndex = state.selectedTabIndex,
+                onItemSelected = { onAction(ContainerAction.OnTabSelected(it)) },
+                icon = { it.icon },
+                label = { it.label }
+            )
         }
     ) { innerPadding ->
         NavDisplay(

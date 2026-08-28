@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,8 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
-import com.artemonre.onemoretodolist.core.designsystem.components.neumorphic.NeumorphicSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
 import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
@@ -58,7 +58,7 @@ fun SettingsScreen(
             text = "Theme",
             style = MaterialTheme.typography.titleMedium
         )
-        NeumorphicSegmentedControl(
+        AppSegmentedControl(
             options = ThemeMode.entries,
             selectedOption = state.themeMode,
             onOptionSelected = { onAction(SettingsAction.OnThemeModeSelected(it)) },
@@ -95,18 +95,13 @@ fun SettingsScreen(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 24.dp)
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        AppChipGroup(
+            options = UiStyleOption.entries,
+            selectedOption = state.uiStyle,
+            onOptionSelected = { onAction(SettingsAction.OnUiStyleSelected(it)) },
+            label = { it.displayName() },
             modifier = Modifier.padding(top = 12.dp)
-        ) {
-            UiStyleOption.entries.forEach { option ->
-                FilterChip(
-                    selected = option == state.uiStyle,
-                    onClick = { onAction(SettingsAction.OnUiStyleSelected(option)) },
-                    label = { Text(option.displayName()) }
-                )
-            }
-        }
+        )
     }
 }
 

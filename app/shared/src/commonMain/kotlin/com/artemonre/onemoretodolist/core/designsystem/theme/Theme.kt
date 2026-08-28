@@ -31,7 +31,8 @@ fun AppTheme(
 
     CompositionLocalProvider(
         LocalAppIcons provides themeConfig.iconSet.toAppIcons(),
-        LocalActionPlacement provides themeConfig.actionPlacement
+        LocalActionPlacement provides themeConfig.actionPlacement,
+        LocalUiStyle provides themeConfig.uiStyle
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

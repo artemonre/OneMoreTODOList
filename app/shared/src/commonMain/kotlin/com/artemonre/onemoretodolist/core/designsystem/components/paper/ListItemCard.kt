@@ -5,37 +5,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
-import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
-import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
@@ -43,6 +26,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val CARD_SHAPE_RADIUS = 4.dp
+
+// Exposed so callers that draw behind/around the card (e.g. a swipe-reveal background) can match
+// its corners exactly - see AppListItemCardShape.
+val PaperListItemCardShape: Shape = RoundedCornerShape(CARD_SHAPE_RADIUS)
 
 // Kept above Material3's 1.dp ElevatedCard default so the press-flatten effect reads more clearly.
 private val CARD_ELEVATION = 4.dp
@@ -53,25 +40,22 @@ private val CARD_ELEVATION = 4.dp
 private val CARD_PRESS_MIN_VISIBLE_DURATION = 150.milliseconds
 
 /**
- * A Paper-styled card for a single todo item: a checkbox, its text, and a formatted date,
- * with a press-driven elevation flatten for immediate tap feedback.
+ * A Paper-styled card: a press-driven elevation flatten for immediate tap feedback around
+ * arbitrary [content]. Domain-agnostic - any feature can use it for a clickable list row without
+ * this module knowing what that row represents.
  *
  * The plain (non-onClick) ElevatedCard overload can't animate its own elevation param reactively,
  * so the press-driven shadow is drawn manually via Modifier.shadow() instead of Card's built-in
  * elevation system.
  */
 @Composable
-fun TodoItemCard(
-    text: String,
-    isDone: Boolean,
-    formattedDate: String,
-    onToggleDone: () -> Unit,
+fun ListItemCard(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val density = LocalDensity.current
-    val cardShape = RoundedCornerShape(CARD_SHAPE_RADIUS)
+    val cardShape = PaperListItemCardShape
     var isCardPressed by remember { mutableStateOf(false) }
     val cardElevation by animateDpAsState(if (isCardPressed) 0.dp else CARD_ELEVATION)
 
@@ -108,63 +92,6 @@ fun TodoItemCard(
         shape = cardShape,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
-        val textStyle = MaterialTheme.typography.bodyLarge
-        val dateStyle = MaterialTheme.typography.labelSmall
-        val textRowHeight = with(density) { textStyle.lineHeight.toDp() * 2 }
-        val dateHeight = with(density) { dateStyle.lineHeight.toDp() }
-        val dateSpacing = 4.dp
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-                .height(textRowHeight + dateSpacing + dateHeight)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.CenterStart),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AppCheckToggle(
-                    checked = isDone,
-                    onCheckedChange = { onToggleDone() }
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = text,
-                    style = textStyle,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Text(
-                text = formattedDate,
-                style = dateStyle,
-                color = MaterialTheme.colorScheme.outline,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 8.dp, y = 8.dp)
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun TodoItemCardPreview() {
-    AppTheme(themeConfig = ThemeConfig()) {
-        TodoItemCard(
-            text = "Buy groceries",
-            isDone = false,
-            formattedDate = "Aug 24, 2026",
-            onToggleDone = {},
-            onClick = {},
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        )
+        content()
     }
 }

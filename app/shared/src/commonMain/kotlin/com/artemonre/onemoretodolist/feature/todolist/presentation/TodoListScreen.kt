@@ -28,11 +28,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +49,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.artemonre.onemoretodolist.core.designsystem.components.paper.TodoItemCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
+import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalActionPlacement
@@ -164,9 +163,10 @@ fun TodoListScreen(
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
-            FloatingActionButton(onClick = { onAction(TodoListAction.OnAddTodoClick) }) {
-                Icon(imageVector = LocalAppIcons.current.addIcon, contentDescription = null)
-            }
+            AppFab(
+                onClick = { onAction(TodoListAction.OnAddTodoClick) },
+                icon = LocalAppIcons.current.addIcon
+            )
         }
 
         AnimatedVisibility(
@@ -177,11 +177,10 @@ fun TodoListScreen(
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
-            FloatingActionButton(
-                onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } }
-            ) {
-                Icon(imageVector = LocalAppIcons.current.scrollToTopIcon, contentDescription = null)
-            }
+            AppFab(
+                onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
+                icon = LocalAppIcons.current.scrollToTopIcon
+            )
         }
     }
 
@@ -222,7 +221,7 @@ private fun SwipeableTodoRow(
             modifier = Modifier
                 .matchParentSize()
                 .padding(horizontal = 8.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)),
+                .background(MaterialTheme.colorScheme.surfaceVariant, appListItemCardShape()),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {

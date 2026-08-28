@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,10 +29,10 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
@@ -52,7 +50,7 @@ fun TodoFormBottomSheet(
         keyboardController?.show()
     }
 
-    ModalBottomSheet(
+    AppBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier
     ) {
