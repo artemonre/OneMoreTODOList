@@ -1,7 +1,7 @@
 package com.artemonre.onemoretodolist.core.designsystem.components.material
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
@@ -25,8 +25,9 @@ fun <T> MaterialChipGroup(
     label: (T) -> String,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
     ) {
         options.forEach { option ->

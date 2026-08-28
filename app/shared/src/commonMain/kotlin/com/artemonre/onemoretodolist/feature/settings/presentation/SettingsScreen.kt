@@ -125,9 +125,9 @@ private fun ThemeMode.displayName(): String = when (this) {
 }
 
 private fun FontOption.displayName(): String = when (this) {
-    FontOption.Default -> "Roboto"
-    FontOption.Serif -> "Times New Roman"
-    FontOption.Monospace -> "JetBrains Mono"
+    FontOption.Default -> "Default"
+    FontOption.Serif -> "Serif"
+    FontOption.Monospace -> "Mono"
 }
 
 private fun UiStyleOption.displayName(): String = when (this) {
