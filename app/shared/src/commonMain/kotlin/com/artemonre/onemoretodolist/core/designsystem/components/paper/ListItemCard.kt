@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -98,16 +99,20 @@ fun ListItemCard(
         shape = cardShape,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
-        content()
+        // Content padding matches the card's own corner radius, so it never sits visually
+        // clipped by the rounded corners.
+        Box(modifier = Modifier.padding(CARD_SHAPE_RADIUS)) {
+            content()
+        }
     }
 }
 
-@Preview(widthDp = 280, heightDp = 64)
+@Preview(widthDp = 280, heightDp = 40)
 @Composable
 private fun ListItemCardPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         ListItemCard(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-            Text("Buy groceries", modifier = Modifier.padding(16.dp))
+            Text("Buy groceries")
         }
     }
 }

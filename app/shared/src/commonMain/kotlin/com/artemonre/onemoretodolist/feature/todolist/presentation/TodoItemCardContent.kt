@@ -2,12 +2,10 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,7 +44,6 @@ fun TodoItemCardContent(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 14.dp)
             .height(textRowHeight + dateSpacing + dateHeight)
     ) {
         Row(
@@ -59,14 +56,15 @@ fun TodoItemCardContent(
                 checked = isDone,
                 onCheckedChange = { onToggleDone() }
             )
-            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = text,
                 style = textStyle,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 4.dp)
             )
         }
         Text(
@@ -80,7 +78,7 @@ fun TodoItemCardContent(
     }
 }
 
-@Preview(widthDp = 360, heightDp = 96)
+@Preview(widthDp = 360, heightDp = 68)
 @Composable
 private fun TodoItemCardContentPreview() {
     AppTheme(themeConfig = ThemeConfig()) {

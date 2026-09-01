@@ -1,5 +1,9 @@
 package com.artemonre.onemoretodolist.core.container
 
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.offset
@@ -11,6 +15,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,6 +44,16 @@ import org.koin.core.parameter.parametersOf
 // docked FAB up by this much centers it on the nav bar's top edge, so it straddles the bar
 // instead of sitting flush inside or fully above it.
 private val FAB_NAV_BAR_OVERLAP = 28.dp
+
+// The outgoing screen exits to the left while the incoming one enters from the right - used when
+// switching to a tab positioned to the right of the current one.
+private fun tabSlideLeft(): ContentTransform =
+    slideInHorizontally(initialOffsetX = { it }) togetherWith slideOutHorizontally(targetOffsetX = { -it })
+
+// The outgoing screen exits to the right while the incoming one enters from the left - used when
+// switching to a tab positioned to the left of the current one.
+private fun tabSlideRight(): ContentTransform =
+    slideInHorizontally(initialOffsetX = { -it }) togetherWith slideOutHorizontally(targetOffsetX = { it })
 
 // Every feature's NavKey subtypes must be registered here so the back stack can be
 // saved/restored across process death. Add a `subclass(...)` line per new route as
@@ -74,6 +91,15 @@ fun ContainerScreen(
         state.tabs.getOrNull(state.selectedTabIndex)?.startDestination ?: TodoListRoute.List
     )
 
+    // A tab switch replaces the back stack wholesale (see below) rather than pushing/popping it,
+    // so NavDisplay can't infer a direction from the stack shape alone - it's set here instead,
+    // synchronously in the nav bar's click handler where the old and new index are both known
+    // before state.selectedTabIndex actually changes. (Deriving it reactively from
+    // state.selectedTabIndex doesn't work: the back stack mutation below happens a frame later,
+    // inside LaunchedEffect, by which point a naive "previous index" would already have caught up
+    // to the new one.)
+    var isTabMovingRight by remember { mutableStateOf(true) }
+
     LaunchedEffect(state.selectedTabIndex, state.tabs) {
         val startDestination = state.tabs.getOrNull(state.selectedTabIndex)?.startDestination ?: return@LaunchedEffect
         if (backStack.lastOrNull() != startDestination) {
@@ -89,7 +115,10 @@ fun ContainerScreen(
                 AppNavigationBar(
                     items = state.tabs,
                     selectedIndex = state.selectedTabIndex,
-                    onItemSelected = { onAction(ContainerAction.OnTabSelected(it)) },
+                    onItemSelected = { index ->
+                        isTabMovingRight = index >= state.selectedTabIndex
+                        onAction(ContainerAction.OnTabSelected(index))
+                    },
                     icon = { it.icon },
                     label = { it.label }
                 )
@@ -107,7 +136,14 @@ fun ContainerScreen(
             onBack = { backStack.removeLastOrNull() },
             entryProvider = entryProvider {
                 state.tabs.forEach { tab -> tab.entries(this) }
-            }
+            },
+            // A tab switch is a backStack.clear() + add() (see the LaunchedEffect above), which
+            // NavDisplay treats as a pop rather than a push - so the pop/predictive-pop specs are
+            // the ones actually exercised here. transitionSpec is still set to match, in case
+            // that ever changes.
+            transitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() },
+            popTransitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() },
+            predictivePopTransitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() }
         )
     }
 }

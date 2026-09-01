@@ -36,7 +36,7 @@ fun TodoItemCard(
     }
 }
 
-@Preview(widthDp = 360, heightDp = 104)
+@Preview(widthDp = 360, heightDp = 100)
 @Composable
 private fun TodoItemCardPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
