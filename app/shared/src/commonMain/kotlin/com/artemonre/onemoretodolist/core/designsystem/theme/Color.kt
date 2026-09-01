@@ -5,9 +5,9 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 val LightColorSchemeDefault = lightColorScheme(
-    primary = Color(0xFF003C47),
+    primary = Color(0xFF006C4F),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFF1C7788),
+    primaryContainer = Color(0xFF21A179),
     onPrimaryContainer = Color(0xFFFFFFFF),
     secondary = Color(0xFF0A3F18),
     onSecondary = Color(0xFFFFFFFF),
@@ -37,7 +37,7 @@ val LightColorSchemeDefault = lightColorScheme(
     surfaceBright = Color(0xFFF5FAFC),
     surfaceContainerLowest = Color(0xFFFFFFFF),
     surfaceContainerLow = Color(0xFFFFFFFF),
-    surfaceContainer = Color(0xFF21A179), //maybe: 21A179 seaweed 204B57 dark teal 125E8A baltic blue 3C6E71 stormy teal 284B63 yale blue
+    surfaceContainer = Color(0xFF5B9BCE), //maybe: 21A179 seaweed 204B57 dark teal 125E8A baltic blue 3C6E71 stormy teal 284B63 yale blue
     surfaceContainerHigh = Color(0xFFD8DEE0),
     surfaceContainerHighest = Color(0xFFCDD2D4)
 )
