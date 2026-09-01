@@ -43,7 +43,7 @@ fun TodoItemCardContent(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(horizontal = 12.dp, vertical = 14.dp)
             .height(textRowHeight + dateSpacing + dateHeight)
     ) {
         Row(
@@ -56,7 +56,7 @@ fun TodoItemCardContent(
                 checked = isDone,
                 onCheckedChange = { onToggleDone() }
             )
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = text,
                 style = textStyle,
