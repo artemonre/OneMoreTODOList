@@ -1,6 +1,8 @@
 package com.artemonre.onemoretodolist.core.container
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List as ListIcon
@@ -9,8 +11,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -28,6 +32,11 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+
+// Half of Material3's default FAB size (56dp, FabBaselineTokens.ContainerHeight) - shifting the
+// docked FAB up by this much centers it on the nav bar's top edge, so it straddles the bar
+// instead of sitting flush inside or fully above it.
+private val FAB_NAV_BAR_OVERLAP = 28.dp
 
 // Every feature's NavKey subtypes must be registered here so the back stack can be
 // saved/restored across process death. Add a `subclass(...)` line per new route as
@@ -76,13 +85,20 @@ fun ContainerScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            AppNavigationBar(
-                items = state.tabs,
-                selectedIndex = state.selectedTabIndex,
-                onItemSelected = { onAction(ContainerAction.OnTabSelected(it)) },
-                icon = { it.icon },
-                label = { it.label }
-            )
+            Box(contentAlignment = Alignment.TopCenter) {
+                AppNavigationBar(
+                    items = state.tabs,
+                    selectedIndex = state.selectedTabIndex,
+                    onItemSelected = { onAction(ContainerAction.OnTabSelected(it)) },
+                    icon = { it.icon },
+                    label = { it.label }
+                )
+                state.tabs.getOrNull(state.selectedTabIndex)?.fab?.let { fab ->
+                    Box(modifier = Modifier.offset(y = -FAB_NAV_BAR_OVERLAP)) {
+                        fab()
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         NavDisplay(

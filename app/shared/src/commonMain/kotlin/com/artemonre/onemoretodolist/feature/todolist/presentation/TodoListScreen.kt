@@ -65,6 +65,10 @@ import org.koin.compose.viewmodel.koinViewModel
 private const val SCROLL_TO_TOP_THRESHOLD = 10
 private val SWIPE_ACTION_WIDTH = 56.dp
 
+// Clears the scroll-to-top button (56dp) plus its 16dp margin, with a little extra breathing
+// room, so the last list item never ends up hidden behind it after a full scroll.
+private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
+
 private enum class SwipeAnchor { Closed, Open }
 
 @Composable
@@ -138,7 +142,7 @@ fun TodoListScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = WindowInsets.safeDrawing
                     .only(WindowInsetsSides.Top)
-                    .add(WindowInsets(top = 8.dp, bottom = 8.dp))
+                    .add(WindowInsets(top = 8.dp, bottom = LIST_BOTTOM_CONTENT_PADDING))
                     .asPaddingValues(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -153,20 +157,6 @@ fun TodoListScreen(
                     )
                 }
             }
-        }
-
-        AnimatedVisibility(
-            visible = !showScrollToTop,
-            modifier = Modifier.align(actionAlignment)
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .padding(16.dp),
-            enter = fadeIn() + scaleIn(),
-            exit = fadeOut() + scaleOut()
-        ) {
-            AppFab(
-                onClick = { onAction(TodoListAction.OnAddTodoClick) },
-                icon = LocalAppIcons.current.addIcon
-            )
         }
 
         AnimatedVisibility(
