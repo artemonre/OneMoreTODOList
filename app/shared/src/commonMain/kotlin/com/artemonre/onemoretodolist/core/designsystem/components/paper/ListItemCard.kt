@@ -5,9 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,7 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
@@ -93,5 +99,15 @@ fun ListItemCard(
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
         content()
+    }
+}
+
+@Preview(widthDp = 280, heightDp = 64)
+@Composable
+private fun ListItemCardPreview() {
+    AppTheme(themeConfig = ThemeConfig()) {
+        ListItemCard(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+            Text("Buy groceries", modifier = Modifier.padding(16.dp))
+        }
     }
 }

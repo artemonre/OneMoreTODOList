@@ -16,8 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 
 /**
  * A todo item's content - checkbox and text centered in a row, formatted date pinned to the
@@ -73,6 +76,19 @@ fun TodoItemCardContent(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .offset(x = 8.dp, y = 8.dp)
+        )
+    }
+}
+
+@Preview(widthDp = 360, heightDp = 96)
+@Composable
+private fun TodoItemCardContentPreview() {
+    AppTheme(themeConfig = ThemeConfig()) {
+        TodoItemCardContent(
+            text = "Buy groceries",
+            isDone = false,
+            formattedDate = "Aug 24, 2026",
+            onToggleDone = {}
         )
     }
 }

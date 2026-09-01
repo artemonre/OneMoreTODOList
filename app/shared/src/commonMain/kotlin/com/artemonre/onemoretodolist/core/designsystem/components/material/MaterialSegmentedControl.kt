@@ -77,7 +77,7 @@ fun <T> MaterialSegmentedControl(
     }
 }
 
-@Preview
+@Preview(widthDp = 360, heightDp = 88)
 @Composable
 private fun MaterialSegmentedControlPreview() {
     AppTheme(themeConfig = ThemeConfig()) {

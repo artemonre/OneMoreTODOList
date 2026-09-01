@@ -40,7 +40,7 @@ fun <T> MaterialChipGroup(
     }
 }
 
-@Preview
+@Preview(widthDp = 300, heightDp = 88)
 @Composable
 private fun MaterialChipGroupPreview() {
     AppTheme(themeConfig = ThemeConfig()) {

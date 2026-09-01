@@ -28,9 +28,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
 @Composable
@@ -110,5 +113,17 @@ fun TodoFormBottomSheet(
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun TodoFormBottomSheetPreview() {
+    AppTheme(themeConfig = ThemeConfig()) {
+        TodoFormBottomSheet(
+            editingItem = null,
+            onConfirm = { _, _ -> },
+            onDismiss = {}
+        )
     }
 }
