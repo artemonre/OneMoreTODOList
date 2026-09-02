@@ -1,6 +1,7 @@
 package com.artemonre.onemoretodolist.core.container
 
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
+import com.artemonre.onemoretodolist.feature.todolist.domain.ONBOARDING_TODOS
 import com.artemonre.onemoretodolist.feature.todolist.domain.SeedOnboardingTodos
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -37,7 +38,7 @@ class ContainerViewModelTest {
         viewModel.onAction(ContainerAction.OnStart)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(3, dataSource.observeTodos().first().size)
+        assertEquals(ONBOARDING_TODOS.size, dataSource.observeTodos().first().size)
     }
 
     @Test
