@@ -49,6 +49,7 @@ class TodoListViewModel(
         when (action) {
             is TodoListAction.OnToggleDone -> toggleDone(action.id)
             is TodoListAction.OnSortOptionSelected -> sortOption.value = action.option
+            is TodoListAction.OnReorder -> reorder(action.orderedIds)
             is TodoListAction.OnAddTodoClick -> {
                 viewModelScope.launch {
                     _events.send(TodoListEvent.ShowAddTodoSheet)
@@ -100,6 +101,18 @@ class TodoListViewModel(
         )
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(updated)
+        }
+    }
+
+    private fun reorder(orderedIds: List<String>) {
+        val itemsById = todos.value.associateBy { it.id }
+        viewModelScope.launch {
+            orderedIds.forEachIndexed { index, id ->
+                val item = itemsById[id] ?: return@forEachIndexed
+                if (item.sortOrder != index) {
+                    todoLocalDataSource.upsertTodo(item.copy(sortOrder = index))
+                }
+            }
         }
     }
 

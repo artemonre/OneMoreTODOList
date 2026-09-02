@@ -1,6 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -29,13 +30,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,7 +50,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -57,12 +65,16 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.LocalActionPlacemen
 import com.artemonre.onemoretodolist.core.presentation.ObserveAsEvents
 import com.artemonre.onemoretodolist.core.theme.domain.ActionPlacement
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private const val SCROLL_TO_TOP_THRESHOLD = 10
+private const val DRAG_ROTATION_DEGREES = 4f
 private val SWIPE_ACTION_WIDTH = 56.dp
 
 // Clears the scroll-to-top button (56dp) plus its 16dp margin, with a little extra breathing
@@ -129,37 +141,107 @@ fun TodoListScreen(
         ActionPlacement.End -> Alignment.BottomEnd
     }
     var detailItem by remember { mutableStateOf<TodoItemUi?>(null) }
+    var sortMenuExpanded by remember { mutableStateOf(false) }
+
+    // The reorderable library needs a local mutable list it can shuffle live during a drag.
+    // It's re-synced from state.items whenever that changes - which OnReorder itself never
+    // triggers mid-drag (it's only dispatched on drag-stop), so this can't fight an in-progress
+    // drag; it only picks up genuinely external changes (add/edit/delete/toggle elsewhere).
+    var manualOrderItems by remember { mutableStateOf(state.items) }
+    LaunchedEffect(state.items) { manualOrderItems = state.items }
+
+    val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
+        manualOrderItems = manualOrderItems.toMutableList().apply {
+            add(to.index, removeAt(from.index))
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (state.items.isEmpty()) {
-            Text(
-                text = "No todo items yet",
-                modifier = Modifier.align(Alignment.Center)
-            )
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = WindowInsets.safeDrawing
-                    .only(WindowInsetsSides.Top)
-                    .add(WindowInsets(top = 8.dp, bottom = LIST_BOTTOM_CONTENT_PADDING))
-                    .asPaddingValues(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(state.items, key = { it.id }) { item ->
-                    SwipeableTodoRow(
-                        item = item,
-                        modifier = Modifier.animateItem(),
-                        onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
-                        onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
-                        onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
-                        onItemClick = { detailItem = item }
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = WindowInsets.safeDrawing
+                .only(WindowInsetsSides.Top)
+                .add(WindowInsets(top = 8.dp, bottom = LIST_BOTTOM_CONTENT_PADDING))
+                .asPaddingValues(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Box {
+                        TextButton(onClick = { sortMenuExpanded = true }) {
+                            Text(state.sortOption.displayName())
+                        }
+                        DropdownMenu(
+                            expanded = sortMenuExpanded,
+                            onDismissRequest = { sortMenuExpanded = false }
+                        ) {
+                            TodoSortOption.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.displayName()) },
+                                    onClick = {
+                                        onAction(TodoListAction.OnSortOptionSelected(option))
+                                        sortMenuExpanded = false
+                                    },
+                                    leadingIcon = if (option == state.sortOption) {
+                                        { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
+                                    } else {
+                                        null
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (state.items.isEmpty()) {
+                item {
+                    Text(
+                        text = "No todo items yet",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        textAlign = TextAlign.Center
                     )
+                }
+            } else {
+                items(manualOrderItems, key = { it.id }) { item ->
+                    ReorderableItem(reorderableListState, key = item.id) { isDragging ->
+                        val rotation by animateFloatAsState(if (isDragging) DRAG_ROTATION_DEGREES else 0f)
+                        val rowModifier = Modifier
+                            .animateItem()
+                            .graphicsLayer { rotationZ = rotation }
+                            .let { base ->
+                                if (state.sortOption == TodoSortOption.Manual) {
+                                    base.longPressDraggableHandle(
+                                        onDragStopped = {
+                                            onAction(TodoListAction.OnReorder(manualOrderItems.map { it.id }))
+                                        }
+                                    )
+                                } else {
+                                    base
+                                }
+                            }
+                        SwipeableTodoRow(
+                            item = item,
+                            modifier = rowModifier,
+                            onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
+                            onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
+                            onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
+                            onItemClick = { detailItem = item }
+                        )
+                    }
                 }
             }
         }
 
-        AnimatedVisibility(
+        androidx.compose.animation.AnimatedVisibility(
             visible = showScrollToTop,
             modifier = Modifier.align(actionAlignment)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
@@ -177,6 +259,12 @@ fun TodoListScreen(
     detailItem?.let { item ->
         TodoDetailDialog(item = item, onDismiss = { detailItem = null })
     }
+}
+
+private fun TodoSortOption.displayName(): String = when (this) {
+    TodoSortOption.Date -> "Default"
+    TodoSortOption.Manual -> "Manual"
+    TodoSortOption.Text -> "Text"
 }
 
 @Composable
@@ -257,6 +345,23 @@ private fun TodoListScreenPreview() {
                     TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "Aug 24, 2026"),
                     TodoItemUi(id = "2", text = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature", status = TodoStatus.Done, sortOrder = 1, formattedDate = "Aug 23, 2026")
                 )
+            ),
+            onAction = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun TodoListScreenManualSortPreview() {
+    AppTheme(themeConfig = ThemeConfig()) {
+        TodoListScreen(
+            state = TodoListState(
+                items = listOf(
+                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "Aug 24, 2026"),
+                    TodoItemUi(id = "2", text = "Write project architecture document", status = TodoStatus.Active, sortOrder = 1, formattedDate = "Aug 23, 2026")
+                ),
+                sortOption = TodoSortOption.Manual
             ),
             onAction = {}
         )
