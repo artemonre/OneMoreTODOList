@@ -7,6 +7,7 @@ sealed interface TodoListAction {
     data class OnSortOptionSelected(val option: TodoSortOption) : TodoListAction
     data class OnReorder(val orderedIds: List<String>) : TodoListAction
     data object OnAddTodoClick : TodoListAction
+    data object OnAddTodoFullScreenClick : TodoListAction
     data class OnConfirmAddTodo(val text: String, val isPrioritized: Boolean) : TodoListAction
     data class OnEditTodoClick(val id: String) : TodoListAction
     data class OnConfirmEditTodo(val id: String, val text: String, val isPrioritized: Boolean) : TodoListAction

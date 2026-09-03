@@ -43,6 +43,27 @@ fun TodoFormBottomSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    AppBottomSheet(
+        onDismissRequest = onDismiss,
+        modifier = modifier
+    ) {
+        TodoFormBody(
+            editingItem = editingItem,
+            onConfirm = onConfirm,
+            onDismiss = onDismiss
+        )
+    }
+}
+
+// Shared by TodoFormBottomSheet (edit flow) and TodoFormFullScreenDialog (add flow) - same
+// fields and behavior, just hosted in a different container.
+@Composable
+internal fun TodoFormBody(
+    editingItem: TodoItemUi?,
+    onConfirm: (text: String, isPrioritized: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var text by remember { mutableStateOf(editingItem?.text.orEmpty()) }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
     val textFocusRequester = remember { FocusRequester() }
@@ -53,64 +74,59 @@ fun TodoFormBottomSheet(
         keyboardController?.show()
     }
 
-    AppBottomSheet(
-        onDismissRequest = onDismiss,
+    Column(
         modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp)
     ) {
-        Column(
+        Text(
+            text = if (editingItem != null) "Edit todo" else "Add todo",
+            style = MaterialTheme.typography.titleLarge
+        )
+        Spacer(Modifier.height(16.dp))
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text("A todo text") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp)
-        ) {
-            Text(
-                text = if (editingItem != null) "Edit todo" else "Add todo",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("A todo text") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(textFocusRequester)
-            )
-            Spacer(Modifier.height(12.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .toggleable(
-                        value = isPrioritized,
-                        onValueChange = { isPrioritized = it },
-                        role = Role.Checkbox
-                    )
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AppCheckToggle(
-                    checked = isPrioritized,
-                    onCheckedChange = null
+                .focusRequester(textFocusRequester)
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = isPrioritized,
+                    onValueChange = { isPrioritized = it },
+                    role = Role.Checkbox
                 )
-                Spacer(Modifier.width(12.dp))
-                Text("Put on top")
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppCheckToggle(
+                checked = isPrioritized,
+                onCheckedChange = null
+            )
+            Spacer(Modifier.width(12.dp))
+            Text("Put on top")
+        }
+        Spacer(Modifier.height(20.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
-            Spacer(Modifier.height(20.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+            Spacer(Modifier.width(8.dp))
+            Button(
+                onClick = { onConfirm(text.trim(), isPrioritized) }
             ) {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = { onConfirm(text.trim(), isPrioritized) }
-                ) {
-                    Text(if (editingItem != null) "Save" else "OK")
-                }
+                Text(if (editingItem != null) "Save" else "OK")
             }
         }
     }

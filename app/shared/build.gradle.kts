@@ -90,6 +90,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
             api(project(":core"))

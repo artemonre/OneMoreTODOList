@@ -55,6 +55,11 @@ class TodoListViewModel(
                     _events.send(TodoListEvent.ShowAddTodoSheet)
                 }
             }
+            is TodoListAction.OnAddTodoFullScreenClick -> {
+                viewModelScope.launch {
+                    _events.send(TodoListEvent.ShowAddTodoFullScreenDialog)
+                }
+            }
             is TodoListAction.OnConfirmAddTodo -> addTodo(action.text, action.isPrioritized)
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
             is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized)

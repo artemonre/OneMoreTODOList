@@ -98,10 +98,12 @@ fun TodoListRoot(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
     var showAddTodoSheet by remember { mutableStateOf(false) }
+    var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
+            TodoListEvent.ShowAddTodoFullScreenDialog -> showAddTodoFullScreenDialog = true
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
         }
     }
@@ -119,6 +121,16 @@ fun TodoListRoot(
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false }
+        )
+    }
+
+    if (showAddTodoFullScreenDialog) {
+        TodoFormFullScreenDialog(
+            onConfirm = { text, isPrioritized ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized))
+                showAddTodoFullScreenDialog = false
+            },
+            onDismiss = { showAddTodoFullScreenDialog = false }
         )
     }
 
