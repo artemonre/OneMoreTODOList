@@ -90,6 +90,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
             api(project(":core"))
@@ -113,6 +114,7 @@ kotlin {
             implementation(libs.reorderable)
             implementation(libs.multiplatformSettings.noArg)
             implementation(libs.multiplatformSettings.coroutines)
+            implementation(libs.multiplatformSettings.makeObservable)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -6,6 +6,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -15,11 +16,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,9 +44,10 @@ import kotlinx.serialization.modules.subclass
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-// Half of Material3's default FAB size (56dp, FabBaselineTokens.ContainerHeight) - shifting the
-// docked FAB up by this much centers it on the nav bar's top edge, so it straddles the bar
-// instead of sitting flush inside or fully above it.
+// Half of Material3's default FAB size (56dp, FabBaselineTokens.ContainerHeight) - the FAB is
+// offset up from the screen's bottom edge by the nav bar's height minus this much, which centers
+// it on the nav bar's top edge so it straddles the bar instead of sitting flush inside or fully
+// above it.
 private val FAB_NAV_BAR_OVERLAP = 28.dp
 
 // The outgoing screen exits to the left while the incoming one enters from the right - used when
@@ -108,10 +113,18 @@ fun ContainerScreen(
         }
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            Box(contentAlignment = Alignment.TopCenter) {
+    // The FAB is a sibling overlay, not a child of the nav bar's own Box - an expanding FAB menu
+    // must not be able to grow the bottomBar's measured height (which would both push the nav bar
+    // up within its slot and grow the content's reserved bottom inset). Its height is tracked here
+    // purely to position the FAB relative to its top edge; it isn't read on every recomposition
+    // this causes, since the nav bar's own height never changes when the FAB expands.
+    var navBarHeightPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            bottomBar = {
                 AppNavigationBar(
                     items = state.tabs,
                     selectedIndex = state.selectedTabIndex,
@@ -120,31 +133,38 @@ fun ContainerScreen(
                         onAction(ContainerAction.OnTabSelected(index))
                     },
                     icon = { it.icon },
-                    label = { it.label }
+                    label = { it.label },
+                    modifier = Modifier.onGloballyPositioned { navBarHeightPx = it.size.height }
                 )
-                state.tabs.getOrNull(state.selectedTabIndex)?.fab?.let { fab ->
-                    Box(modifier = Modifier.offset(y = -FAB_NAV_BAR_OVERLAP)) {
-                        fab()
-                    }
-                }
+            }
+        ) { innerPadding ->
+            NavDisplay(
+                modifier = Modifier.padding(innerPadding),
+                backStack = backStack,
+                onBack = { backStack.removeLastOrNull() },
+                entryProvider = entryProvider {
+                    state.tabs.forEach { tab -> tab.entries(this) }
+                },
+                // A tab switch is a backStack.clear() + add() (see the LaunchedEffect above),
+                // which NavDisplay treats as a pop rather than a push - so the pop/predictive-pop
+                // specs are the ones actually exercised here. transitionSpec is still set to
+                // match, in case that ever changes.
+                transitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() },
+                popTransitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() },
+                predictivePopTransitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() }
+            )
+        }
+
+        state.tabs.getOrNull(state.selectedTabIndex)?.fab?.let { fab ->
+            val navBarHeight = with(density) { navBarHeightPx.toDp() }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = -(navBarHeight - FAB_NAV_BAR_OVERLAP))
+            ) {
+                fab()
             }
         }
-    ) { innerPadding ->
-        NavDisplay(
-            modifier = Modifier.padding(innerPadding),
-            backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
-            entryProvider = entryProvider {
-                state.tabs.forEach { tab -> tab.entries(this) }
-            },
-            // A tab switch is a backStack.clear() + add() (see the LaunchedEffect above), which
-            // NavDisplay treats as a pop rather than a push - so the pop/predictive-pop specs are
-            // the ones actually exercised here. transitionSpec is still set to match, in case
-            // that ever changes.
-            transitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() },
-            popTransitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() },
-            predictivePopTransitionSpec = { if (isTabMovingRight) tabSlideLeft() else tabSlideRight() }
-        )
     }
 }
 
