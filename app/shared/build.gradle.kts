@@ -113,6 +113,7 @@ kotlin {
             implementation(libs.reorderable)
             implementation(libs.multiplatformSettings.noArg)
             implementation(libs.multiplatformSettings.coroutines)
+            implementation(libs.multiplatformSettings.makeObservable)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -44,6 +44,22 @@ val ONBOARDING_TODOS = listOf(
         sortOrder = 3,
         creationDate = ONBOARDING_TODAY,
         lastEditDate = ONBOARDING_TODAY
+    ),
+    TodoItem(
+        id = "onboarding-5",
+        text = "Fifth todo item. Swipe left to edit or delete",
+        status = TodoStatus.Active,
+        sortOrder = 4,
+        creationDate = ONBOARDING_TODAY,
+        lastEditDate = ONBOARDING_TODAY
+    ),
+    TodoItem(
+        id = "onboarding-6",
+        text = "Sixth todo item. Swipe right to share",
+        status = TodoStatus.Active,
+        sortOrder = 5,
+        creationDate = ONBOARDING_TODAY,
+        lastEditDate = ONBOARDING_TODAY
     )
 )
 

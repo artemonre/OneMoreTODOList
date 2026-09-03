@@ -15,11 +15,12 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 fun AppBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    showDragHandle: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material -> MaterialBottomSheet(onDismissRequest, modifier, content)
+        UiStyleOption.Material -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, content)
         // No Paper bottom sheet yet - fall back to Material.
-        UiStyleOption.Paper -> MaterialBottomSheet(onDismissRequest, modifier, content)
+        UiStyleOption.Paper -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, content)
     }
 }

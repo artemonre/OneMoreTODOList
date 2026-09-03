@@ -24,7 +24,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,13 +35,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -49,14 +53,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.createPlainTextClipEntry
+import com.artemonre.onemoretodolist.rememberNativeShareLauncher
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -81,7 +89,7 @@ private val SWIPE_ACTION_WIDTH = 56.dp
 // room, so the last list item never ends up hidden behind it after a full scroll.
 private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
 
-private enum class SwipeAnchor { Closed, Open }
+private enum class SwipeAnchor { Closed, Open, ShareTrigger }
 
 @Composable
 fun TodoListRoot(
@@ -126,6 +134,7 @@ fun TodoListRoot(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TodoListScreen(
     state: TodoListState,
@@ -141,7 +150,11 @@ fun TodoListScreen(
         ActionPlacement.End -> Alignment.BottomEnd
     }
     var detailItem by remember { mutableStateOf<TodoItemUi?>(null) }
+    var shareItem by remember { mutableStateOf<TodoItemUi?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val nativeShareLauncher = rememberNativeShareLauncher()
+    val clipboard = LocalClipboard.current
 
     // The reorderable library needs a local mutable list it can shuffle live during a drag.
     // It's re-synced from state.items whenever that changes - which OnReorder itself never
@@ -171,10 +184,16 @@ fun TodoListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        text = "Sort",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Box {
-                        TextButton(onClick = { sortMenuExpanded = true }) {
+                        Button(onClick = { sortMenuExpanded = true }) {
                             Text(state.sortOption.displayName())
                         }
                         DropdownMenu(
@@ -234,7 +253,8 @@ fun TodoListScreen(
                             onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                             onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
                             onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
-                            onItemClick = { detailItem = item }
+                            onItemClick = { detailItem = item },
+                            onShareSwipe = { shareItem = item }
                         )
                     }
                 }
@@ -254,10 +274,42 @@ fun TodoListScreen(
                 icon = LocalAppIcons.current.scrollToTopIcon
             )
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                .padding(16.dp)
+        )
     }
 
     detailItem?.let { item ->
-        TodoDetailDialog(item = item, onDismiss = { detailItem = null })
+        TodoDetailDialog(
+            item = item,
+            onDismiss = { detailItem = null },
+            onCopied = {
+                coroutineScope.launch { snackbarHostState.showSnackbar("Copied to clipboard") }
+            }
+        )
+    }
+
+    shareItem?.let { item ->
+        TodoShareBottomSheet(
+            itemText = item.text,
+            onShareClick = {
+                val launcher = nativeShareLauncher
+                if (launcher != null) {
+                    launcher(item.text)
+                } else {
+                    coroutineScope.launch {
+                        clipboard.setClipEntry(createPlainTextClipEntry(item.text))
+                        snackbarHostState.showSnackbar("Copied to clipboard")
+                    }
+                }
+            },
+            onDismiss = { shareItem = null }
+        )
     }
 }
 
@@ -274,6 +326,7 @@ private fun SwipeableTodoRow(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onItemClick: () -> Unit,
+    onShareSwipe: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -284,6 +337,7 @@ private fun SwipeableTodoRow(
         AnchoredDraggableState(
             initialValue = SwipeAnchor.Closed,
             anchors = DraggableAnchors {
+                SwipeAnchor.ShareTrigger at revealedWidthPx
                 SwipeAnchor.Closed at 0f
                 SwipeAnchor.Open at -revealedWidthPx
             }
@@ -292,6 +346,15 @@ private fun SwipeableTodoRow(
 
     fun closeSwipe() {
         coroutineScope.launch { swipeState.animateTo(SwipeAnchor.Closed) }
+    }
+
+    // A right swipe is a trigger, not a resting state - once it settles there, fire the
+    // callback and snap straight back to closed instead of staying open like the left swipe.
+    LaunchedEffect(swipeState.settledValue) {
+        if (swipeState.settledValue == SwipeAnchor.ShareTrigger) {
+            onShareSwipe()
+            swipeState.animateTo(SwipeAnchor.Closed)
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
