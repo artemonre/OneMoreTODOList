@@ -2,15 +2,13 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
-import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
+import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
-import com.artemonre.onemoretodolist.feature.todolist.domain.toggled
 import kotlin.time.Clock
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,16 +16,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.format.char
 
 private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
 
 class TodoListViewModel(
-    private val todoLocalDataSource: TodoLocalDataSource
+    private val todoLocalDataSource: TodoLocalDataSource,
+    private val addTodoUseCase: AddTodo,
+    private val toggleTodoDoneUseCase: ToggleTodoDone
 ) : ViewModel() {
 
     private val todos = todoLocalDataSource.observeTodos()
@@ -67,21 +64,9 @@ class TodoListViewModel(
         }
     }
 
-    @OptIn(ExperimentalUuidApi::class)
     private fun addTodo(text: String, isPrioritized: Boolean) {
-        val currentTodos = todos.value
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        val newItem = TodoItem(
-            id = Uuid.random().toString(),
-            text = text.ifBlank { defaultText() },
-            status = TodoStatus.Active,
-            sortOrder = (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
-            creationDate = today,
-            lastEditDate = today,
-            priorityOrder = prioritize(isPrioritized, currentTodos)
-        )
         viewModelScope.launch {
-            todoLocalDataSource.upsertTodo(newItem)
+            addTodoUseCase(text, isPrioritized)
         }
     }
 
@@ -135,27 +120,9 @@ class TodoListViewModel(
         }
     }
 
-    private fun defaultText(): String {
-        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        return "Todo added at ${timeFormat.format(now.time)}"
-    }
-
     private fun toggleDone(id: String) {
-        val item = todos.value.firstOrNull { it.id == id } ?: return
-        val newStatus = item.status.toggled()
-        val completionDate = if (newStatus == TodoStatus.Done) {
-            Clock.System.todayIn(TimeZone.currentSystemDefault())
-        } else {
-            null
-        }
         viewModelScope.launch {
-            todoLocalDataSource.upsertTodo(item.copy(status = newStatus, completionDate = completionDate))
+            toggleTodoDoneUseCase(id)
         }
     }
-}
-
-private val timeFormat = LocalTime.Format {
-    hour()
-    char(':')
-    minute()
 }

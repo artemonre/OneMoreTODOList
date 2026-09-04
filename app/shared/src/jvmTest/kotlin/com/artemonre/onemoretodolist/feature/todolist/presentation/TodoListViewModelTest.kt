@@ -1,9 +1,11 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
+import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
+import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -43,7 +45,7 @@ class TodoListViewModelTest {
                 todoItem(id = "3", sortOrder = 2)
             )
         )
-        val viewModel = TodoListViewModel(dataSource)
+        val viewModel = todoListViewModel(dataSource)
         // state (and the private todos it's derived from) uses SharingStarted.WhileSubscribed,
         // so it never starts collecting the data source without an active subscriber - reorder()
         // reads from that same todos flow, so without this the write below is silently skipped.
@@ -68,7 +70,7 @@ class TodoListViewModelTest {
                 todoItem(id = "b", text = "Apple", sortOrder = 1)
             )
         )
-        val viewModel = TodoListViewModel(dataSource)
+        val viewModel = todoListViewModel(dataSource)
         backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.onAction(TodoListAction.OnSortOptionSelected(TodoSortOption.Text))
@@ -77,6 +79,9 @@ class TodoListViewModelTest {
         assertEquals(TodoSortOption.Text, viewModel.state.value.sortOption)
         assertEquals(listOf("Apple", "Zebra"), viewModel.state.value.items.map { it.text })
     }
+
+    private fun todoListViewModel(dataSource: FakeTodoLocalDataSource) =
+        TodoListViewModel(dataSource, AddTodo(dataSource), ToggleTodoDone(dataSource))
 
     private fun todoItem(
         id: String,
