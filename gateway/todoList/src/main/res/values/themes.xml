@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hosts QuickAddTodoActivity. A full-screen translucent window, not a "floating dialog"
+         theme - Compose owns 100% of the layout (scrim + card), which avoids the platform's own
+         dialog-window sizing (a floating Activity's root view is still MATCH_PARENT, so
+         windowIsFloating alone does not make the window hug its content). -->
+    <style name="Theme.QuickAddTodo" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>

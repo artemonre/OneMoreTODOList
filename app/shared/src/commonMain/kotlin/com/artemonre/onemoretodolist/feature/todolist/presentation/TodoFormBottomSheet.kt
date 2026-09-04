@@ -55,10 +55,12 @@ fun TodoFormBottomSheet(
     }
 }
 
-// Shared by TodoFormBottomSheet (edit flow) and TodoFormFullScreenDialog (add flow) - same
-// fields and behavior, just hosted in a different container.
+// Shared by TodoFormBottomSheet (edit flow), TodoFormFullScreenDialog (add flow), and
+// gateway/todoList's QuickAddTodoActivity (widget quick-add) - same fields and behavior, just
+// hosted in a different container. Public since the widget's quick-add screen lives in a
+// separate Gradle module.
 @Composable
-internal fun TodoFormBody(
+fun TodoFormBody(
     editingItem: TodoItemUi?,
     onConfirm: (text: String, isPrioritized: Boolean) -> Unit,
     onDismiss: () -> Unit,

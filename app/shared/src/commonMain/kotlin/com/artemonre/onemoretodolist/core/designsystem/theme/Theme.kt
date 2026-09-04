@@ -19,6 +19,7 @@ private fun rememberThemeConfig(): ThemeConfig {
 @Composable
 fun AppTheme(
     themeConfig: ThemeConfig = rememberThemeConfig(),
+    paintBackground: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val useDarkTheme = when (themeConfig.mode) {
@@ -38,7 +39,11 @@ fun AppTheme(
             colorScheme = colorScheme,
             typography = appTypography(themeConfig.font.toFontFamily())
         ) {
-            AppBackground(style = themeConfig.background, content = content)
+            if (paintBackground) {
+                AppBackground(style = themeConfig.background, content = content)
+            } else {
+                content()
+            }
         }
     }
 }

@@ -12,17 +12,17 @@ import org.koin.compose.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinConfiguration
 
+// The single source of truth for this app's Koin module list - shared by App()'s lazy
+// KoinApplication start and by any platform entry point (e.g. an Android Application subclass)
+// that needs to start Koin eagerly before App() ever composes.
+fun appKoinModules(platformModules: List<Module>): List<Module> =
+    listOf(todoListModule, themeModule, settingsModule, containerModule) + platformModules
+
 @Composable
 fun App(platformModules: List<Module>, contentTabs: List<NavigationTab>) {
     KoinApplication(
         configuration = koinConfiguration {
-            modules(
-                todoListModule,
-                themeModule,
-                settingsModule,
-                containerModule,
-                *platformModules.toTypedArray()
-            )
+            modules(appKoinModules(platformModules))
         }
     ) {
         AppTheme {
