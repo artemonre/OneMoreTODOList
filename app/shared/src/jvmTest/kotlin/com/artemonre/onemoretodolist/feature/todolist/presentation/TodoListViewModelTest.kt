@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
+import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
@@ -80,8 +81,42 @@ class TodoListViewModelTest {
         assertEquals(listOf("Apple", "Zebra"), viewModel.state.value.items.map { it.text })
     }
 
-    private fun todoListViewModel(dataSource: FakeTodoLocalDataSource) =
-        TodoListViewModel(dataSource, AddTodo(dataSource), ToggleTodoDone(dataSource))
+    @Test
+    fun `OnToggleDone archives the item out of the default view and into Archived`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
+        val viewModel = todoListViewModel(dataSource)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(TodoListAction.OnToggleDone("1"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(emptyList(), viewModel.state.value.items.map { it.id })
+
+        viewModel.onAction(TodoListAction.OnSortOptionSelected(TodoSortOption.Archived))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(listOf("1"), viewModel.state.value.items.map { it.id })
+    }
+
+    @Test
+    fun `OnToggleDone deletes the item immediately when archiving is turned off`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
+        val todoPreferences = FakeTodoPreferences(initialArchiveCompletedTodos = false)
+        val viewModel = todoListViewModel(dataSource, todoPreferences)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(TodoListAction.OnToggleDone("1"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(emptyList(), dataSource.observeTodos().first())
+    }
+
+    private fun todoListViewModel(
+        dataSource: FakeTodoLocalDataSource,
+        todoPreferences: FakeTodoPreferences = FakeTodoPreferences()
+    ) = TodoListViewModel(dataSource, AddTodo(dataSource), ToggleTodoDone(dataSource, todoPreferences))
 
     private fun todoItem(
         id: String,

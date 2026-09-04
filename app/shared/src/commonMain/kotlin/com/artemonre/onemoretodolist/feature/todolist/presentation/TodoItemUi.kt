@@ -25,9 +25,9 @@ fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
 )
 
 private val dateFormat = LocalDate.Format {
+    day()
+    char(' ')
     monthName(MonthNames.ENGLISH_ABBREVIATED)
     char(' ')
-    day()
-    chars(", ")
     year()
 }
