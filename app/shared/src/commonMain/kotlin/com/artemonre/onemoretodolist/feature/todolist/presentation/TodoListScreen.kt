@@ -76,6 +76,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
@@ -219,11 +220,12 @@ fun TodoListScreen(
                                         onAction(TodoListAction.OnSortOptionSelected(option))
                                         sortMenuExpanded = false
                                     },
-                                    leadingIcon = if (option == state.sortOption) {
+                                    trailingIcon = if (option == state.sortOption) {
                                         { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
                                     } else {
                                         null
-                                    }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
@@ -234,7 +236,11 @@ fun TodoListScreen(
             if (state.items.isEmpty()) {
                 item {
                     Text(
-                        text = "No todo items yet",
+                        text = if (state.sortOption == TodoSortOption.Archived) {
+                            "No archived todos yet"
+                        } else {
+                            "No todo items yet"
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 32.dp),
@@ -329,6 +335,7 @@ private fun TodoSortOption.displayName(): String = when (this) {
     TodoSortOption.Date -> "Default"
     TodoSortOption.Manual -> "Manual"
     TodoSortOption.Text -> "Text"
+    TodoSortOption.Archived -> "Archived"
 }
 
 @Composable
@@ -344,6 +351,18 @@ private fun SwipeableTodoRow(
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val revealedWidthPx = with(density) { (SWIPE_ACTION_WIDTH * 2).toPx() }
+
+    // Checking an item off plays the strikethrough animation (TodoItemCardContent) first, then
+    // fires the real toggle once it's done - the item's actual removal from the list (once its
+    // status flips and it's filtered out of state.items) is handled by animateItem() below, so
+    // the two animations chain: strike, then collapse-out.
+    var isCompleting by remember(item.id) { mutableStateOf(false) }
+    LaunchedEffect(isCompleting) {
+        if (isCompleting) {
+            delay(STRIKETHROUGH_ANIMATION_DURATION_MS.toLong())
+            onToggleDone()
+        }
+    }
 
     val swipeState = remember(revealedWidthPx) {
         AnchoredDraggableState(
@@ -398,9 +417,15 @@ private fun SwipeableTodoRow(
 
         TodoItemCard(
             text = item.text,
-            isDone = item.status == TodoStatus.Done,
+            isDone = item.status == TodoStatus.Done || isCompleting,
             formattedDate = item.formattedDate,
-            onToggleDone = onToggleDone,
+            onToggleDone = {
+                if (item.status == TodoStatus.Active) {
+                    isCompleting = true
+                } else {
+                    onToggleDone()
+                }
+            },
             onClick = onItemClick,
             modifier = Modifier
                 .padding(horizontal = 8.dp)
@@ -417,8 +442,8 @@ private fun TodoListScreenPreview() {
         TodoListScreen(
             state = TodoListState(
                 items = listOf(
-                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "Aug 24, 2026"),
-                    TodoItemUi(id = "2", text = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature", status = TodoStatus.Done, sortOrder = 1, formattedDate = "Aug 23, 2026")
+                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "24 Aug 2026"),
+                    TodoItemUi(id = "2", text = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature", status = TodoStatus.Done, sortOrder = 1, formattedDate = "23 Aug 2026")
                 )
             ),
             onAction = {}
@@ -433,8 +458,8 @@ private fun TodoListScreenManualSortPreview() {
         TodoListScreen(
             state = TodoListState(
                 items = listOf(
-                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "Aug 24, 2026"),
-                    TodoItemUi(id = "2", text = "Write project architecture document", status = TodoStatus.Active, sortOrder = 1, formattedDate = "Aug 23, 2026")
+                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "24 Aug 2026"),
+                    TodoItemUi(id = "2", text = "Write project architecture document", status = TodoStatus.Active, sortOrder = 1, formattedDate = "23 Aug 2026")
                 ),
                 sortOption = TodoSortOption.Manual
             ),

@@ -9,4 +9,6 @@ fun List<TodoItem>.sortedByOption(option: TodoSortOption): List<TodoItem> = when
     )
     TodoSortOption.Manual -> sortedBy { it.sortOrder }
     TodoSortOption.Text -> sortedBy { it.text }
+    // Most recently completed first.
+    TodoSortOption.Archived -> sortedByDescending { it.completionDate }
 }

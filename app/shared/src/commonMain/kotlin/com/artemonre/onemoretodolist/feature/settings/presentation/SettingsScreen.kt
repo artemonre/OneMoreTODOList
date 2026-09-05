@@ -12,14 +12,19 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
@@ -51,68 +56,113 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
-            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Theme",
-            style = MaterialTheme.typography.titleMedium
-        )
-        AppSegmentedControl(
-            options = ThemeMode.entries,
-            selectedOption = state.themeMode,
-            onOptionSelected = { onAction(SettingsAction.OnThemeModeSelected(it)) },
-            label = { it.displayName() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp)
-        )
-        Text(
-            text = "Palette",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 24.dp)
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(top = 12.dp)
-        ) {
-            val isDarkTheme = when (state.themeMode) {
-                ThemeMode.System -> isSystemInDarkTheme()
-                ThemeMode.Light -> false
-                ThemeMode.Dark -> true
-            }
-            AVAILABLE_PALETTES.forEach { option ->
-                val palette = option.toColorPalette()
-                PaletteSwatch(
-                    colorScheme = if (isDarkTheme) palette.dark else palette.light,
-                    selected = option == state.palette,
-                    onClick = { onAction(SettingsAction.OnPaletteSelected(option)) }
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                Text(
+                    text = "Theme",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                AppSegmentedControl(
+                    options = ThemeMode.entries,
+                    selectedOption = state.themeMode,
+                    onOptionSelected = { onAction(SettingsAction.OnThemeModeSelected(it)) },
+                    label = { it.displayName() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
                 )
             }
         }
-        Text(
-            text = "Font",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 24.dp)
-        )
-        AppChipGroup(
-            options = FontOption.entries,
-            selectedOption = state.font,
-            onOptionSelected = { onAction(SettingsAction.OnFontSelected(it)) },
-            label = { it.displayName() },
-            modifier = Modifier.padding(top = 12.dp)
-        )
-        Text(
-            text = "UI Style",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 24.dp)
-        )
-        AppChipGroup(
-            options = UiStyleOption.entries,
-            selectedOption = state.uiStyle,
-            onOptionSelected = { onAction(SettingsAction.OnUiStyleSelected(it)) },
-            label = { it.displayName() },
-            modifier = Modifier.padding(top = 12.dp)
-        )
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                Text(
+                    text = "Palette",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(top = 12.dp)
+                ) {
+                    val isDarkTheme = when (state.themeMode) {
+                        ThemeMode.System -> isSystemInDarkTheme()
+                        ThemeMode.Light -> false
+                        ThemeMode.Dark -> true
+                    }
+                    AVAILABLE_PALETTES.forEach { option ->
+                        val palette = option.toColorPalette()
+                        PaletteSwatch(
+                            colorScheme = if (isDarkTheme) palette.dark else palette.light,
+                            selected = option == state.palette,
+                            onClick = { onAction(SettingsAction.OnPaletteSelected(option)) }
+                        )
+                    }
+                }
+            }
+        }
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                Text(
+                    text = "Font",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                AppChipGroup(
+                    options = FontOption.entries,
+                    selectedOption = state.font,
+                    onOptionSelected = { onAction(SettingsAction.OnFontSelected(it)) },
+                    label = { it.displayName() },
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+            }
+        }
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                Text(
+                    text = "UI Style",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                AppChipGroup(
+                    options = UiStyleOption.entries,
+                    selectedOption = state.uiStyle,
+                    onOptionSelected = { onAction(SettingsAction.OnUiStyleSelected(it)) },
+                    label = { it.displayName() },
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+            }
+        }
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                Text(
+                    text = "Todos",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Archive completed todos",
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = state.archiveCompletedTodos,
+                        onCheckedChange = { onAction(SettingsAction.OnArchiveCompletedTodosChanged(it)) }
+                    )
+                }
+                Text(
+                    text = "When off, completing a todo deletes it immediately - including from the " +
+                        "widget's checkbox - with no undo.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
     }
 }
 

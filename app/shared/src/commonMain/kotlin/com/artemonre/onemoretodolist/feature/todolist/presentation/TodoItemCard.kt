@@ -43,7 +43,7 @@ private fun TodoItemCardPreview() {
         TodoItemCard(
             text = "Buy groceries",
             isDone = false,
-            formattedDate = "Aug 24, 2026",
+            formattedDate = "24 Aug 2026",
             onToggleDone = {},
             onClick = {},
             modifier = Modifier

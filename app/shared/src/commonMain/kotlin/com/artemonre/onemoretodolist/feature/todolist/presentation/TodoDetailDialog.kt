@@ -58,7 +58,7 @@ private fun TodoDetailDialogPreview() {
                 text = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature",
                 status = TodoStatus.Active,
                 sortOrder = 0,
-                formattedDate = "Aug 24, 2026"
+                formattedDate = "24 Aug 2026"
             ),
             onDismiss = {},
             onCopied = {}

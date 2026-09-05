@@ -9,5 +9,6 @@ data class SettingsState(
     val themeMode: ThemeMode = ThemeMode.System,
     val palette: ColorPaletteOption = ColorPaletteOption.Default,
     val font: FontOption = FontOption.Default,
-    val uiStyle: UiStyleOption = UiStyleOption.Material
+    val uiStyle: UiStyleOption = UiStyleOption.Material,
+    val archiveCompletedTodos: Boolean = true
 )
