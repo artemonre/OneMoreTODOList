@@ -15,4 +15,6 @@ dependencies {
     implementation(libs.androidx.glance.material3)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    debugImplementation(libs.androidx.glance.preview)
+    debugImplementation(libs.androidx.glance.appwidget.preview)
 }

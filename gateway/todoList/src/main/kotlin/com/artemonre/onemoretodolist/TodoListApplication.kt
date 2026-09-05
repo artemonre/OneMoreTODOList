@@ -1,7 +1,9 @@
 package com.artemonre.onemoretodolist
 
 import android.app.Application
+import androidx.glance.appwidget.updateAll
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
+import com.artemonre.onemoretodolist.widget.TodoWidget
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -15,7 +17,19 @@ class TodoListApplication : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@TodoListApplication)
-            modules(appKoinModules(listOf(androidTodoDataModule(this@TodoListApplication))))
+            modules(
+                appKoinModules(
+                    listOf(
+                        androidTodoDataModule(this@TodoListApplication) {
+                            // The widget's own actions (its checkbox) already get redrawn by
+                            // Glance automatically - this covers every other write (the app, the
+                            // quick-add popup), which the widget's passive Flow collection alone
+                            // isn't guaranteed to pick up promptly.
+                            TodoWidget().updateAll(this@TodoListApplication)
+                        }
+                    )
+                )
+            )
         }
     }
 }

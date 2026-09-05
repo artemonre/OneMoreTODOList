@@ -10,6 +10,10 @@ import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
+import androidx.glance.color.ColorProviders
+import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.presentation.toTodoItemUi
 import kotlinx.coroutines.flow.map
@@ -28,17 +32,27 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
     override val sizeMode: SizeMode = SizeMode.Responsive(setOf(SIZE_1X1, SIZE_2X1, SIZE_2X2))
 
     private val observeActiveTodos: ObserveActiveTodos by inject()
+    private val themeRepository: ThemeRepository by inject()
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             val todos by observeActiveTodos()
                 .map { todos -> todos.map { it.toTodoItemUi() } }
                 .collectAsState(initial = emptyList())
+            val themeConfig by themeRepository.themeConfig.collectAsState(initial = ThemeConfig())
+            val palette = themeConfig.palette.toColorPalette()
+            // surfaceContainer isn't one of the roles ColorProviders exposes, so it's carried
+            // separately from the rest of the palette, which flows through GlanceTheme normally.
+            val colors: ColorProviders = androidx.glance.material3.ColorProviders(light = palette.light, dark = palette.dark)
+            val background = androidx.glance.color.ColorProvider(
+                day = palette.light.surfaceContainer,
+                night = palette.dark.surfaceContainer
+            )
 
             when (LocalSize.current) {
-                SIZE_1X1 -> TodoWidgetContentCompact(activeCount = todos.size)
-                SIZE_2X1 -> TodoWidgetContentRow(topTodo = todos.firstOrNull())
-                else -> TodoWidgetContent(todos = todos.take(MAX_WIDGET_ROWS))
+                SIZE_1X1 -> TodoWidgetContentCompact(activeCount = todos.size, colors = colors, background = background)
+                SIZE_2X1 -> TodoWidgetContentRow(topTodo = todos.firstOrNull(), colors = colors, background = background)
+                else -> TodoWidgetContent(todos = todos.take(MAX_WIDGET_ROWS), colors = colors, background = background)
             }
         }
     }
