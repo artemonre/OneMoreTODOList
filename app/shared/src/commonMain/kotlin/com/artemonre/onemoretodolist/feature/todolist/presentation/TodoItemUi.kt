@@ -1,30 +1,33 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
 
 data class TodoItemUi(
     val id: String,
-    val title: String,
-    val isDone: Boolean,
+    val text: String,
+    val status: TodoStatus,
     val sortOrder: Int,
-    val formattedDate: String
+    val formattedDate: String,
+    val isPrioritized: Boolean = false
 )
 
 fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
     id = id,
-    title = title,
-    isDone = isDone,
+    text = text,
+    status = status,
     sortOrder = sortOrder,
-    formattedDate = dateFormat.format(date)
+    formattedDate = dateFormat.format(creationDate),
+    isPrioritized = priorityOrder != null
 )
 
 private val dateFormat = LocalDate.Format {
+    day()
+    char(' ')
     monthName(MonthNames.ENGLISH_ABBREVIATED)
     char(' ')
-    day()
-    chars(", ")
     year()
 }

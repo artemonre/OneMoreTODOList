@@ -22,7 +22,7 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop (JVM
 
 Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
 
-- Android app: `./gradlew :app:androidApp:assembleDebug`
+- Android app: `./gradlew :gateway:todoList:assembleDebug`
 - Desktop app:
   - Hot reload: `./gradlew :app:desktopApp:hotRun --auto`
   - Standard run: `./gradlew :app:desktopApp:run`

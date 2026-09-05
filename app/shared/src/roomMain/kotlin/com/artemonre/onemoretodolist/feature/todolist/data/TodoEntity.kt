@@ -1,0 +1,18 @@
+package com.artemonre.onemoretodolist.feature.todolist.data
+
+import androidx.room3.Entity
+import androidx.room3.PrimaryKey
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
+import kotlinx.datetime.LocalDate
+
+@Entity(tableName = "todo_items")
+data class TodoEntity(
+    @PrimaryKey val id: String,
+    val text: String,
+    val status: TodoStatus,
+    val sortOrder: Int,
+    val creationDate: LocalDate,
+    val lastEditDate: LocalDate,
+    val completionDate: LocalDate?,
+    val priorityOrder: Double?
+)

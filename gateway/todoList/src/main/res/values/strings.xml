@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">OneMoreTODOList</string>
+    <string name="todo_widget_label">Todo List</string>
+    <string name="todo_widget_description">Shows your active todos and lets you quickly add or check off items</string>
+    <string name="todo_widget_compact_label">Todo List (Compact)</string>
+    <string name="todo_widget_compact_description">Shows how many active todos you have, tap to add one</string>
+    <string name="todo_widget_row_label">Todo List (Row)</string>
+    <string name="todo_widget_row_description">Shows your next active todo, tap to add or check it off</string>
+</resources>

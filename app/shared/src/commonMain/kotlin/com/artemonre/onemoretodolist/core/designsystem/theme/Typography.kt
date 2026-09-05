@@ -1,10 +1,16 @@
 package com.artemonre.onemoretodolist.core.designsystem.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.artemonre.onemoretodolist.core.theme.domain.FontOption
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.jetbrains_mono_bold
+import onemoretodolist.app.shared.generated.resources.jetbrains_mono_regular
+import org.jetbrains.compose.resources.Font
 
 val AppTypography = Typography(
     displayLarge = TextStyle(
@@ -112,4 +118,35 @@ val AppTypography = Typography(
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     )
+)
+
+// JetBrains Mono (SIL Open Font License) - see app/shared/licenses/JetBrainsMono-OFL.txt.
+@Composable
+fun FontOption.toFontFamily(): FontFamily = when (this) {
+    FontOption.Default -> FontFamily.Default
+    // Times New Roman can't be bundled - it's a proprietary Microsoft font, not
+    // redistributable. FontFamily.Serif is the closest portable equivalent.
+    FontOption.Serif -> FontFamily.Serif
+    FontOption.Monospace -> FontFamily(
+        Font(Res.font.jetbrains_mono_regular, FontWeight.Normal),
+        Font(Res.font.jetbrains_mono_bold, FontWeight.Bold)
+    )
+}
+
+fun appTypography(fontFamily: FontFamily): Typography = AppTypography.copy(
+    displayLarge = AppTypography.displayLarge.copy(fontFamily = fontFamily),
+    displayMedium = AppTypography.displayMedium.copy(fontFamily = fontFamily),
+    displaySmall = AppTypography.displaySmall.copy(fontFamily = fontFamily),
+    headlineLarge = AppTypography.headlineLarge.copy(fontFamily = fontFamily),
+    headlineMedium = AppTypography.headlineMedium.copy(fontFamily = fontFamily),
+    headlineSmall = AppTypography.headlineSmall.copy(fontFamily = fontFamily),
+    titleLarge = AppTypography.titleLarge.copy(fontFamily = fontFamily),
+    titleMedium = AppTypography.titleMedium.copy(fontFamily = fontFamily),
+    titleSmall = AppTypography.titleSmall.copy(fontFamily = fontFamily),
+    bodyLarge = AppTypography.bodyLarge.copy(fontFamily = fontFamily),
+    bodyMedium = AppTypography.bodyMedium.copy(fontFamily = fontFamily),
+    bodySmall = AppTypography.bodySmall.copy(fontFamily = fontFamily),
+    labelLarge = AppTypography.labelLarge.copy(fontFamily = fontFamily),
+    labelMedium = AppTypography.labelMedium.copy(fontFamily = fontFamily),
+    labelSmall = AppTypography.labelSmall.copy(fontFamily = fontFamily)
 )
