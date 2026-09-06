@@ -7,7 +7,7 @@ import androidx.room3.Database
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.CoroutineContext
 
 @Database(
     entities = [TodoEntity::class],
@@ -30,10 +30,16 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
     override fun initialize(): AppDatabase
 }
 
-fun getRoomDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase {
+// Dispatchers.IO is JVM-only, so callers supply the right dispatcher for their target
+// (Dispatchers.IO on android/jvm, Dispatchers.Default on iOS/Native) rather than this shared
+// source set referencing one directly.
+fun getRoomDatabase(
+    builder: RoomDatabase.Builder<AppDatabase>,
+    queryCoroutineContext: CoroutineContext
+): AppDatabase {
     return builder
         .addMigrations(MIGRATION_2_3)
         .setDriver(BundledSQLiteDriver())
-        .setQueryCoroutineContext(Dispatchers.IO)
+        .setQueryCoroutineContext(queryCoroutineContext)
         .build()
 }

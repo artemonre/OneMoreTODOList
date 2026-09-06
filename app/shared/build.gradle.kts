@@ -111,6 +111,7 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.compose.materialIconsCore)
+            implementation(libs.compose.materialIconsExtended)
             implementation(libs.reorderable)
             implementation(libs.multiplatformSettings.noArg)
             implementation(libs.multiplatformSettings.coroutines)
