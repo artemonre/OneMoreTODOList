@@ -10,5 +10,6 @@ data class SettingsState(
     val palette: ColorPaletteOption = ColorPaletteOption.Default,
     val font: FontOption = FontOption.Default,
     val uiStyle: UiStyleOption = UiStyleOption.Material,
-    val archiveCompletedTodos: Boolean = true
+    val archiveCompletedTodos: Boolean = true,
+    val appVersion: String = ""
 )

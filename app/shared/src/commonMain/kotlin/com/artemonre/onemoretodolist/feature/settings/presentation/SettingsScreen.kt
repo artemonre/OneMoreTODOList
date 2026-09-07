@@ -163,6 +163,11 @@ fun SettingsScreen(
                 )
             }
         }
+        Text(
+            text = "App version: ${state.appVersion}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

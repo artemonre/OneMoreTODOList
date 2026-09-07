@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.artemonre.onemoretodolist.appVersionName
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
 import com.artemonre.onemoretodolist.core.theme.domain.updateFont
 import com.artemonre.onemoretodolist.core.theme.domain.updateMode
@@ -20,13 +21,16 @@ class SettingsViewModel(
     private val todoPreferences: TodoPreferences
 ) : ViewModel() {
 
+    private val appVersion = appVersionName()
+
     val state = combine(themeRepository.themeConfig, todoPreferences.archiveCompletedTodos) { theme, archive ->
         SettingsState(
             themeMode = theme.mode,
             palette = theme.palette,
             font = theme.font,
             uiStyle = theme.uiStyle,
-            archiveCompletedTodos = archive
+            archiveCompletedTodos = archive,
+            appVersion = appVersion
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), SettingsState())
 

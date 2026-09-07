@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalGlancePreviewApi::class)
-
 package com.artemonre.onemoretodolist.widget
 
 import androidx.compose.runtime.Composable
@@ -29,32 +27,13 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
-import androidx.glance.preview.ExperimentalGlancePreviewApi
-import androidx.glance.preview.Preview
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.artemonre.onemoretodolist.MainActivity
 import com.artemonre.onemoretodolist.QuickAddTodoActivity
-import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
-import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
-import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoItemUi
-
-private fun previewTodoItem(id: String, text: String) = TodoItemUi(
-    id = id,
-    text = text,
-    status = TodoStatus.Active,
-    sortOrder = 0,
-    formattedDate = "04 Sep 2026"
-)
-
-private val previewPalette = ColorPaletteOption.Default.toColorPalette()
-private val previewColors: ColorProviders =
-    androidx.glance.material3.ColorProviders(light = previewPalette.light, dark = previewPalette.dark)
-private val previewBackground =
-    androidx.glance.color.ColorProvider(day = previewPalette.light.surfaceContainer, night = previewPalette.dark.surfaceContainer)
 
 @Composable
 fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, background: ColorProvider) {
@@ -111,20 +90,6 @@ fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, backgroun
     }
 }
 
-// Matches SIZE_2X2 in TodoWidget.kt.
-@Preview(widthDp = 110, heightDp = 110)
-@Composable
-private fun TodoWidgetContentPreview() {
-    TodoWidgetContent(
-        todos = listOf(
-            previewTodoItem(id = "1", text = "Buy groceries"),
-            previewTodoItem(id = "2", text = "Write project report")
-        ),
-        colors = previewColors,
-        background = previewBackground
-    )
-}
-
 // 1x1: too small for any todo text - the active count (tap opens the app) stacked over a "+"
 // zone that fills all the remaining height (tap opens quick-add).
 @Composable
@@ -168,13 +133,6 @@ fun TodoWidgetContentCompact(activeCount: Int, colors: ColorProviders, backgroun
 }
 
 private fun formatWidgetCount(count: Int): String = if (count > 99) "99+" else count.toString()
-
-// Matches SIZE_1X1 in TodoWidget.kt.
-@Preview(widthDp = 40, heightDp = 40)
-@Composable
-private fun TodoWidgetContentCompactPreview() {
-    TodoWidgetContentCompact(activeCount = 3, colors = previewColors, background = previewBackground)
-}
 
 // 2x1: one row tall - the single top active todo, interactive (reuses TodoWidgetRow), plus a
 // quick-add affordance since there's no room for a separate header.
@@ -244,25 +202,8 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
     }
 }
 
-// Matches SIZE_2X1 in TodoWidget.kt.
-@Preview(widthDp = 110, heightDp = 40)
 @Composable
-private fun TodoWidgetContentRowPreview() {
-    TodoWidgetContentRow(
-        topTodo = previewTodoItem(id = "1", text = "Buy groceries"),
-        colors = previewColors,
-        background = previewBackground
-    )
-}
-
-@Preview(widthDp = 110, heightDp = 40)
-@Composable
-private fun TodoWidgetContentRowEmptyPreview() {
-    TodoWidgetContentRow(topTodo = null, colors = previewColors, background = previewBackground)
-}
-
-@Composable
-private fun TodoWidgetRow(item: TodoItemUi) {
+internal fun TodoWidgetRow(item: TodoItemUi) {
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
@@ -285,10 +226,4 @@ private fun TodoWidgetRow(item: TodoItemUi) {
             style = TextStyle(color = GlanceTheme.colors.onSurface)
         )
     }
-}
-
-@Preview(widthDp = 110, heightDp = 40)
-@Composable
-private fun TodoWidgetRowPreview() {
-    TodoWidgetRow(item = previewTodoItem(id = "1", text = "Buy groceries"))
 }
