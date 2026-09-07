@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Row
@@ -10,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
@@ -57,7 +60,11 @@ fun TodoFormBottomSheet(
         TodoFormBody(
             editingItem = editingItem,
             onConfirm = onConfirm,
-            onDismiss = onDismiss
+            onDismiss = onDismiss,
+            // A short window (JVM/desktop, or a small/rotated phone) can leave less height than
+            // the form needs - without this the Cancel/OK row can end up positioned below the
+            // visible sheet instead of being reachable by scrolling.
+            modifier = Modifier.verticalScroll(rememberScrollState())
         )
     }
 }
@@ -66,12 +73,17 @@ fun TodoFormBottomSheet(
 // gateway/todoList's QuickAddTodoActivity (widget quick-add) - same fields and behavior, just
 // hosted in a different container. Public since the widget's quick-add screen lives in a
 // separate Gradle module.
+// fieldMinLines/fieldMaxLines default to a 2-line field that fits the small dialog/bottom-sheet/
+// quick-add containers - TodoFormFullScreenDialog raises both to start at 3 lines and allow any
+// amount more.
 @Composable
 fun TodoFormBody(
     editingItem: TodoItemUi?,
     onConfirm: (text: String, isPrioritized: Boolean) -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fieldMinLines: Int = 2,
+    fieldMaxLines: Int = 2
 ) {
     var text by remember { mutableStateOf(editingItem?.text.orEmpty()) }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
@@ -99,18 +111,28 @@ fun TodoFormBody(
             value = text,
             onValueChange = { text = it },
             label = { Text("A todo text") },
-            singleLine = true,
+            singleLine = false,
+            minLines = fieldMinLines,
+            maxLines = fieldMaxLines,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            trailingIcon = speechController?.let { controller ->
+            trailingIcon = if (text.isNotEmpty()) {
                 {
-                    val isListening = controller.state.value is SpeechRecognitionState.Listening
-                    IconButton(
-                        onClick = { if (isListening) controller.stop() else controller.start() }
-                    ) {
-                        Icon(
-                            imageVector = if (isListening) Icons.Filled.Stop else Icons.Filled.Mic,
-                            contentDescription = if (isListening) "Stop listening" else "Speak todo text"
-                        )
+                    IconButton(onClick = { text = "" }) {
+                        Icon(imageVector = Icons.Filled.Close, contentDescription = "Clear text")
+                    }
+                }
+            } else {
+                speechController?.let { controller ->
+                    {
+                        val isListening = controller.state.value is SpeechRecognitionState.Listening
+                        IconButton(
+                            onClick = { if (isListening) controller.stop() else controller.start() }
+                        ) {
+                            Icon(
+                                imageVector = if (isListening) Icons.Filled.Stop else Icons.Filled.Mic,
+                                contentDescription = if (isListening) "Stop listening" else "Speak todo text"
+                            )
+                        }
                     }
                 }
             },

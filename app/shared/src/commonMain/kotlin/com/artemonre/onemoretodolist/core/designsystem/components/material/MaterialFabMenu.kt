@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -84,6 +85,7 @@ fun MaterialFabMenu(
         Surface(
             modifier = Modifier
                 .size(FAB_TRIGGER_SIZE)
+                .clip(RoundedCornerShape(FAB_TRIGGER_CORNER_RADIUS))
                 .combinedClickable(
                     onClick = { if (expanded) onExpandedChange(false) else onClick() },
                     onLongClick = { onExpandedChange(true) },

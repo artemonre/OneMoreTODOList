@@ -39,7 +39,9 @@ fun TodoFormFullScreenDialog(
                 modifier = Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.safeDrawing)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState()),
+                fieldMinLines = 3,
+                fieldMaxLines = Int.MAX_VALUE
             )
         }
     }
