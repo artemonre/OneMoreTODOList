@@ -41,8 +41,10 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -100,18 +102,33 @@ fun TodoListRoot(
     var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
     var showAddTodoSheet by remember { mutableStateOf(false) }
     var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
             TodoListEvent.ShowAddTodoFullScreenDialog -> showAddTodoFullScreenDialog = true
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
+            is TodoListEvent.ShowUndoSnackbar -> {
+                coroutineScope.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = event.message,
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onAction(TodoListAction.OnUndoClick)
+                    }
+                }
+            }
         }
     }
 
     TodoListScreen(
         state = state,
-        onAction = viewModel::onAction
+        onAction = viewModel::onAction,
+        snackbarHostState = snackbarHostState
     )
 
     if (showAddTodoSheet) {
@@ -151,7 +168,8 @@ fun TodoListRoot(
 @Composable
 fun TodoListScreen(
     state: TodoListState,
-    onAction: (TodoListAction) -> Unit
+    onAction: (TodoListAction) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -165,7 +183,6 @@ fun TodoListScreen(
     var detailItem by remember { mutableStateOf<TodoItemUi?>(null) }
     var shareItem by remember { mutableStateOf<TodoItemUi?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
     val nativeShareLauncher = rememberNativeShareLauncher()
     val clipboard = LocalClipboard.current
 
@@ -176,9 +193,16 @@ fun TodoListScreen(
     var manualOrderItems by remember { mutableStateOf(state.items) }
     LaunchedEffect(state.items) { manualOrderItems = state.items }
 
+    // from.index/to.index are positions in the whole LazyColumn, not in manualOrderItems - the
+    // "Sort" header item above shifts them by one. Look items up by key instead of trusting the
+    // raw index.
     val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
-        manualOrderItems = manualOrderItems.toMutableList().apply {
-            add(to.index, removeAt(from.index))
+        val fromIndex = manualOrderItems.indexOfFirst { it.id == from.key }
+        val toIndex = manualOrderItems.indexOfFirst { it.id == to.key }
+        if (fromIndex != -1 && toIndex != -1) {
+            manualOrderItems = manualOrderItems.toMutableList().apply {
+                add(toIndex, removeAt(fromIndex))
+            }
         }
     }
 
@@ -268,6 +292,7 @@ fun TodoListScreen(
                         SwipeableTodoRow(
                             item = item,
                             modifier = rowModifier,
+                            swipeEnabled = !isDragging,
                             onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                             onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
                             onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
@@ -346,7 +371,8 @@ private fun SwipeableTodoRow(
     onDeleteClick: () -> Unit,
     onItemClick: () -> Unit,
     onShareSwipe: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    swipeEnabled: Boolean = true
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -377,6 +403,13 @@ private fun SwipeableTodoRow(
 
     fun closeSwipe() {
         coroutineScope.launch { swipeState.animateTo(SwipeAnchor.Closed) }
+    }
+
+    // Reordering (drag) and swipe-to-reveal both react to horizontal drags on the same row and
+    // fight each other if left open together - snap any revealed actions closed as soon as a
+    // drag disables swipe.
+    LaunchedEffect(swipeEnabled) {
+        if (!swipeEnabled) closeSwipe()
     }
 
     // A right swipe is a trigger, not a resting state - once it settles there, fire the
@@ -430,7 +463,11 @@ private fun SwipeableTodoRow(
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }
-                .anchoredDraggable(state = swipeState, orientation = Orientation.Horizontal)
+                .anchoredDraggable(
+                    state = swipeState,
+                    orientation = Orientation.Horizontal,
+                    enabled = swipeEnabled
+                )
         )
     }
 }

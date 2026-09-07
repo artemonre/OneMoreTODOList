@@ -44,6 +44,11 @@ class TodoListViewModel(
     private val _events = Channel<TodoListEvent>()
     val events = _events.receiveAsFlow()
 
+    // The item as it was right before its last completion/deletion, so OnUndoClick can restore
+    // it exactly via upsertTodo - holds only the most recent one, matching the single Snackbar
+    // that offers Undo for it.
+    private var pendingUndoItem: TodoItem? = null
+
     fun onAction(action: TodoListAction) {
         when (action) {
             is TodoListAction.OnToggleDone -> toggleDone(action.id)
@@ -63,6 +68,7 @@ class TodoListViewModel(
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
             is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized)
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
+            is TodoListAction.OnUndoClick -> undo()
         }
     }
 
@@ -109,8 +115,19 @@ class TodoListViewModel(
     }
 
     private fun deleteTodo(id: String) {
+        val item = todos.value.firstOrNull { it.id == id } ?: return
         viewModelScope.launch {
             todoLocalDataSource.deleteTodo(id)
+            pendingUndoItem = item
+            _events.send(TodoListEvent.ShowUndoSnackbar("Todo deleted"))
+        }
+    }
+
+    private fun undo() {
+        val item = pendingUndoItem ?: return
+        pendingUndoItem = null
+        viewModelScope.launch {
+            todoLocalDataSource.upsertTodo(item)
         }
     }
 
@@ -123,8 +140,16 @@ class TodoListViewModel(
     }
 
     private fun toggleDone(id: String) {
+        val item = todos.value.firstOrNull { it.id == id } ?: return
         viewModelScope.launch {
             toggleTodoDoneUseCase(id)
+            // Only completing (Active -> Done, or Active -> deleted when archiving is off) is
+            // worth offering Undo for - toggling a Done item back to Active is already itself
+            // a reversal.
+            if (item.status == TodoStatus.Active) {
+                pendingUndoItem = item
+                _events.send(TodoListEvent.ShowUndoSnackbar("Todo completed"))
+            }
         }
     }
 }

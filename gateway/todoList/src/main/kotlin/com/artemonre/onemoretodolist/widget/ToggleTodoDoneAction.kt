@@ -15,7 +15,9 @@ class ToggleTodoDoneAction : ActionCallback, KoinComponent {
 
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         val todoId = parameters[todoIdKey] ?: return
-        toggleTodoDone(todoId)
+        // A widget tap has no Snackbar/undo surface to fall back on, so it never permanently
+        // deletes even when "archive completed todos" is off - it just archives instead.
+        toggleTodoDone(todoId, allowImmediateDelete = false)
         // Belt-and-suspenders: collectAsState in TodoWidget.provideGlance already re-renders
         // reactively as soon as Room's Flow emits, but explicitly requesting an update here
         // guarantees an immediate refresh regardless of the Glance session's own lifecycle.
