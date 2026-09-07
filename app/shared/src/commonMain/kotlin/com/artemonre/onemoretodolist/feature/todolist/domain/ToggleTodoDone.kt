@@ -11,9 +11,12 @@ class ToggleTodoDone(
     private val dataSource: TodoLocalDataSource,
     private val todoPreferences: TodoPreferences
 ) {
-    suspend operator fun invoke(id: String) {
+    // allowImmediateDelete lets the widget's checkbox opt out of the archive-off delete branch -
+    // a home-screen mis-tap has no Snackbar/undo surface available (Glance has no equivalent),
+    // unlike the in-app checkbox, which captures the item for undo before calling this.
+    suspend operator fun invoke(id: String, allowImmediateDelete: Boolean = true) {
         val item = dataSource.observeTodos().first().firstOrNull { it.id == id } ?: return
-        if (item.status == TodoStatus.Active && !todoPreferences.archiveCompletedTodos.first()) {
+        if (item.status == TodoStatus.Active && allowImmediateDelete && !todoPreferences.archiveCompletedTodos.first()) {
             dataSource.deleteTodo(id)
             return
         }
