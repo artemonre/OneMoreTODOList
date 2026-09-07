@@ -41,8 +41,10 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -100,18 +102,33 @@ fun TodoListRoot(
     var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
     var showAddTodoSheet by remember { mutableStateOf(false) }
     var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
             TodoListEvent.ShowAddTodoFullScreenDialog -> showAddTodoFullScreenDialog = true
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
+            is TodoListEvent.ShowUndoSnackbar -> {
+                coroutineScope.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = event.message,
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onAction(TodoListAction.OnUndoClick)
+                    }
+                }
+            }
         }
     }
 
     TodoListScreen(
         state = state,
-        onAction = viewModel::onAction
+        onAction = viewModel::onAction,
+        snackbarHostState = snackbarHostState
     )
 
     if (showAddTodoSheet) {
@@ -151,7 +168,8 @@ fun TodoListRoot(
 @Composable
 fun TodoListScreen(
     state: TodoListState,
-    onAction: (TodoListAction) -> Unit
+    onAction: (TodoListAction) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -165,7 +183,6 @@ fun TodoListScreen(
     var detailItem by remember { mutableStateOf<TodoItemUi?>(null) }
     var shareItem by remember { mutableStateOf<TodoItemUi?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
     val nativeShareLauncher = rememberNativeShareLauncher()
     val clipboard = LocalClipboard.current
 

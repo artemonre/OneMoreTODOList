@@ -155,8 +155,8 @@ fun SettingsScreen(
                     )
                 }
                 Text(
-                    text = "When off, completing a todo deletes it immediately - including from the " +
-                        "widget's checkbox - with no undo.",
+                    text = "When off, completing a todo deletes it immediately. The app offers Undo " +
+                        "via a snackbar; the widget's checkbox doesn't.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
