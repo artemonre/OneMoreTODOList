@@ -2,9 +2,170 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Privacy Policy - OneMoreTODOList</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Another TODO list</title>
+    <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 40px 20px 80px;
+          line-height: 1.6;
+          color: #1a1a1a;
+        }
+        h1 { font-size: 1.8em; margin-bottom: 0.2em; }
+        h2 { font-size: 1.3em; margin-top: 2em; border-bottom: 1px solid #e0e0e0; padding-bottom: 6px; }
+        .meta { color: #666; font-size: 0.9em; margin-bottom: 2em; }
+        .note {
+          background: #f5f7fa;
+          border-left: 4px solid #4a6cf7;
+          padding: 12px 16px;
+          margin: 1.5em 0;
+          font-size: 0.95em;
+        }
+        ul { padding-left: 1.3em; }
+        code { background: #f0f0f0; padding: 2px 5px; border-radius: 4px; font-size: 0.9em; }
+    </style>
 </head>
 <body>
-    <h1>Privacy Policy</h1>
+
+<h1>Privacy Policy</h1>
+<p class="meta">Last updated: September 7, 2026 &middot; Applies to: Another TODO list (Android, iOS, Desktop, Web)</p>
+
+<p>This policy explains what data Another TODO list ("the app", "we") collects, why, and how it's handled.
+    We built this app to work fully offline by default, and we only collect additional data when you
+    explicitly choose to enable a feature that requires it.</p>
+
+<div class="note">
+    <strong>Summary:</strong> By default, Another TODO list stores all your data locally on your device and
+    collects nothing. If you choose to enable optional features — Google Drive backup, or a cloud
+    account — this policy explains exactly what that involves.
+</div>
+
+<h2>1. Data stored locally on your device</h2>
+<p>By default, all tasks, notes, and content you create in Another TODO list are stored only on your
+    device, in the app's local storage. We do not see this data, collect it, or transmit it anywhere.
+    Uninstalling the app or clearing its data removes it permanently, since nothing is retained
+    elsewhere.</p>
+
+<h2>2. Optional: Google Drive backup</h2>
+<p>If you choose to enable Google Drive backup, the app requests permission to create and manage
+    <strong>only the files it creates itself</strong> in your Google Drive, using Google's restricted
+    "app data" access scope. This means:</p>
+<ul>
+    <li>The app cannot see, read, or modify any other files already in your Google Drive.</li>
+    <li>The only data stored in Drive is your app content (tasks, notes, etc.) in a backup file
+        created by the app.</li>
+    <li>This feature is entirely optional. If you never enable it, no Drive permission is ever
+        requested and no data leaves your device.</li>
+    <li>You can revoke this access at any time from your Google Account permissions page, which
+        also removes the app's ability to access that backup file.</li>
+</ul>
+<p>This feature is provided using Google Drive's API. Your use of Google Drive is also subject to
+    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy
+        Policy</a>.</p>
+
+<h2>3. Optional: Cloud account and sync</h2>
+<p><em>[This feature is planned for a future release. This section describes how it will work once
+    available.]</em></p>
+<p>Another TODO list will offer an optional cloud account so you can sync your data across devices.
+    We've designed this to require as little personal information as possible:</p>
+<ul>
+    <li><strong>No email or personal details are required to create an account.</strong> Accounts
+        are secured using passkeys and/or biometric authentication (fingerprint or face recognition)
+        handled entirely by your device's operating system.</li>
+    <li>Biometric data (fingerprint or face scans) is <strong>never accessed, transmitted, or
+        stored by us</strong>. It's processed entirely within your device's secure hardware, and only
+        a success/failure signal is used to unlock your passkey — the biometric data itself never
+        leaves your device or reaches our servers.</li>
+    <li>Your account is identified internally by a randomly generated account ID, not by any
+        personal information.</li>
+    <li><strong>Passkey sync as the default recovery path:</strong> passkeys are synced across your
+        own devices by your device platform (e.g. Google Password Manager or iCloud Keychain), not by
+        us. This means signing in on a new device is typically automatic, as long as it's signed into
+        the same Google or Apple account — no separate recovery step from us is needed in that case.</li>
+    <li><strong>Optional recovery email:</strong> if you choose to, you can add a recovery email
+        address to your account as a safety net in case you lose access to your synced devices. This
+        is entirely opt-in — the app works fully without it. If provided, it is stored encrypted and
+        used only to help you recover account access; it is never used for marketing or shared with
+        third parties.</li>
+</ul>
+
+<h2>4. Analytics</h2>
+<p>Another TODO list uses Firebase Analytics (a Google service) to help us understand how the app is
+    used and to identify crashes or errors, so we can improve reliability and features. This may
+    include:</p>
+<ul>
+    <li>Aggregated usage data (e.g. which features are used, how often the app is opened)</li>
+    <li>Crash and error reports (technical details about what caused a crash, not your personal
+        content)</li>
+    <li>General device information (device model, OS version, app version)</li>
+</ul>
+<p>This data is processed by our analytics provider on our behalf and is not sold or used for
+    advertising. It is not linked to your name, email, or account identity. See
+    <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase's
+        Privacy and Security documentation</a> for details on how this data is handled.</p>
+
+<h2>5. Advertising</h2>
+<p>Another TODO list may display ads served through Google AdMob to support free use of the app. We show
+    <strong>non-personalized ads only</strong> — ads are not targeted based on your interests, browsing
+    history, or app usage profile.</p>
+<p>Even with non-personalized ads, Google AdMob may still process some technical data as necessary
+    to serve ads, prevent fraud and abuse, and measure basic ad performance. This can include an
+    advertising identifier, general device information, and coarse location (such as country/region)
+    derived from your IP address. This data is processed by Google, not by us directly, and is not
+    linked to your account, your tasks, or any other content within the app. See
+    <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">Google's
+        Ads Privacy &amp; Terms</a> for details on how this is handled.</p>
+<p>We also use RevenueCat to track ad performance (such as impressions, clicks, and ad revenue)
+    alongside our other monetization data. RevenueCat does not serve ads itself — Google AdMob remains
+    the ad network — but it receives ad event and revenue data via its SDK to give us a combined view of
+    app monetization. This data is not linked to your account or personal identity. See
+    <a href="https://www.revenuecat.com/privacy" target="_blank" rel="noopener">RevenueCat's Privacy
+        Policy</a> for details.</p>
+<p>If you never open a screen that shows ads, no ad-related data is requested.</p>
+
+<h2>6. Data we do not collect</h2>
+<ul>
+    <li>We do not sell your data to anyone, under any circumstances.</li>
+    <li>We do not show personalized/targeted ads based on your behavior or interests.</li>
+    <li>We never access biometric data — this is handled entirely by your device's operating
+        system and never reaches us.</li>
+    <li>We do not access any Google Drive content beyond files the app itself creates.</li>
+</ul>
+
+<h2>7. Your choices and rights</h2>
+<ul>
+    <li>You can use Another TODO list entirely offline, with zero data collection, by simply not enabling
+        Drive backup or cloud sync.</li>
+    <li>You can disable Google Drive backup and revoke access at any time via your Google Account
+        settings.</li>
+    <li>You can delete your cloud account and all associated data at any time from within the app
+        or by contacting us (see below).</li>
+    <li>If you're located in a region with specific data rights (such as the EU/EEA under GDPR, or
+        California under the CCPA), you may have additional rights to access, correct, or delete your
+        data — contact us to exercise these.</li>
+</ul>
+
+<h2>8. Children's privacy</h2>
+<p>Another TODO list is not directed at children under 13 (or the relevant minimum age in your region),
+    and we do not knowingly collect data from children. If you believe a child has provided us with
+    personal information, please contact us so we can remove it.</p>
+
+<h2>9. Changes to this policy</h2>
+<p>We may update this policy as the app's features change — most notably when cloud sync becomes
+    available. We'll update the "Last updated" date above when changes are made. Continued use of the
+    app after changes constitutes acceptance of the updated policy.</p>
+
+<h2>10. Contact</h2>
+<p>Questions about this policy or your data can be sent to:
+    <strong>artemonsupport@gmail.com</strong></p>
+
+<hr>
+<p style="font-size:0.85em;color:#888;">This policy is provided as a plain-language summary of
+    our data practices and has not been reviewed by a lawyer. If you have specific legal or regulatory
+    requirements for your region, consider having it reviewed before relying on it for compliance
+    purposes.</p>
+
 </body>
 </html>
