@@ -82,6 +82,26 @@ class TodoListViewModelTest {
     }
 
     @Test
+    fun `OnConfirmEditTodo with isPrioritized moves the item to the top of Manual sort`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource(
+            initialTodos = listOf(
+                todoItem(id = "1", sortOrder = 0),
+                todoItem(id = "2", sortOrder = 1),
+                todoItem(id = "3", sortOrder = 2)
+            )
+        )
+        val viewModel = todoListViewModel(dataSource)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(TodoListAction.OnSortOptionSelected(TodoSortOption.Manual))
+        viewModel.onAction(TodoListAction.OnConfirmEditTodo(id = "3", text = "Todo 3", isPrioritized = true))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("3", viewModel.state.value.items.first().id)
+    }
+
+    @Test
     fun `OnToggleDone archives the item out of the default view and into Archived`() = runTest(testDispatcher) {
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
         val viewModel = todoListViewModel(dataSource)

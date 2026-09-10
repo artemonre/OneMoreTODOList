@@ -89,9 +89,13 @@ class TodoListViewModel(
     private fun editTodo(id: String, text: String, isPrioritized: Boolean) {
         val currentTodos = todos.value
         val item = currentTodos.firstOrNull { it.id == id } ?: return
+        // Only newly-prioritized items jump to the top of Manual sort too - an item that was
+        // already prioritized keeps whatever position the user (re)ordered it to.
+        val becomingPrioritized = isPrioritized && item.priorityOrder == null
         val updated = item.copy(
             text = text.ifBlank { item.text },
             lastEditDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+            sortOrder = if (becomingPrioritized) topSortOrder(currentTodos) else item.sortOrder,
             priorityOrder = if (isPrioritized) {
                 item.priorityOrder ?: prioritize(isPrioritized = true, currentTodos = currentTodos)
             } else {
@@ -139,6 +143,9 @@ class TodoListViewModel(
             null
         }
     }
+
+    private fun topSortOrder(currentTodos: List<TodoItem>): Int =
+        (currentTodos.minOfOrNull { it.sortOrder } ?: 0) - 1
 
     private fun toggleDone(id: String) {
         val item = todos.value.firstOrNull { it.id == id } ?: return
