@@ -16,11 +16,12 @@ fun AppBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     showDragHandle: Boolean = true,
+    onExpanded: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, content)
+        UiStyleOption.Material -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, onExpanded, content)
         // No Paper bottom sheet yet - fall back to Material.
-        UiStyleOption.Paper -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, content)
+        UiStyleOption.Paper -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, onExpanded, content)
     }
 }

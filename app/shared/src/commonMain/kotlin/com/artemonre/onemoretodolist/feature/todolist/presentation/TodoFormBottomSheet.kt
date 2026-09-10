@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -44,6 +45,7 @@ import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.rememberSpeechToText
+import kotlinx.coroutines.flow.first
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
 @Composable
@@ -53,9 +55,12 @@ fun TodoFormBottomSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var isSheetExpanded by remember { mutableStateOf(false) }
+
     AppBottomSheet(
         onDismissRequest = onDismiss,
-        modifier = modifier
+        modifier = modifier,
+        onExpanded = { isSheetExpanded = true }
     ) {
         TodoFormBody(
             editingItem = editingItem,
@@ -64,7 +69,8 @@ fun TodoFormBottomSheet(
             // A short window (JVM/desktop, or a small/rotated phone) can leave less height than
             // the form needs - without this the Cancel/OK row can end up positioned below the
             // visible sheet instead of being reachable by scrolling.
-            modifier = Modifier.verticalScroll(rememberScrollState())
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            awaitAutoFocusReady = { snapshotFlow { isSheetExpanded }.first { it } }
         )
     }
 }
@@ -83,7 +89,8 @@ fun TodoFormBody(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     fieldMinLines: Int = 2,
-    fieldMaxLines: Int = 2
+    fieldMaxLines: Int = 2,
+    awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
     var text by remember { mutableStateOf(editingItem?.text.orEmpty()) }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
@@ -92,6 +99,10 @@ fun TodoFormBody(
     val speechController = rememberSpeechToText(onResult = { text = it })
 
     LaunchedEffect(Unit) {
+        // Wait for the host (bottom sheet) to finish its entrance animation before grabbing focus -
+        // requesting it eagerly races the keyboard's show animation against the sheet's slide-up and
+        // makes both visibly stutter.
+        awaitAutoFocusReady()
         textFocusRequester.requestFocus()
         keyboardController?.show()
     }
