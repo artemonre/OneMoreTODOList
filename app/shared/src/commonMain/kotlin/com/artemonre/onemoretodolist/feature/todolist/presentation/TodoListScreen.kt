@@ -58,15 +58,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.artemonre.onemoretodolist.createPlainTextClipEntry
-import com.artemonre.onemoretodolist.rememberNativeShareLauncher
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -99,17 +96,11 @@ fun TodoListRoot(
     viewModel: TodoListViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
-    var showAddTodoSheet by remember { mutableStateOf(false) }
-    var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
-            TodoListEvent.ShowAddTodoFullScreenDialog -> showAddTodoFullScreenDialog = true
-            is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
             is TodoListEvent.ShowUndoSnackbar -> {
                 coroutineScope.launch {
                     val result = snackbarHostState.showSnackbar(
@@ -122,6 +113,11 @@ fun TodoListRoot(
                     }
                 }
             }
+            is TodoListEvent.ShowSnackbar -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(message = event.message, duration = SnackbarDuration.Short)
+                }
+            }
         }
     }
 
@@ -130,38 +126,6 @@ fun TodoListRoot(
         onAction = viewModel::onAction,
         snackbarHostState = snackbarHostState
     )
-
-    if (showAddTodoSheet) {
-        TodoFormBottomSheet(
-            editingItem = null,
-            onConfirm = { text, isPrioritized ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized))
-                showAddTodoSheet = false
-            },
-            onDismiss = { showAddTodoSheet = false }
-        )
-    }
-
-    if (showAddTodoFullScreenDialog) {
-        TodoFormFullScreenDialog(
-            onConfirm = { text, isPrioritized ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized))
-                showAddTodoFullScreenDialog = false
-            },
-            onDismiss = { showAddTodoFullScreenDialog = false }
-        )
-    }
-
-    editingTodo?.let { item ->
-        TodoFormBottomSheet(
-            editingItem = item,
-            onConfirm = { text, isPrioritized ->
-                viewModel.onAction(TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized))
-                editingTodo = null
-            },
-            onDismiss = { editingTodo = null }
-        )
-    }
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -181,10 +145,7 @@ fun TodoListScreen(
         ActionPlacement.End -> Alignment.BottomEnd
     }
     var detailItem by remember { mutableStateOf<TodoItemUi?>(null) }
-    var shareItem by remember { mutableStateOf<TodoItemUi?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
-    val nativeShareLauncher = rememberNativeShareLauncher()
-    val clipboard = LocalClipboard.current
 
     // The reorderable library needs a local mutable list it can shuffle live during a drag.
     // It's re-synced from state.items whenever that changes - which OnReorder itself never
@@ -297,7 +258,7 @@ fun TodoListScreen(
                             onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
                             onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
                             onItemClick = { detailItem = item },
-                            onShareSwipe = { shareItem = item }
+                            onShareSwipe = { onAction(TodoListAction.OnShareTodoSwipe(item.id)) }
                         )
                     }
                 }
@@ -334,24 +295,6 @@ fun TodoListScreen(
             onCopied = {
                 coroutineScope.launch { snackbarHostState.showSnackbar("Copied to clipboard") }
             }
-        )
-    }
-
-    shareItem?.let { item ->
-        TodoShareBottomSheet(
-            itemText = item.text,
-            onShareClick = {
-                val launcher = nativeShareLauncher
-                if (launcher != null) {
-                    launcher(item.text)
-                } else {
-                    coroutineScope.launch {
-                        clipboard.setClipEntry(createPlainTextClipEntry(item.text))
-                        snackbarHostState.showSnackbar("Copied to clipboard")
-                    }
-                }
-            },
-            onDismiss = { shareItem = null }
         )
     }
 }

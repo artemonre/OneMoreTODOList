@@ -16,5 +16,9 @@ data class NavigationTab(
     // doesn't need one. Resolves its own ViewModel (koinViewModel() is store-owner-scoped, not
     // entry-scoped here - see TodoListNavigation.todoListTab()), so it stays in sync with the
     // tab's own screen even though the container renders it.
-    val fab: (@Composable () -> Unit)? = null
+    val fab: (@Composable () -> Unit)? = null,
+    // Rendered above both the nav bar and the FAB (see ContainerScreen), for a tab's own modal
+    // overlays (e.g. a bottom sheet) that need to cover the whole screen rather than just the
+    // tab's own content area. Same store-owner-scoped ViewModel resolution as fab.
+    val overlay: (@Composable () -> Unit)? = null
 )

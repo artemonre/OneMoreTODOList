@@ -12,10 +12,14 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -43,6 +47,13 @@ class TodoListViewModel(
     private val _events = Channel<TodoListEvent>()
     val events = _events.receiveAsFlow()
 
+    // Which sheet/dialog is currently showing, if any - a separate StateFlow from state (todos +
+    // sort) so overlay toggles don't ripple into list recomputation, and read from two places:
+    // TodoListRoot and TodoListOverlay (see TodoListNavigation.todoListTab()'s overlay slot,
+    // needed so the sheet can render above the nav bar and FAB rather than just the tab content).
+    private val _overlayState = MutableStateFlow(TodoListOverlayState())
+    val overlayState: StateFlow<TodoListOverlayState> = _overlayState.asStateFlow()
+
     // The item as it was right before its last completion/deletion, so OnUndoClick can restore
     // it exactly via upsertTodo - holds only the most recent one, matching the single Snackbar
     // that offers Undo for it.
@@ -56,24 +67,28 @@ class TodoListViewModel(
             }
             is TodoListAction.OnReorder -> reorder(action.orderedIds)
             is TodoListAction.OnAddTodoClick -> {
-                viewModelScope.launch {
-                    _events.send(TodoListEvent.ShowAddTodoSheet)
-                }
+                _overlayState.update { it.copy(showAddTodoSheet = true) }
             }
             is TodoListAction.OnAddTodoFullScreenClick -> {
-                viewModelScope.launch {
-                    _events.send(TodoListEvent.ShowAddTodoFullScreenDialog)
-                }
+                _overlayState.update { it.copy(showAddTodoFullScreenDialog = true) }
             }
             is TodoListAction.OnConfirmAddTodo -> addTodo(action.text, action.isPrioritized)
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
             is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized)
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
             is TodoListAction.OnUndoClick -> undo()
+            is TodoListAction.OnDismissOverlay -> _overlayState.value = TodoListOverlayState()
+            is TodoListAction.OnShareTodoSwipe -> shareTodo(action.id)
+            is TodoListAction.OnCopyFallbackUsed -> viewModelScope.launch {
+                _events.send(TodoListEvent.ShowSnackbar("Copied to clipboard"))
+            }
         }
     }
 
     private fun addTodo(text: String, isPrioritized: Boolean) {
+        // Closed immediately, same as before - the write below happens in the background rather
+        // than the sheet waiting on it.
+        _overlayState.update { it.copy(showAddTodoSheet = false, showAddTodoFullScreenDialog = false) }
         viewModelScope.launch {
             addTodoUseCase(text, isPrioritized)
         }
@@ -81,9 +96,7 @@ class TodoListViewModel(
 
     private fun showEditSheet(id: String) {
         val item = todos.value.firstOrNull { it.id == id } ?: return
-        viewModelScope.launch {
-            _events.send(TodoListEvent.ShowEditTodoSheet(item.toTodoItemUi()))
-        }
+        _overlayState.update { it.copy(editingItem = item.toTodoItemUi()) }
     }
 
     private fun editTodo(id: String, text: String, isPrioritized: Boolean) {
@@ -102,9 +115,15 @@ class TodoListViewModel(
                 null
             }
         )
+        _overlayState.update { it.copy(editingItem = null) }
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(updated)
         }
+    }
+
+    private fun shareTodo(id: String) {
+        val item = todos.value.firstOrNull { it.id == id } ?: return
+        _overlayState.update { it.copy(shareItem = item.toTodoItemUi()) }
     }
 
     private fun reorder(orderedIds: List<String>) {

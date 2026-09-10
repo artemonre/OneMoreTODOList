@@ -165,6 +165,10 @@ fun ContainerScreen(
                 fab()
             }
         }
+
+        // Topmost - a tab's overlay (e.g. a bottom sheet) needs to cover the nav bar and FAB
+        // above, not just its own tab content.
+        state.tabs.getOrNull(state.selectedTabIndex)?.overlay?.invoke()
     }
 }
 

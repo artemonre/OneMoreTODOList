@@ -102,6 +102,59 @@ class TodoListViewModelTest {
     }
 
     @Test
+    fun `OnAddTodoClick and OnAddTodoFullScreenClick open their overlay, OnDismissOverlay closes it`() = runTest(testDispatcher) {
+        val viewModel = todoListViewModel(FakeTodoLocalDataSource())
+
+        viewModel.onAction(TodoListAction.OnAddTodoClick)
+        assertEquals(true, viewModel.overlayState.value.showAddTodoSheet)
+
+        viewModel.onAction(TodoListAction.OnDismissOverlay)
+        assertEquals(TodoListOverlayState(), viewModel.overlayState.value)
+
+        viewModel.onAction(TodoListAction.OnAddTodoFullScreenClick)
+        assertEquals(true, viewModel.overlayState.value.showAddTodoFullScreenDialog)
+    }
+
+    @Test
+    fun `OnConfirmAddTodo closes the add overlay it was opened from`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource()
+        val viewModel = todoListViewModel(dataSource)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(TodoListAction.OnAddTodoFullScreenClick)
+        viewModel.onAction(TodoListAction.OnConfirmAddTodo("New todo", isPrioritized = false))
+
+        assertEquals(false, viewModel.overlayState.value.showAddTodoFullScreenDialog)
+    }
+
+    @Test
+    fun `OnEditTodoClick opens the edit overlay, OnConfirmEditTodo closes it`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
+        val viewModel = todoListViewModel(dataSource)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(TodoListAction.OnEditTodoClick("1"))
+        assertEquals("1", viewModel.overlayState.value.editingItem?.id)
+
+        viewModel.onAction(TodoListAction.OnConfirmEditTodo(id = "1", text = "Todo 1", isPrioritized = false))
+        assertEquals(null, viewModel.overlayState.value.editingItem)
+    }
+
+    @Test
+    fun `OnShareTodoSwipe opens the share overlay for that item`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
+        val viewModel = todoListViewModel(dataSource)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(TodoListAction.OnShareTodoSwipe("1"))
+
+        assertEquals("1", viewModel.overlayState.value.shareItem?.id)
+    }
+
+    @Test
     fun `OnToggleDone archives the item out of the default view and into Archived`() = runTest(testDispatcher) {
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
         val viewModel = todoListViewModel(dataSource)

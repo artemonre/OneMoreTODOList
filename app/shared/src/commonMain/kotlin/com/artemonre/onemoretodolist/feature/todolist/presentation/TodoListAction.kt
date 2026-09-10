@@ -13,4 +13,7 @@ sealed interface TodoListAction {
     data class OnConfirmEditTodo(val id: String, val text: String, val isPrioritized: Boolean) : TodoListAction
     data class OnDeleteTodo(val id: String) : TodoListAction
     data object OnUndoClick : TodoListAction
+    data object OnDismissOverlay : TodoListAction
+    data class OnShareTodoSwipe(val id: String) : TodoListAction
+    data object OnCopyFallbackUsed : TodoListAction
 }
