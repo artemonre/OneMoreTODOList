@@ -5,13 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -25,15 +25,14 @@ private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
 class TodoListViewModel(
     private val todoLocalDataSource: TodoLocalDataSource,
     private val addTodoUseCase: AddTodo,
-    private val toggleTodoDoneUseCase: ToggleTodoDone
+    private val toggleTodoDoneUseCase: ToggleTodoDone,
+    private val todoPreferences: TodoPreferences
 ) : ViewModel() {
 
     private val todos = todoLocalDataSource.observeTodos()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), emptyList())
 
-    private val sortOption = MutableStateFlow(TodoSortOption.Date)
-
-    val state = combine(todos, sortOption) { todos, sortOption ->
+    val state = combine(todos, todoPreferences.sortOption) { todos, sortOption ->
         val statusFilter = if (sortOption == TodoSortOption.Archived) TodoStatus.Done else TodoStatus.Active
         TodoListState(
             sortOption = sortOption,
@@ -52,7 +51,9 @@ class TodoListViewModel(
     fun onAction(action: TodoListAction) {
         when (action) {
             is TodoListAction.OnToggleDone -> toggleDone(action.id)
-            is TodoListAction.OnSortOptionSelected -> sortOption.value = action.option
+            is TodoListAction.OnSortOptionSelected -> viewModelScope.launch {
+                todoPreferences.setSortOption(action.option)
+            }
             is TodoListAction.OnReorder -> reorder(action.orderedIds)
             is TodoListAction.OnAddTodoClick -> {
                 viewModelScope.launch {

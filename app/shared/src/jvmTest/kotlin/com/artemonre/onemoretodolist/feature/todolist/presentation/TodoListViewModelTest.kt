@@ -116,7 +116,7 @@ class TodoListViewModelTest {
     private fun todoListViewModel(
         dataSource: FakeTodoLocalDataSource,
         todoPreferences: FakeTodoPreferences = FakeTodoPreferences()
-    ) = TodoListViewModel(dataSource, AddTodo(dataSource), ToggleTodoDone(dataSource, todoPreferences))
+    ) = TodoListViewModel(dataSource, AddTodo(dataSource), ToggleTodoDone(dataSource, todoPreferences), todoPreferences)
 
     private fun todoItem(
         id: String,
