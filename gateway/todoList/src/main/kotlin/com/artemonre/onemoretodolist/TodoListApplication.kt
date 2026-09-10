@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist
 
 import android.app.Application
 import androidx.glance.appwidget.updateAll
+import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
 import com.artemonre.onemoretodolist.widget.TodoWidget
 import org.koin.android.ext.koin.androidContext
@@ -25,6 +26,11 @@ class TodoListApplication : Application() {
                             // Glance automatically - this covers every other write (the app, the
                             // quick-add popup), which the widget's passive Flow collection alone
                             // isn't guaranteed to pick up promptly.
+                            TodoWidget().updateAll(this@TodoListApplication)
+                        },
+                        androidThemeModule {
+                            // Same rationale as above: a Settings change (e.g. color palette)
+                            // needs an explicit refresh to reach the widget promptly.
                             TodoWidget().updateAll(this@TodoListApplication)
                         }
                     )
