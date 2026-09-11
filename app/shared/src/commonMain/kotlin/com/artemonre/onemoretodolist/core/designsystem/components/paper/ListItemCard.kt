@@ -32,14 +32,16 @@ import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val CARD_SHAPE_RADIUS = 4.dp
+val CARD_SHAPE_RADIUS = 4.dp
 
 // Exposed so callers that draw behind/around the card (e.g. a swipe-reveal background) can match
 // its corners exactly - see AppListItemCardShape.
 val PaperListItemCardShape: Shape = RoundedCornerShape(CARD_SHAPE_RADIUS)
 
+private val CARD_CONTENT_PADDING = 8.dp
+
 // Kept above Material3's 1.dp ElevatedCard default so the press-flatten effect reads more clearly.
-private val CARD_ELEVATION = 4.dp
+private val CARD_ELEVATION = 6.dp
 
 // A fast tap can release before the shadow has had any frames to visibly animate down and back
 // up. Holding the pressed visual for at least this long (measured from touch-down, only topping
@@ -99,9 +101,7 @@ fun ListItemCard(
         shape = cardShape,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
-        // Content padding matches the card's own corner radius, so it never sits visually
-        // clipped by the rounded corners.
-        Box(modifier = Modifier.padding(CARD_SHAPE_RADIUS)) {
+        Box(modifier = Modifier.padding(CARD_CONTENT_PADDING)) {
             content()
         }
     }

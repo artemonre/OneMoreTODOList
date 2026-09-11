@@ -7,6 +7,11 @@ android {
     defaultConfig {
         applicationId = "com.artemonre.onemoretodolist"
     }
+    buildTypes {
+        debug {
+            resValue("string", "app_name", "OneMoreTODOList-dev")
+        }
+    }
 }
 
 dependencies {

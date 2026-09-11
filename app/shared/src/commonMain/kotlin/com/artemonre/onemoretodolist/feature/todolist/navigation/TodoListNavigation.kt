@@ -2,7 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,7 +47,7 @@ private fun TodoListFab(viewModel: TodoListViewModel = koinViewModel()) {
             // Common, not screen-specific - no action wired up yet.
             FabMenuItem(
                 label = "Capture a note",
-                icon = Icons.Filled.Create,
+                icon = Icons.Filled.PhotoCamera,
                 enabled = false,
                 onClick = {}
             )

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,14 +30,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.SpeechRecognitionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
@@ -44,6 +48,7 @@ import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.rememberSpeechToText
+import kotlinx.coroutines.flow.first
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
 @Composable
@@ -53,9 +58,12 @@ fun TodoFormBottomSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var isSheetExpanded by remember { mutableStateOf(false) }
+
     AppBottomSheet(
         onDismissRequest = onDismiss,
-        modifier = modifier
+        modifier = modifier,
+        onExpanded = { isSheetExpanded = true }
     ) {
         TodoFormBody(
             editingItem = editingItem,
@@ -64,7 +72,15 @@ fun TodoFormBottomSheet(
             // A short window (JVM/desktop, or a small/rotated phone) can leave less height than
             // the form needs - without this the Cancel/OK row can end up positioned below the
             // visible sheet instead of being reachable by scrolling.
-            modifier = Modifier.verticalScroll(rememberScrollState())
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            // The sheet's own drag handle already separates it from the content above, so the
+            // title is redundant here - unlike the full-screen dialog, which has nothing else
+            // marking it as an add/edit form.
+            showTitle = false,
+            fieldMinLines = 1,
+            fieldMaxLines = Int.MAX_VALUE,
+            actionsTopSpacing = 8.dp,
+            awaitAutoFocusReady = { snapshotFlow { isSheetExpanded }.first { it } }
         )
     }
 }
@@ -75,15 +91,20 @@ fun TodoFormBottomSheet(
 // separate Gradle module.
 // fieldMinLines/fieldMaxLines default to a 2-line field that fits the small dialog/bottom-sheet/
 // quick-add containers - TodoFormFullScreenDialog raises both to start at 3 lines and allow any
-// amount more.
+// amount more. showTitle/actionsTopSpacing default to what the full-screen dialog and quick-add
+// screen use - TodoFormBottomSheet tightens both since its drag handle already separates it from
+// whatever is above.
 @Composable
 fun TodoFormBody(
     editingItem: TodoItemUi?,
     onConfirm: (text: String, isPrioritized: Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    showTitle: Boolean = true,
     fieldMinLines: Int = 2,
-    fieldMaxLines: Int = 2
+    fieldMaxLines: Int = 2,
+    actionsTopSpacing: Dp = 20.dp,
+    awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
     var text by remember { mutableStateOf(editingItem?.text.orEmpty()) }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
@@ -92,6 +113,10 @@ fun TodoFormBody(
     val speechController = rememberSpeechToText(onResult = { text = it })
 
     LaunchedEffect(Unit) {
+        // Wait for the host (bottom sheet) to finish its entrance animation before grabbing focus -
+        // requesting it eagerly races the keyboard's show animation against the sheet's slide-up and
+        // makes both visibly stutter.
+        awaitAutoFocusReady()
         textFocusRequester.requestFocus()
         keyboardController?.show()
     }
@@ -102,11 +127,13 @@ fun TodoFormBody(
             .padding(horizontal = 16.dp)
             .padding(bottom = 16.dp)
     ) {
-        Text(
-            text = if (editingItem != null) "Edit todo" else "Add todo",
-            style = MaterialTheme.typography.titleLarge
-        )
-        Spacer(Modifier.height(16.dp))
+        if (showTitle) {
+            Text(
+                text = if (editingItem != null) "Edit todo" else "Add todo",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(Modifier.height(16.dp))
+        }
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
@@ -114,7 +141,13 @@ fun TodoFormBody(
             singleLine = false,
             minLines = fieldMinLines,
             maxLines = fieldMaxLines,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { onConfirm(text.trim(), isPrioritized) }
+            ),
             trailingIcon = if (text.isNotEmpty()) {
                 {
                     IconButton(onClick = { text = "" }) {
@@ -159,7 +192,7 @@ fun TodoFormBody(
             Spacer(Modifier.width(12.dp))
             Text("Put on top")
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(actionsTopSpacing))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End

@@ -24,7 +24,8 @@ class AddTodo(
             id = Uuid.random().toString(),
             text = text.ifBlank { defaultText() },
             status = TodoStatus.Active,
-            sortOrder = (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
+            // Prioritized ("put on top") also leads Manual sort, not just Date's priorityOrder.
+            sortOrder = if (isPrioritized) topSortOrder(currentTodos) else (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
             creationDate = today,
             lastEditDate = today,
             priorityOrder = prioritize(isPrioritized, currentTodos)
@@ -39,6 +40,9 @@ class AddTodo(
             null
         }
     }
+
+    private fun topSortOrder(currentTodos: List<TodoItem>): Int =
+        (currentTodos.minOfOrNull { it.sortOrder } ?: 0) - 1
 
     private fun defaultText(): String {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
