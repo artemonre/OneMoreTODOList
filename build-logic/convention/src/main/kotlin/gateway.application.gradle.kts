@@ -27,8 +27,8 @@ android {
     defaultConfig {
         minSdk = libs.findVersion("android-minSdk").get().requiredVersion.toInt()
         targetSdk = libs.findVersion("android-targetSdk").get().requiredVersion.toInt()
-        versionCode = 1
-        versionName = "0.0.1"
+        versionCode = 2
+        versionName = "0.1.0"
     }
 
     androidResources {
