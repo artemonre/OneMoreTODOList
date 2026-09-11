@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.glance.appwidget.updateAll
 import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
+import com.artemonre.onemoretodolist.observability.initSentry
 import com.artemonre.onemoretodolist.widget.TodoWidget
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -16,6 +17,10 @@ import org.koin.core.context.startKoin
 class TodoListApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        // Skipped in debug builds - avoids noise/quota burn from dev-time crashes and test data.
+        if (!BuildConfig.DEBUG) {
+            initSentry(BuildConfig.SENTRY_DSN, environment = "production")
+        }
         startKoin {
             androidContext(this@TodoListApplication)
             modules(

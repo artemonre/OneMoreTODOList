@@ -116,6 +116,7 @@ kotlin {
             implementation(libs.multiplatformSettings.noArg)
             implementation(libs.multiplatformSettings.coroutines)
             implementation(libs.multiplatformSettings.makeObservable)
+            implementation(libs.sentry.kmp)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
