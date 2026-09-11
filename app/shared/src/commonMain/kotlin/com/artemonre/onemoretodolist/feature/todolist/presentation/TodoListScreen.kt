@@ -263,7 +263,7 @@ fun TodoListScreen(
                         text = if (state.sortOption == TodoSortOption.Archived) {
                             "No archived todos yet"
                         } else {
-                            "No todo items yet"
+                            "You completed all your tasks!\nMaybe you should add more?"
                         },
                         modifier = Modifier
                             .fillMaxWidth()
