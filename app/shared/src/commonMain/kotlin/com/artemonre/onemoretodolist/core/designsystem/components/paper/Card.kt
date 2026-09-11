@@ -14,12 +14,11 @@ import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 
-// Matches PaperListItemCardShape's corner radius, so content never sits visually clipped.
-private val CARD_CONTENT_PADDING = 4.dp
+private val CARD_CONTENT_PADDING = 8.dp
 
 // Same elevation as ListItemCard, minus its press-driven flatten - nothing to press on a static
 // container.
-private val CARD_ELEVATION = 4.dp
+private val CARD_ELEVATION = 6.dp
 
 /**
  * A Paper-styled static card - [PaperListItemCardShape] and elevation matching [ListItemCard],

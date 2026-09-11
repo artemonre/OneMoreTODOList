@@ -76,7 +76,7 @@ fun TodoItemCardContent(
                     style = textStyle,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier.padding(start = 8.dp)
                 )
                 if (strikeProgress > 0f) {
                     Text(
@@ -86,7 +86,7 @@ fun TodoItemCardContent(
                         overflow = TextOverflow.Ellipsis,
                         textDecoration = TextDecoration.LineThrough,
                         modifier = Modifier
-                            .padding(start = 4.dp)
+                            .padding(start = 8.dp)
                             .drawWithContent {
                                 clipRect(right = size.width * strikeProgress) {
                                     this@drawWithContent.drawContent()
