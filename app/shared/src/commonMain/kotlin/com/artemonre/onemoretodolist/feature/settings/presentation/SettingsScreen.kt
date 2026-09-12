@@ -125,7 +125,10 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
                 AppChipGroup(
-                    options = UiStyleOption.entries,
+                    // Paper is hidden from the picker for now - dark theme support for it isn't
+                    // settled yet. The enum value and its whole implementation stay in place, just
+                    // not user-selectable.
+                    options = UiStyleOption.entries.filter { it != UiStyleOption.Paper },
                     selectedOption = state.uiStyle,
                     onOptionSelected = { onAction(SettingsAction.OnUiStyleSelected(it)) },
                     label = { it.displayName() },

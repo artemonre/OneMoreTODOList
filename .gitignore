@@ -6,6 +6,8 @@ xcuserdata
 !src/**/build/
 local.properties
 keystore.properties
+sentry.properties
+posthog.properties
 *.jks
 *.keystore
 .idea

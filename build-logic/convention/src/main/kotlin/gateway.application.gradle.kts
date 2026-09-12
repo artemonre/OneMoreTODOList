@@ -20,6 +20,25 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+// Same convention as keystore.properties above: gitignored, per-module, see
+// sentry.properties.template. Missing file (a fresh checkout, CI without secrets) just means an
+// empty DSN, which Observability.kt's initSentry() treats as "disabled".
+val sentryPropertiesFile = project.file("sentry.properties")
+val sentryProperties = Properties().apply {
+    if (sentryPropertiesFile.exists()) {
+        sentryPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+// Same convention again, see posthog.properties.template. Missing file means an empty API key,
+// which Analytics.kt's initPostHog() treats as "disabled".
+val posthogPropertiesFile = project.file("posthog.properties")
+val posthogProperties = Properties().apply {
+    if (posthogPropertiesFile.exists()) {
+        posthogPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     compileSdk = libs.findVersion("android-compileSdk").get().requiredVersion.toInt()
 
@@ -27,8 +46,10 @@ android {
     defaultConfig {
         minSdk = libs.findVersion("android-minSdk").get().requiredVersion.toInt()
         targetSdk = libs.findVersion("android-targetSdk").get().requiredVersion.toInt()
-        versionCode = 2
-        versionName = "0.1.0"
+        versionCode = 3
+        versionName = "0.2.0"
+        buildConfigField("String", "SENTRY_DSN", "\"${sentryProperties.getProperty("dsn", "")}\"")
+        buildConfigField("String", "POSTHOG_API_KEY", "\"${posthogProperties.getProperty("apiKey", "")}\"")
     }
 
     androidResources {
@@ -81,6 +102,7 @@ android {
         // Lets a gateway module override resources like app_name per build type (e.g. a "-dev"
         // app name suffix for debug) via resValue().
         resValues = true
+        buildConfig = true
     }
 
 //    applicationVariants.all {
