@@ -9,12 +9,21 @@ import com.artemonre.onemoretodolist.core.theme.domain.updateMode
 import com.artemonre.onemoretodolist.core.theme.domain.updatePalette
 import com.artemonre.onemoretodolist.core.theme.domain.updateUiStyle
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
+import com.posthog.kmp.PostHog
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
+private const val SETTINGS_SCREEN = "Settings"
+
+private fun captureSettingChanged(section: String, option: String) {
+    PostHog.capture(
+        event = "setting_changed",
+        properties = mapOf("screen" to SETTINGS_SCREEN, "section" to section, "option" to option)
+    )
+}
 
 class SettingsViewModel(
     private val themeRepository: ThemeRepository,
@@ -37,26 +46,34 @@ class SettingsViewModel(
     fun onAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.OnThemeModeSelected -> {
+                captureSettingChanged(section = "Theme", option = action.mode.name)
                 viewModelScope.launch {
                     themeRepository.updateMode(action.mode)
                 }
             }
             is SettingsAction.OnPaletteSelected -> {
+                captureSettingChanged(section = "Palette", option = action.palette.name)
                 viewModelScope.launch {
                     themeRepository.updatePalette(action.palette)
                 }
             }
             is SettingsAction.OnFontSelected -> {
+                captureSettingChanged(section = "Font", option = action.font.name)
                 viewModelScope.launch {
                     themeRepository.updateFont(action.font)
                 }
             }
             is SettingsAction.OnUiStyleSelected -> {
+                captureSettingChanged(section = "UI Style", option = action.uiStyle.name)
                 viewModelScope.launch {
                     themeRepository.updateUiStyle(action.uiStyle)
                 }
             }
             is SettingsAction.OnArchiveCompletedTodosChanged -> {
+                captureSettingChanged(
+                    section = "Archive completed todos",
+                    option = if (action.archive) "On" else "Off"
+                )
                 viewModelScope.launch {
                     todoPreferences.setArchiveCompletedTodos(action.archive)
                 }

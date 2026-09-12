@@ -30,7 +30,7 @@
 <body>
 
 <h1>Privacy Policy</h1>
-<p class="meta">Last updated: September 7, 2026 &middot; Applies to: Another TODO list (Android, iOS, Desktop, Web)</p>
+<p class="meta">Last updated: September 12, 2026 &middot; Applies to: Another TODO list (Android, iOS, Desktop, Web)</p>
 
 <p>This policy explains what data Another TODO list ("the app", "we") collects, why, and how it's handled.
     We built this app to work fully offline by default, and we only collect additional data when you
@@ -91,20 +91,25 @@
         third parties.</li>
 </ul>
 
-<h2>4. Analytics</h2>
-<p>Another TODO list uses Firebase Analytics (a Google service) to help us understand how the app is
-    used and to identify crashes or errors, so we can improve reliability and features. This may
-    include:</p>
+<h2>4. Crash reporting and analytics</h2>
+<p>Another TODO list uses two third-party services to help us fix bugs and understand how the app is
+    used, so we can improve reliability and features.</p>
 <ul>
-    <li>Aggregated usage data (e.g. which features are used, how often the app is opened)</li>
-    <li>Crash and error reports (technical details about what caused a crash, not your personal
-        content)</li>
-    <li>General device information (device model, OS version, app version)</li>
+    <li><strong>Sentry</strong> — used for crash and error reporting. When the app crashes or hits an
+        unexpected error, Sentry receives technical details about what went wrong (stack traces, the
+        type of error) and general device/app information (device model, OS version, app version).
+        It does not receive your tasks, notes, or other personal content. See
+        <a href="https://sentry.io/legal/privacy/" target="_blank" rel="noopener">Sentry's Privacy
+            Policy</a> for details on how this data is handled.</li>
+    <li><strong>PostHog</strong> — used for product analytics, such as which features and settings
+        are used and how often the app is opened. This helps us understand what to improve, not who
+        you are. We've configured PostHog to <strong>never collect your IP address or any location
+        data</strong> (country, city, or coordinates) — this is disabled for every event we send, not
+        just discarded afterwards. See <a href="https://posthog.com/privacy" target="_blank"
+            rel="noopener">PostHog's Privacy Policy</a> for details on how this data is handled.</li>
 </ul>
-<p>This data is processed by our analytics provider on our behalf and is not sold or used for
-    advertising. It is not linked to your name, email, or account identity. See
-    <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase's
-        Privacy and Security documentation</a> for details on how this data is handled.</p>
+<p>Neither service sells this data, uses it for advertising, or receives your name, email, or
+    account identity.</p>
 
 <h2>5. Advertising</h2>
 <p>Another TODO list may display ads served through Google AdMob to support free use of the app. We show
@@ -132,6 +137,8 @@
     <li>We never access biometric data — this is handled entirely by your device's operating
         system and never reaches us.</li>
     <li>We do not access any Google Drive content beyond files the app itself creates.</li>
+    <li>We do not collect your IP address or location data (country, city, or coordinates) through
+        our crash reporting or analytics providers.</li>
 </ul>
 
 <h2>7. Your choices and rights</h2>

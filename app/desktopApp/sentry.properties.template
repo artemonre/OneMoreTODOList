@@ -1,0 +1,5 @@
+# Copy this file to sentry.properties (same directory) and fill in your real DSN.
+# sentry.properties is gitignored - a missing file just builds with Sentry disabled.
+#
+# Get a DSN by creating a project at https://sentry.io (or your self-hosted instance).
+dsn=

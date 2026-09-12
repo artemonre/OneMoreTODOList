@@ -116,6 +116,11 @@ kotlin {
             implementation(libs.multiplatformSettings.noArg)
             implementation(libs.multiplatformSettings.coroutines)
             implementation(libs.multiplatformSettings.makeObservable)
+            implementation(libs.sentry.kmp)
+            // api: initPostHog()'s context param exposes PostHogContext to downstream consumers
+            // (gateway/*, desktopApp, webApp, iosApp) that construct it - same reasoning as koin-core
+            // above.
+            api(libs.posthog.kmp)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
