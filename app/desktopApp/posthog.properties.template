@@ -1,0 +1,5 @@
+# Copy this file to posthog.properties (same directory) and fill in your real project API key.
+# posthog.properties is gitignored - a missing file just builds with analytics disabled.
+#
+# Get a project API key by creating a project at https://posthog.com.
+apiKey=

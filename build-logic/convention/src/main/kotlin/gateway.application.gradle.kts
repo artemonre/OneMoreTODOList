@@ -30,6 +30,15 @@ val sentryProperties = Properties().apply {
     }
 }
 
+// Same convention again, see posthog.properties.template. Missing file means an empty API key,
+// which Analytics.kt's initPostHog() treats as "disabled".
+val posthogPropertiesFile = project.file("posthog.properties")
+val posthogProperties = Properties().apply {
+    if (posthogPropertiesFile.exists()) {
+        posthogPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     compileSdk = libs.findVersion("android-compileSdk").get().requiredVersion.toInt()
 
@@ -40,6 +49,7 @@ android {
         versionCode = 2
         versionName = "0.1.0"
         buildConfigField("String", "SENTRY_DSN", "\"${sentryProperties.getProperty("dsn", "")}\"")
+        buildConfigField("String", "POSTHOG_API_KEY", "\"${posthogProperties.getProperty("apiKey", "")}\"")
     }
 
     androidResources {

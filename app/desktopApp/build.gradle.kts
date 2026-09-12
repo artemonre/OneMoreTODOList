@@ -59,14 +59,47 @@ fun registerGenerateSentryConfig(dsn: String, outputDir: Provider<Directory>) =
 
 val generateSentryConfig = registerGenerateSentryConfig(sentryDsn, generatedSentryConfigDir)
 
+// Same convention again, see posthog.properties.template. Missing file means a null API key,
+// which Analytics.kt's initPostHog() treats as "disabled".
+val posthogPropertiesFile = project.file("posthog.properties")
+val posthogProperties = Properties().apply {
+    if (posthogPropertiesFile.exists()) {
+        posthogPropertiesFile.inputStream().use { load(it) }
+    }
+}
+val posthogApiKey: String = posthogProperties.getProperty("apiKey", "")
+
+val generatedPostHogConfigDir = layout.buildDirectory.dir("generated/posthog/kotlin")
+
+fun registerGeneratePostHogConfig(apiKey: String, outputDir: Provider<Directory>) =
+    tasks.register("generatePostHogConfig") {
+        inputs.property("postHogApiKey", apiKey)
+        outputs.dir(outputDir)
+        doLast {
+            val packageDir = outputDir.get().dir("com/artemonre/onemoretodolist/analytics").asFile
+            packageDir.mkdirs()
+            File(packageDir, "AnalyticsConfig.kt").writeText(
+                """
+                package com.artemonre.onemoretodolist.analytics
+
+                internal val postHogApiKey: String? = ${if (apiKey.isBlank()) "null" else "\"$apiKey\""}
+
+                """.trimIndent()
+            )
+        }
+    }
+
+val generatePostHogConfig = registerGeneratePostHogConfig(posthogApiKey, generatedPostHogConfigDir)
+
 kotlin {
     sourceSets.main {
         kotlin.srcDir(generatedSentryConfigDir)
+        kotlin.srcDir(generatedPostHogConfigDir)
     }
 }
 
 tasks.named("compileKotlin") {
-    dependsOn(generateSentryConfig)
+    dependsOn(generateSentryConfig, generatePostHogConfig)
 }
 
 compose.desktop {
