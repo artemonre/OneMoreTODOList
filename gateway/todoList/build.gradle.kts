@@ -27,6 +27,19 @@ android {
 // upload) - same graceful-degrade shape as every other secret in this module.
 sentry {
     autoUploadProguardMapping.set(System.getenv("SENTRY_AUTH_TOKEN") != null)
+
+    // app:shared already brings in the Android Sentry SDK transitively through sentry-kotlin-
+    // multiplatform (see libs.sentry.kmp), so the plugin's own auto-added copy just duplicates it
+    // under a separate dependency edge. Even though Gradle's version resolution unifies both to
+    // the same io.sentry:sentry-android version on paper, the two edges are enough for Sentry's own
+    // runtime self-check to trip "Sentry SDK has detected a mix of versions" and crash
+    // Application.onCreate() on startup - which is exactly what breaks adding a widget, since
+    // Android has to cold-start the process to serve the widget and the crash loop kills it before
+    // it can render anything ("Couldn't add widget"). Disabling auto-installation leaves exactly
+    // one dependency edge for the Android SDK.
+    autoInstallation {
+        enabled.set(false)
+    }
 }
 
 dependencies {
