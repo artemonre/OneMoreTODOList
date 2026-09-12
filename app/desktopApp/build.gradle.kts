@@ -38,6 +38,10 @@ val generatedSentryConfigDir = layout.buildDirectory.dir("generated/sentry/kotli
 // can't serialize a reference to the build script object itself.
 fun registerGenerateSentryConfig(dsn: String, outputDir: Provider<Directory>) =
     tasks.register("generateSentryConfig") {
+        // Without this, Gradle has no way to know the dsn changed (only the output dir is
+        // declared) and marks the task UP-TO-DATE forever after the first run - silently keeping
+        // a stale/empty DSN even after sentry.properties is created or edited.
+        inputs.property("sentryDsn", dsn)
         outputs.dir(outputDir)
         doLast {
             val packageDir = outputDir.get().dir("com/artemonre/onemoretodolist/observability").asFile
