@@ -1,5 +1,17 @@
-# Copy this file to sentry.properties (same directory) and fill in your real DSN.
+# Copy this file to sentry.properties (same directory) and fill in your real values.
 # sentry.properties is gitignored - a missing file just builds with Sentry disabled.
 #
 # Get a DSN by creating a project at https://sentry.io (or your self-hosted instance).
 dsn=
+
+# defaults.org/defaults.project are your Sentry org and project slugs (visible in the project's
+# URL: sentry.io/organizations/<org-slug>/projects/<project-slug>/). Used only by the Sentry
+# Android Gradle plugin to upload the R8/ProGuard mapping file so release crashes are readable in
+# the dashboard instead of showing obfuscated class/method names. Leaving these blank just means
+# the mapping never gets uploaded - crash reporting itself still works fine via the dsn above.
+defaults.org=
+defaults.project=
+
+# The auth token itself is NOT set here - it's read from the SENTRY_AUTH_TOKEN environment
+# variable instead (export SENTRY_AUTH_TOKEN=... in your shell, or set it in CI secrets). Generate
+# one from Settings -> Auth Tokens in Sentry, with the "project:releases" scope.

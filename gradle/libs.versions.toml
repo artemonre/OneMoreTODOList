@@ -29,6 +29,7 @@ reorderable = "3.1.0"
 posthogKmp = "0.5.1"
 room3 = "3.0.1"
 sentry = "8.56.0"
+sentryAndroidGradlePlugin = "6.22.0"
 sentryKmp = "0.27.0"
 sqlite = "2.7.0"
 
@@ -94,3 +95,4 @@ kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versio
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 androidxRoom3 = { id = "androidx.room3", version.ref = "room3" }
+sentryAndroidGradle = { id = "io.sentry.android.gradle", version.ref = "sentryAndroidGradlePlugin" }
