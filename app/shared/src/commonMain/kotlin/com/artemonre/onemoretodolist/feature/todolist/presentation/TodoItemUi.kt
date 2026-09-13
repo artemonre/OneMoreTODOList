@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
+import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlinx.datetime.LocalDate
@@ -12,7 +13,8 @@ data class TodoItemUi(
     val status: TodoStatus,
     val sortOrder: Int,
     val formattedDate: String,
-    val isPrioritized: Boolean = false
+    val isPrioritized: Boolean = false,
+    val recurrence: Recurrence? = null
 )
 
 fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
@@ -21,7 +23,8 @@ fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
     status = status,
     sortOrder = sortOrder,
     formattedDate = dateFormat.format(creationDate),
-    isPrioritized = priorityOrder != null
+    isPrioritized = priorityOrder != null,
+    recurrence = recurrence
 )
 
 private val dateFormat = LocalDate.Format {

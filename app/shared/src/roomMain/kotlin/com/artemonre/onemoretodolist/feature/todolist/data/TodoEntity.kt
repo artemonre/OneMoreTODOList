@@ -2,6 +2,8 @@ package com.artemonre.onemoretodolist.feature.todolist.data
 
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
+import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceUnit
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlinx.datetime.LocalDate
 
@@ -14,5 +16,11 @@ data class TodoEntity(
     val creationDate: LocalDate,
     val lastEditDate: LocalDate,
     val completionDate: LocalDate?,
-    val priorityOrder: Double?
+    val priorityOrder: Double?,
+    // type/interval/unit all null together means "does not repeat" - see TodoMappers.
+    // recurrenceAnchorDate is Every-type bookkeeping only, see TodoItem.
+    val recurrenceType: RecurrenceType? = null,
+    val recurrenceInterval: Int? = null,
+    val recurrenceUnit: RecurrenceUnit? = null,
+    val recurrenceAnchorDate: LocalDate? = null
 )

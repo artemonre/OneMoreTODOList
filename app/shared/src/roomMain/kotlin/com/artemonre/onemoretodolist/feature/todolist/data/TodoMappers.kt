@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.data
 
+import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 
 fun TodoEntity.toTodoItem(): TodoItem = TodoItem(
@@ -10,7 +11,13 @@ fun TodoEntity.toTodoItem(): TodoItem = TodoItem(
     creationDate = creationDate,
     lastEditDate = lastEditDate,
     completionDate = completionDate,
-    priorityOrder = priorityOrder
+    priorityOrder = priorityOrder,
+    recurrence = recurrenceType?.let { type ->
+        val interval = recurrenceInterval ?: return@let null
+        val unit = recurrenceUnit ?: return@let null
+        Recurrence(type = type, interval = interval, unit = unit)
+    },
+    recurrenceAnchorDate = recurrenceAnchorDate
 )
 
 fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
@@ -21,5 +28,9 @@ fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
     creationDate = creationDate,
     lastEditDate = lastEditDate,
     completionDate = completionDate,
-    priorityOrder = priorityOrder
+    priorityOrder = priorityOrder,
+    recurrenceType = recurrence?.type,
+    recurrenceInterval = recurrence?.interval,
+    recurrenceUnit = recurrence?.unit,
+    recurrenceAnchorDate = recurrenceAnchorDate
 )

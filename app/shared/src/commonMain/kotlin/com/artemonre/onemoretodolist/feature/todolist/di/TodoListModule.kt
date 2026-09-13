@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.di
 
 import com.artemonre.onemoretodolist.feature.todolist.data.SettingsTodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
+import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.SeedOnboardingTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
@@ -14,6 +15,7 @@ import org.koin.dsl.module
 
 val todoListModule = module {
     singleOf(::SeedOnboardingTodos)
+    singleOf(::ApplyDueRecurrences)
     singleOf(::ObserveActiveTodos)
     singleOf(::AddTodo)
     singleOf(::ToggleTodoDone)

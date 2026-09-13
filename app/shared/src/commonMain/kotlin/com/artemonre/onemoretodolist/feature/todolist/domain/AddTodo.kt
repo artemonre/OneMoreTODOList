@@ -17,7 +17,7 @@ class AddTodo(
     private val dataSource: TodoLocalDataSource
 ) {
     @OptIn(ExperimentalUuidApi::class)
-    suspend operator fun invoke(text: String, isPrioritized: Boolean) {
+    suspend operator fun invoke(text: String, isPrioritized: Boolean, recurrence: Recurrence? = null) {
         val currentTodos = dataSource.observeTodos().first()
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val newItem = TodoItem(
@@ -28,7 +28,9 @@ class AddTodo(
             sortOrder = if (isPrioritized) topSortOrder(currentTodos) else (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
             creationDate = today,
             lastEditDate = today,
-            priorityOrder = prioritize(isPrioritized, currentTodos)
+            priorityOrder = prioritize(isPrioritized, currentTodos),
+            recurrence = recurrence,
+            recurrenceAnchorDate = today.takeIf { recurrence?.type == RecurrenceType.Every }
         )
         dataSource.upsertTodo(newItem)
     }

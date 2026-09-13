@@ -11,10 +11,13 @@ import kotlin.coroutines.CoroutineContext
 
 @Database(
     entities = [TodoEntity::class],
-    version = 4,
+    version = 5,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class),
-        AutoMigration(from = 3, to = 4)
+        AutoMigration(from = 3, to = 4),
+        // Adds the (nullable) recurrenceType/recurrenceInterval/recurrenceUnit columns - a plain
+        // AutoMigration is enough since existing rows just get NULL (no recurrence).
+        AutoMigration(from = 4, to = 5)
     ]
 )
 @ColumnTypeConverters(TodoDateConverters::class)

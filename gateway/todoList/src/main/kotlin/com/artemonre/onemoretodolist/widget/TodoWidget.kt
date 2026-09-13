@@ -14,6 +14,7 @@ import androidx.glance.color.ColorProviders
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
+import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.presentation.toTodoItemUi
 import kotlinx.coroutines.flow.map
@@ -33,8 +34,13 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
 
     private val observeActiveTodos: ObserveActiveTodos by inject()
     private val themeRepository: ThemeRepository by inject()
+    private val applyDueRecurrences: ApplyDueRecurrences by inject()
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Catches up recurring todos even if the main app hasn't been opened - the widget is
+        // often the only thing a user ever looks at, and its own composition runs independently
+        // of ContainerViewModel's app-startup call to the same use case.
+        applyDueRecurrences()
         provideContent {
             val todos by observeActiveTodos()
                 .map { todos -> todos.map { it.toTodoItemUi() } }

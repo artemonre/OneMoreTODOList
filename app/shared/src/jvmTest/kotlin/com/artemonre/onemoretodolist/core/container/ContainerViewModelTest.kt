@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.core.container
 
+import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.ONBOARDING_TODOS
 import com.artemonre.onemoretodolist.feature.todolist.domain.SeedOnboardingTodos
@@ -33,7 +34,11 @@ class ContainerViewModelTest {
     @Test
     fun `OnStart action triggers onboarding seeding`() = runTest(testDispatcher) {
         val dataSource = FakeTodoLocalDataSource()
-        val viewModel = ContainerViewModel(contentTabs = emptyList(), seedOnboardingTodos = SeedOnboardingTodos(dataSource))
+        val viewModel = ContainerViewModel(
+            contentTabs = emptyList(),
+            seedOnboardingTodos = SeedOnboardingTodos(dataSource),
+            applyDueRecurrences = ApplyDueRecurrences(dataSource)
+        )
 
         viewModel.onAction(ContainerAction.OnStart)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -43,9 +48,11 @@ class ContainerViewModelTest {
 
     @Test
     fun `OnTabSelected action updates the selected tab index`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource()
         val viewModel = ContainerViewModel(
             contentTabs = emptyList(),
-            seedOnboardingTodos = SeedOnboardingTodos(FakeTodoLocalDataSource())
+            seedOnboardingTodos = SeedOnboardingTodos(dataSource),
+            applyDueRecurrences = ApplyDueRecurrences(dataSource)
         )
 
         viewModel.onAction(ContainerAction.OnTabSelected(1))

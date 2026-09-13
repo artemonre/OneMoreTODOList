@@ -1,6 +1,7 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -18,6 +19,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +42,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -47,6 +51,9 @@ import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
+import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
+import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceUnit
 import com.artemonre.onemoretodolist.rememberSpeechToText
 import kotlinx.coroutines.flow.first
 
@@ -54,7 +61,7 @@ import kotlinx.coroutines.flow.first
 @Composable
 fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
-    onConfirm: (text: String, isPrioritized: Boolean) -> Unit,
+    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -74,7 +81,7 @@ fun TodoFormBottomSheet(
             // visible sheet instead of being reachable by scrolling.
             modifier = Modifier.verticalScroll(rememberScrollState()),
             // The sheet's own drag handle already separates it from the content above, so the
-            // title is redundant here - unlike the full-screen dialog, which has nothing else
+            // title is redundant here - unlike TodoFormFullScreenDialog, which has nothing else
             // marking it as an add/edit form.
             showTitle = false,
             fieldMinLines = 1,
@@ -85,29 +92,42 @@ fun TodoFormBottomSheet(
     }
 }
 
-// Shared by TodoFormBottomSheet (edit flow), TodoFormFullScreenDialog (add flow), and
-// gateway/todoList's QuickAddTodoActivity (widget quick-add) - same fields and behavior, just
-// hosted in a different container. Public since the widget's quick-add screen lives in a
-// separate Gradle module.
+// Shared by TodoFormBottomSheet (quick-add flow), TodoFormFullScreenDialog (detailed add and edit
+// flows), and gateway/todoList's QuickAddTodoActivity (widget quick-add) - same fields and
+// behavior, just hosted in a different container. Public since the widget's quick-add screen lives
+// in a separate Gradle module.
 // fieldMinLines/fieldMaxLines default to a 2-line field that fits the small dialog/bottom-sheet/
 // quick-add containers - TodoFormFullScreenDialog raises both to start at 3 lines and allow any
 // amount more. showTitle/actionsTopSpacing default to what the full-screen dialog and quick-add
 // screen use - TodoFormBottomSheet tightens both since its drag handle already separates it from
-// whatever is above.
+// whatever is above. showRecurrence is off by default too - recurrence is a detailed-creation
+// concern, only TodoFormFullScreenDialog turns it on.
 @Composable
 fun TodoFormBody(
     editingItem: TodoItemUi?,
-    onConfirm: (text: String, isPrioritized: Boolean) -> Unit,
+    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     fieldMinLines: Int = 2,
     fieldMaxLines: Int = 2,
     actionsTopSpacing: Dp = 20.dp,
+    showRecurrence: Boolean = false,
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
     var text by remember { mutableStateOf(editingItem?.text.orEmpty()) }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
+    var repeatEnabled by remember { mutableStateOf(editingItem?.recurrence != null) }
+    var recurrenceType by remember { mutableStateOf(editingItem?.recurrence?.type ?: RecurrenceType.Every) }
+    var recurrenceIntervalText by remember { mutableStateOf(editingItem?.recurrence?.interval?.toString() ?: "1") }
+    var recurrenceUnit by remember { mutableStateOf(editingItem?.recurrence?.unit ?: RecurrenceUnit.Week) }
+    val recurrence = if (repeatEnabled) {
+        recurrenceIntervalText.toIntOrNull()
+            ?.takeIf { it > 0 }
+            ?.let { interval -> Recurrence(type = recurrenceType, interval = interval, unit = recurrenceUnit) }
+    } else {
+        null
+    }
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val speechController = rememberSpeechToText(onResult = { text = it })
@@ -146,7 +166,7 @@ fun TodoFormBody(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { onConfirm(text.trim(), isPrioritized) }
+                onDone = { onConfirm(text.trim(), isPrioritized, recurrence) }
             ),
             trailingIcon = if (text.isNotEmpty()) {
                 {
@@ -192,6 +212,87 @@ fun TodoFormBody(
             Spacer(Modifier.width(12.dp))
             Text("Put on top")
         }
+        if (showRecurrence) {
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = repeatEnabled,
+                        onValueChange = { repeatEnabled = it },
+                        role = Role.Checkbox
+                    )
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppCheckToggle(
+                    checked = repeatEnabled,
+                    onCheckedChange = null
+                )
+                Spacer(Modifier.width(12.dp))
+                Text("Repeat")
+            }
+        }
+        if (showRecurrence && repeatEnabled) {
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                var typeMenuExpanded by remember { mutableStateOf(false) }
+                Box(modifier = Modifier.weight(1.4f)) {
+                    Button(onClick = { typeMenuExpanded = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(recurrenceType.displayName())
+                    }
+                    DropdownMenu(
+                        expanded = typeMenuExpanded,
+                        onDismissRequest = { typeMenuExpanded = false }
+                    ) {
+                        RecurrenceType.entries.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type.displayName()) },
+                                onClick = {
+                                    recurrenceType = type
+                                    typeMenuExpanded = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = recurrenceIntervalText,
+                    onValueChange = { value -> recurrenceIntervalText = value.filter { it.isDigit() } },
+                    placeholder = { Text("1") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.width(72.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                var unitMenuExpanded by remember { mutableStateOf(false) }
+                Box(modifier = Modifier.weight(1f)) {
+                    Button(onClick = { unitMenuExpanded = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(recurrenceUnit.displayName())
+                    }
+                    DropdownMenu(
+                        expanded = unitMenuExpanded,
+                        onDismissRequest = { unitMenuExpanded = false }
+                    ) {
+                        RecurrenceUnit.entries.forEach { unit ->
+                            DropdownMenuItem(
+                                text = { Text(unit.displayName()) },
+                                onClick = {
+                                    recurrenceUnit = unit
+                                    unitMenuExpanded = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+        }
         Spacer(Modifier.height(actionsTopSpacing))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -202,12 +303,24 @@ fun TodoFormBody(
             }
             Spacer(Modifier.width(8.dp))
             Button(
-                onClick = { onConfirm(text.trim(), isPrioritized) }
+                onClick = { onConfirm(text.trim(), isPrioritized, recurrence) }
             ) {
                 Text(if (editingItem != null) "Save" else "OK")
             }
         }
     }
+}
+
+private fun RecurrenceType.displayName(): String = when (this) {
+    RecurrenceType.Every -> "Every"
+    RecurrenceType.AfterCompletion -> "After completion"
+}
+
+private fun RecurrenceUnit.displayName(): String = when (this) {
+    RecurrenceUnit.Day -> "Day"
+    RecurrenceUnit.Week -> "Week"
+    RecurrenceUnit.Month -> "Month"
+    RecurrenceUnit.Year -> "Year"
 }
 
 @Preview
@@ -216,7 +329,7 @@ private fun TodoFormBottomSheetPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoFormBottomSheet(
             editingItem = null,
-            onConfirm = { _, _ -> },
+            onConfirm = { _, _, _ -> },
             onDismiss = {}
         )
     }

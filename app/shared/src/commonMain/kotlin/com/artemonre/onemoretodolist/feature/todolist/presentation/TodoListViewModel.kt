@@ -3,6 +3,8 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
+import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
+import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
@@ -65,17 +68,17 @@ class TodoListViewModel(
                     _events.send(TodoListEvent.ShowAddTodoFullScreenDialog)
                 }
             }
-            is TodoListAction.OnConfirmAddTodo -> addTodo(action.text, action.isPrioritized)
+            is TodoListAction.OnConfirmAddTodo -> addTodo(action.text, action.isPrioritized, action.recurrence)
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
-            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized)
+            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized, action.recurrence)
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
             is TodoListAction.OnUndoClick -> undo()
         }
     }
 
-    private fun addTodo(text: String, isPrioritized: Boolean) {
+    private fun addTodo(text: String, isPrioritized: Boolean, recurrence: Recurrence?) {
         viewModelScope.launch {
-            addTodoUseCase(text, isPrioritized)
+            addTodoUseCase(text, isPrioritized, recurrence)
         }
     }
 
@@ -86,7 +89,7 @@ class TodoListViewModel(
         }
     }
 
-    private fun editTodo(id: String, text: String, isPrioritized: Boolean) {
+    private fun editTodo(id: String, text: String, isPrioritized: Boolean, recurrence: Recurrence?) {
         val currentTodos = todos.value
         val item = currentTodos.firstOrNull { it.id == id } ?: return
         // Only newly-prioritized items jump to the top of Manual sort too - an item that was
@@ -100,11 +103,22 @@ class TodoListViewModel(
                 item.priorityOrder ?: prioritize(isPrioritized = true, currentTodos = currentTodos)
             } else {
                 null
-            }
+            },
+            recurrence = recurrence,
+            recurrenceAnchorDate = recurrenceAnchorDate(item, recurrence)
         )
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(updated)
         }
+    }
+
+    // Editing keeps the existing anchor as long as the Every rule itself is unchanged (same type/
+    // interval/unit) - only a genuinely new or changed rule restarts the countdown from today.
+    // AfterCompletion needs no anchor at all (it reads completionDate directly).
+    private fun recurrenceAnchorDate(item: TodoItem, newRecurrence: Recurrence?): LocalDate? {
+        if (newRecurrence?.type != RecurrenceType.Every) return null
+        return item.recurrenceAnchorDate.takeIf { item.recurrence == newRecurrence }
+            ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
     }
 
     private fun reorder(orderedIds: List<String>) {

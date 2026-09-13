@@ -15,13 +15,17 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 
-// The modern (non-DialogFragment) replacement for a full-screen modal: a full-size Dialog
-// hosting the same TodoFormBody used by the edit flow's bottom sheet. Add-only for now - editing
-// still goes through TodoFormBottomSheet.
+// The modern (non-DialogFragment) replacement for a full-screen modal: a full-size Dialog hosting
+// the same TodoFormBody used by the quick-add bottom sheet. Used for both the detailed add flow
+// and editing an existing todo - editingItem == null means "add" mode, same convention as
+// TodoFormBottomSheet. The extra room here (vs. the quick-add bottom sheet/widget screen) is what
+// fits recurrence configuration, so this is the only host that turns showRecurrence on.
 @Composable
 fun TodoFormFullScreenDialog(
-    onConfirm: (text: String, isPrioritized: Boolean) -> Unit,
+    editingItem: TodoItemUi?,
+    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?) -> Unit,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -33,7 +37,7 @@ fun TodoFormFullScreenDialog(
             color = MaterialTheme.colorScheme.surface
         ) {
             TodoFormBody(
-                editingItem = null,
+                editingItem = editingItem,
                 onConfirm = onConfirm,
                 onDismiss = onDismiss,
                 modifier = Modifier
@@ -41,7 +45,8 @@ fun TodoFormFullScreenDialog(
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .verticalScroll(rememberScrollState()),
                 fieldMinLines = 3,
-                fieldMaxLines = Int.MAX_VALUE
+                fieldMaxLines = Int.MAX_VALUE,
+                showRecurrence = true
             )
         }
     }
@@ -52,7 +57,8 @@ fun TodoFormFullScreenDialog(
 private fun TodoFormFullScreenDialogPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoFormFullScreenDialog(
-            onConfirm = { _, _ -> },
+            editingItem = null,
+            onConfirm = { _, _, _ -> },
             onDismiss = {}
         )
     }

@@ -3,6 +3,7 @@ package com.artemonre.onemoretodolist.core.container
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.settings.navigation.settingsTab
+import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
 import com.artemonre.onemoretodolist.feature.todolist.domain.SeedOnboardingTodos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +12,8 @@ import kotlinx.coroutines.launch
 
 class ContainerViewModel(
     contentTabs: List<NavigationTab>,
-    private val seedOnboardingTodos: SeedOnboardingTodos
+    private val seedOnboardingTodos: SeedOnboardingTodos,
+    private val applyDueRecurrences: ApplyDueRecurrences
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ContainerState(tabs = contentTabs + settingsTab()))
@@ -19,7 +21,10 @@ class ContainerViewModel(
 
     fun onAction(action: ContainerAction) {
         when (action) {
-            ContainerAction.OnStart -> viewModelScope.launch { seedOnboardingTodos() }
+            ContainerAction.OnStart -> viewModelScope.launch {
+                seedOnboardingTodos()
+                applyDueRecurrences()
+            }
             is ContainerAction.OnTabSelected -> _state.update { it.copy(selectedTabIndex = action.index) }
         }
     }

@@ -54,8 +54,8 @@ class QuickAddTodoActivity : ComponentActivity() {
                     ) {
                         TodoFormBody(
                             editingItem = null,
-                            onConfirm = { text, isPrioritized ->
-                                coroutineScope.launch { addTodo(text, isPrioritized) }
+                            onConfirm = { text, isPrioritized, recurrence ->
+                                coroutineScope.launch { addTodo(text, isPrioritized, recurrence) }
                                 finish()
                             },
                             onDismiss = { finish() },
