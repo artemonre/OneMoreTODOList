@@ -23,5 +23,6 @@ data class TodoEntity(
     val recurrenceType: RecurrenceType? = null,
     val recurrenceInterval: Int? = null,
     val recurrenceUnit: RecurrenceUnit? = null,
-    val recurrenceAnchorInstant: Instant? = null
+    val recurrenceAnchorInstant: Instant? = null,
+    val topSince: Instant? = null
 )

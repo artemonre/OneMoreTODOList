@@ -453,6 +453,7 @@ private fun SwipeableTodoRow(
             text = item.text,
             isDone = item.status == TodoStatus.Done || isCompleting,
             formattedDate = item.formattedDate,
+            attention = item.attention,
             onToggleDone = {
                 if (item.status == TodoStatus.Active) {
                     isCompleting = true

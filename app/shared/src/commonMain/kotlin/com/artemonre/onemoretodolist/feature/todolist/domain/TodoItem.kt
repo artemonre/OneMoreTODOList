@@ -24,5 +24,9 @@ data class TodoItem(
     // advanced every time it fires; for AfterCompletion, set by ToggleTodoDone at the moment it's
     // marked Done. Null while there's no recurrence, or an AfterCompletion recurrence that's never
     // been completed yet.
-    val recurrenceAnchorInstant: Instant? = null
+    val recurrenceAnchorInstant: Instant? = null,
+    // The instant this todo most recently, continuously became the top of the active list - kept
+    // in sync by TopSinceTrackingTodoLocalDataSource after every write. Null while it isn't
+    // currently top; see topTodoAttention for how this drives the "long staying" attention color.
+    val topSince: Instant? = null
 )

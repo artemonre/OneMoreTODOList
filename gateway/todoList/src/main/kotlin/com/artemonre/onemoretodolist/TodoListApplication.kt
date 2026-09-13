@@ -5,12 +5,14 @@ import androidx.glance.appwidget.updateAll
 import com.artemonre.onemoretodolist.analytics.initPostHog
 import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
-import com.artemonre.onemoretodolist.feature.todolist.work.schedulePeriodicRecurrenceCheck
+import com.artemonre.onemoretodolist.feature.todolist.work.WidgetRefresher
+import com.artemonre.onemoretodolist.feature.todolist.work.schedulePeriodicTodoMaintenance
 import com.artemonre.onemoretodolist.observability.initSentry
 import com.artemonre.onemoretodolist.widget.TodoWidget
 import com.posthog.kmp.PostHogContext
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import org.koin.dsl.module
 
 // Koin is otherwise only started lazily, the first time MainActivity composes App() - but a
 // GlanceAppWidget/GlanceAppWidgetReceiver can run in a fresh process where that has never
@@ -45,11 +47,18 @@ class TodoListApplication : Application() {
                             // Same rationale as above: a Settings change (e.g. color palette)
                             // needs an explicit refresh to reach the widget promptly.
                             TodoWidget().updateAll(this@TodoListApplication)
+                        },
+                        module {
+                            // Lets PeriodicTodoMaintenanceWorker repaint the widget without
+                            // app:shared depending on Glance - WorkManager (not Koin) constructs
+                            // the worker itself, so this can't just be a constructor lambda like
+                            // onDataChanged above.
+                            single<WidgetRefresher> { WidgetRefresher { TodoWidget().updateAll(this@TodoListApplication) } }
                         }
                     )
                 )
             )
         }
-        schedulePeriodicRecurrenceCheck(this@TodoListApplication)
+        schedulePeriodicTodoMaintenance(this@TodoListApplication)
     }
 }

@@ -14,6 +14,8 @@ import androidx.glance.color.ColorProviders
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.presentation.toTodoItemUi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -33,9 +35,14 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
 
     private val observeActiveTodos: ObserveActiveTodos by inject()
     private val themeRepository: ThemeRepository by inject()
+    private val todoPreferences: TodoPreferences by inject()
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val activeTodos = observeActiveTodos().map { todos -> todos.map { it.toTodoItemUi() } }
+        // Archived isn't an ordering of the active list at all (it's the Done-only view) - same
+        // fallback UpdateTopSince uses, so the widget's order and its notion of "top" always agree.
+        val sortOption = todoPreferences.sortOption.first()
+            .takeUnless { it == TodoSortOption.Archived } ?: TodoSortOption.Date
+        val activeTodos = observeActiveTodos(sortOption).map { todos -> todos.map { it.toTodoItemUi() } }
         val themeConfig = themeRepository.themeConfig
 
         // Fetched before provideContent (instead of defaulting collectAsState to emptyList()/

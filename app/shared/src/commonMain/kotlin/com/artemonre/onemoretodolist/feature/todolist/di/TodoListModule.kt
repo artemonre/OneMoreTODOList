@@ -7,6 +7,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.SeedOnboardingTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
+import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListViewModel
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -19,6 +20,7 @@ val todoListModule = module {
     singleOf(::ObserveActiveTodos)
     singleOf(::AddTodo)
     singleOf(::ToggleTodoDone)
+    singleOf(::UpdateTopSince)
     singleOf(::SettingsTodoPreferences) { bind<TodoPreferences>() }
     viewModelOf(::TodoListViewModel)
 }

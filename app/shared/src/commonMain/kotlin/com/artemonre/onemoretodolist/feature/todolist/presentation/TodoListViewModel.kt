@@ -11,6 +11,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
+import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -29,7 +30,8 @@ class TodoListViewModel(
     private val todoLocalDataSource: TodoLocalDataSource,
     private val addTodoUseCase: AddTodo,
     private val toggleTodoDoneUseCase: ToggleTodoDone,
-    private val todoPreferences: TodoPreferences
+    private val todoPreferences: TodoPreferences,
+    private val updateTopSince: UpdateTopSince
 ) : ViewModel() {
 
     private val todos = todoLocalDataSource.observeTodos()
@@ -56,6 +58,9 @@ class TodoListViewModel(
             is TodoListAction.OnToggleDone -> toggleDone(action.id)
             is TodoListAction.OnSortOptionSelected -> viewModelScope.launch {
                 todoPreferences.setSortOption(action.option)
+                // Switching sort alone doesn't touch the todo list, so nothing else would
+                // otherwise recompute who's "top" under the newly selected order.
+                updateTopSince()
             }
             is TodoListAction.OnReorder -> reorder(action.orderedIds)
             is TodoListAction.OnAddTodoClick -> {
