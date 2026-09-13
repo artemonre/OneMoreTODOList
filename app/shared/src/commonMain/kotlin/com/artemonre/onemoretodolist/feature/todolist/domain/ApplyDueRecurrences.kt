@@ -1,10 +1,10 @@
 package com.artemonre.onemoretodolist.feature.todolist.domain
 
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.atStartOfDayIn
 
 // Framework-free (no Android/Compose/Glance) so it can run both at app startup (ContainerViewModel)
 // and at the start of the widget's own composition (TodoWidget.provideGlance) - the two places a
@@ -18,9 +18,9 @@ class ApplyDueRecurrences(
     private val dataSource: TodoLocalDataSource
 ) {
     suspend operator fun invoke() {
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val now = Clock.System.now()
         var todos = dataSource.observeTodos().first()
-        val dueIds = todos.filter { isDue(it, today) }.map { it.id }
+        val dueIds = todos.filter { isDue(it, now) }.map { it.id }
 
         for (id in dueIds) {
             val item = todos.first { it.id == id }
@@ -30,7 +30,7 @@ class ApplyDueRecurrences(
                 completionDate = null,
                 sortOrder = topSortOrder(todos),
                 priorityOrder = prioritize(todos),
-                recurrenceAnchorDate = if (recurrence.type == RecurrenceType.Every) today else item.recurrenceAnchorDate
+                recurrenceAnchorInstant = if (recurrence.type == RecurrenceType.Every) now else item.recurrenceAnchorInstant
             )
             dataSource.upsertTodo(updated)
             // Keeps sortOrder/priorityOrder stacking correctly if several todos come due in the
@@ -39,16 +39,18 @@ class ApplyDueRecurrences(
         }
     }
 
-    private fun isDue(item: TodoItem, today: LocalDate): Boolean {
+    private fun isDue(item: TodoItem, now: Instant): Boolean {
         val recurrence = item.recurrence ?: return false
         return when (recurrence.type) {
             RecurrenceType.Every -> {
-                val anchor = item.recurrenceAnchorDate ?: item.creationDate
-                anchor.plus(recurrence) <= today
+                val anchor = item.recurrenceAnchorInstant
+                    ?: item.creationDate.atStartOfDayIn(TimeZone.currentSystemDefault())
+                anchor + recurrence.duration() <= now
             }
             RecurrenceType.AfterCompletion -> {
-                val completionDate = item.completionDate ?: return false
-                completionDate.plus(recurrence) <= today
+                if (item.status != TodoStatus.Done) return false
+                val completedAt = item.recurrenceAnchorInstant ?: return false
+                completedAt + recurrence.duration() <= now
             }
         }
     }

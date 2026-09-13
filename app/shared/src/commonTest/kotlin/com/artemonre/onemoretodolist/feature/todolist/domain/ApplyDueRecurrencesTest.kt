@@ -4,16 +4,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.toLocalDateTime
 
 class ApplyDueRecurrencesTest {
 
-    private val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    private val now = Clock.System.now()
 
     @Test
     fun `a due Every todo is pulled to Active and the top, keeping its creation date`() = runTest {
@@ -23,7 +23,7 @@ class ApplyDueRecurrencesTest {
             status = TodoStatus.Active,
             sortOrder = 5,
             recurrence = recurrence,
-            recurrenceAnchorDate = today.minusRecurrence(recurrence)
+            recurrenceAnchorInstant = now - recurrence.duration()
         )
         val dataSource = FakeTodoLocalDataSource(
             initialTodos = listOf(original, todoItem(id = "2", sortOrder = 0))
@@ -35,7 +35,6 @@ class ApplyDueRecurrencesTest {
         val updated = todos.first { it.id == "1" }
         assertEquals(TodoStatus.Active, updated.status)
         assertEquals(original.creationDate, updated.creationDate)
-        assertEquals(today, updated.recurrenceAnchorDate)
         assertEquals(updated.sortOrder, todos.minOf { it.sortOrder })
     }
 
@@ -47,9 +46,9 @@ class ApplyDueRecurrencesTest {
                 todoItem(
                     id = "1",
                     status = TodoStatus.Done,
-                    completionDate = today,
+                    completionDate = today(),
                     recurrence = recurrence,
-                    recurrenceAnchorDate = today.minusRecurrence(recurrence)
+                    recurrenceAnchorInstant = now - recurrence.duration()
                 )
             )
         )
@@ -64,7 +63,7 @@ class ApplyDueRecurrencesTest {
     @Test
     fun `an Every todo not yet due is left untouched`() = runTest {
         val recurrence = Recurrence(type = RecurrenceType.Every, interval = 1, unit = RecurrenceUnit.Week)
-        val original = todoItem(id = "1", sortOrder = 5, recurrence = recurrence, recurrenceAnchorDate = today)
+        val original = todoItem(id = "1", sortOrder = 5, recurrence = recurrence, recurrenceAnchorInstant = now)
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
 
         ApplyDueRecurrences(dataSource)()
@@ -80,8 +79,9 @@ class ApplyDueRecurrencesTest {
                 todoItem(
                     id = "1",
                     status = TodoStatus.Done,
-                    completionDate = today.minusRecurrence(recurrence),
-                    recurrence = recurrence
+                    completionDate = today(),
+                    recurrence = recurrence,
+                    recurrenceAnchorInstant = now - recurrence.duration()
                 )
             )
         )
@@ -91,7 +91,6 @@ class ApplyDueRecurrencesTest {
         val updated = dataSource.observeTodos().first().single()
         assertEquals(TodoStatus.Active, updated.status)
         assertNull(updated.completionDate)
-        assertNull(updated.recurrenceAnchorDate)
     }
 
     @Test
@@ -106,8 +105,16 @@ class ApplyDueRecurrencesTest {
     }
 
     @Test
-    fun `a non-recurring todo is left untouched`() = runTest {
-        val original = todoItem(id = "1", status = TodoStatus.Done, completionDate = today.minus(5, RecurrenceUnit.Year.toDateTimeUnit()))
+    fun `an AfterCompletion todo manually reactivated before its delay passes is left untouched`() = runTest {
+        // status flipped back to Active by the user, even though the old anchor would otherwise
+        // already be "due" - it must not get force-reprocessed since it's not waiting anymore.
+        val recurrence = Recurrence(type = RecurrenceType.AfterCompletion, interval = 1, unit = RecurrenceUnit.Day)
+        val original = todoItem(
+            id = "1",
+            status = TodoStatus.Active,
+            recurrence = recurrence,
+            recurrenceAnchorInstant = now - recurrence.duration()
+        )
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
 
         ApplyDueRecurrences(dataSource)()
@@ -115,8 +122,17 @@ class ApplyDueRecurrencesTest {
         assertEquals(original, dataSource.observeTodos().first().single())
     }
 
-    private fun LocalDate.minusRecurrence(recurrence: Recurrence): LocalDate =
-        minus(recurrence.interval, recurrence.unit.toDateTimeUnit())
+    @Test
+    fun `a non-recurring todo is left untouched`() = runTest {
+        val original = todoItem(id = "1", status = TodoStatus.Done, completionDate = today())
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
+
+        ApplyDueRecurrences(dataSource)()
+
+        assertEquals(original, dataSource.observeTodos().first().single())
+    }
+
+    private fun today(): LocalDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     private fun todoItem(
         id: String,
@@ -124,16 +140,16 @@ class ApplyDueRecurrencesTest {
         sortOrder: Int = 0,
         completionDate: LocalDate? = null,
         recurrence: Recurrence? = null,
-        recurrenceAnchorDate: LocalDate? = null
+        recurrenceAnchorInstant: Instant? = null
     ) = TodoItem(
         id = id,
         text = "Todo $id",
         status = status,
         sortOrder = sortOrder,
-        creationDate = today.minus(30, RecurrenceUnit.Day.toDateTimeUnit()),
-        lastEditDate = today.minus(30, RecurrenceUnit.Day.toDateTimeUnit()),
+        creationDate = LocalDate(2026, 1, 1),
+        lastEditDate = LocalDate(2026, 1, 1),
         completionDate = completionDate,
         recurrence = recurrence,
-        recurrenceAnchorDate = recurrenceAnchorDate
+        recurrenceAnchorInstant = recurrenceAnchorInstant
     )
 }

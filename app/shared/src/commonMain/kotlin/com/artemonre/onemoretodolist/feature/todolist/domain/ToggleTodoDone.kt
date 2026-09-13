@@ -32,6 +32,15 @@ class ToggleTodoDone(
         } else {
             null
         }
-        dataSource.upsertTodo(item.copy(status = newStatus, completionDate = completionDate))
+        // AfterCompletion counts its delay from the moment it's actually completed, so this is
+        // where its cycle starts - Every's own anchor is only ever touched by ApplyDueRecurrences.
+        val recurrenceAnchorInstant = if (newStatus == TodoStatus.Done && item.recurrence?.type == RecurrenceType.AfterCompletion) {
+            Clock.System.now()
+        } else {
+            item.recurrenceAnchorInstant
+        }
+        dataSource.upsertTodo(
+            item.copy(status = newStatus, completionDate = completionDate, recurrenceAnchorInstant = recurrenceAnchorInstant)
+        )
     }
 }

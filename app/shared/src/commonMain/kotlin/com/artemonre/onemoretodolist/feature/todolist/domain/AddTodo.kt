@@ -30,7 +30,7 @@ class AddTodo(
             lastEditDate = today,
             priorityOrder = prioritize(isPrioritized, currentTodos),
             recurrence = recurrence,
-            recurrenceAnchorDate = today.takeIf { recurrence?.type == RecurrenceType.Every }
+            recurrenceAnchorInstant = Clock.System.now().takeIf { recurrence?.type == RecurrenceType.Every }
         )
         dataSource.upsertTodo(newItem)
     }

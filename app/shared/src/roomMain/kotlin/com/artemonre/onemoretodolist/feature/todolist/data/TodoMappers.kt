@@ -17,7 +17,7 @@ fun TodoEntity.toTodoItem(): TodoItem = TodoItem(
         val unit = recurrenceUnit ?: return@let null
         Recurrence(type = type, interval = interval, unit = unit)
     },
-    recurrenceAnchorDate = recurrenceAnchorDate
+    recurrenceAnchorInstant = recurrenceAnchorInstant
 )
 
 fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
@@ -32,5 +32,5 @@ fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
     recurrenceType = recurrence?.type,
     recurrenceInterval = recurrence?.interval,
     recurrenceUnit = recurrence?.unit,
-    recurrenceAnchorDate = recurrenceAnchorDate
+    recurrenceAnchorInstant = recurrenceAnchorInstant
 )

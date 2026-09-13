@@ -5,6 +5,7 @@ import androidx.glance.appwidget.updateAll
 import com.artemonre.onemoretodolist.analytics.initPostHog
 import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
+import com.artemonre.onemoretodolist.feature.todolist.work.schedulePeriodicRecurrenceCheck
 import com.artemonre.onemoretodolist.observability.initSentry
 import com.artemonre.onemoretodolist.widget.TodoWidget
 import com.posthog.kmp.PostHogContext
@@ -49,5 +50,6 @@ class TodoListApplication : Application() {
                 )
             )
         }
+        schedulePeriodicRecurrenceCheck(this@TodoListApplication)
     }
 }

@@ -9,6 +9,7 @@ androidx-core = "1.19.0"
 androidx-espresso = "3.7.0"
 androidx-lifecycle = "2.11.0-beta01"
 androidx-testExt = "1.3.0"
+androidx-work = "2.11.2"
 composeMultiplatform = "1.11.1"
 glance = "1.1.1"
 junit = "4.13.2"
@@ -79,6 +80,7 @@ multiplatformSettings-makeObservable = { module = "com.russhwolf:multiplatform-s
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 androidx-room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
 androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room3" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work" }
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 posthog-kmp = { module = "com.posthog:posthog-kmp", version.ref = "posthogKmp" }
 sentry-java = { module = "io.sentry:sentry", version.ref = "sentry" }

@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.domain
 
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 
 data class TodoItem(
@@ -19,7 +20,10 @@ data class TodoItem(
     // back to Active and the top whenever it's due - see ApplyDueRecurrences - not a freshly
     // created copy. Keeps repeating until the todo itself is deleted.
     val recurrence: Recurrence? = null,
-    // Every-type only: the date its cycle last (re)started counting from. Null while type is
-    // AfterCompletion (which anchors off completionDate instead) or there's no recurrence at all.
-    val recurrenceAnchorDate: LocalDate? = null
+    // The instant its current cycle started counting from - for Every, set on creation/edit and
+    // advanced every time it fires; for AfterCompletion, set by ToggleTodoDone at the moment it's
+    // marked Done. Null while there's no recurrence, or an AfterCompletion recurrence that's never
+    // been completed yet. A precise Instant (not a LocalDate) so short testing intervals (minutes)
+    // are representable - see Recurrence.toTestingDuration().
+    val recurrenceAnchorInstant: Instant? = null
 )

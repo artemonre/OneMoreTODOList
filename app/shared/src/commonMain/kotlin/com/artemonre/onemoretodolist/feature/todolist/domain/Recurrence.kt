@@ -1,8 +1,7 @@
 package com.artemonre.onemoretodolist.feature.todolist.domain
 
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 enum class RecurrenceType {
     Every,
@@ -22,11 +21,15 @@ data class Recurrence(
     val unit: RecurrenceUnit
 )
 
-fun RecurrenceUnit.toDateTimeUnit(): DateTimeUnit.DateBased = when (this) {
-    RecurrenceUnit.Day -> DateTimeUnit.DAY
-    RecurrenceUnit.Week -> DateTimeUnit.WEEK
-    RecurrenceUnit.Month -> DateTimeUnit.MONTH
-    RecurrenceUnit.Year -> DateTimeUnit.YEAR
+// TESTING OVERRIDE - revert to real calendar durations (1.days, 7.days, 30.days, 365.days) once
+// manual testing of recurrence is done. Compressed to minutes (same 1-unit-to-1-minute ratio
+// throughout) so "every"/"after completion" cycles are observable in a normal testing session
+// instead of over real days/weeks/months.
+private fun RecurrenceUnit.toTestingDuration(): Duration = when (this) {
+    RecurrenceUnit.Day -> 1.minutes
+    RecurrenceUnit.Week -> 7.minutes
+    RecurrenceUnit.Month -> 30.minutes
+    RecurrenceUnit.Year -> 365.minutes
 }
 
-fun LocalDate.plus(recurrence: Recurrence): LocalDate = plus(recurrence.interval, recurrence.unit.toDateTimeUnit())
+fun Recurrence.duration(): Duration = unit.toTestingDuration() * interval

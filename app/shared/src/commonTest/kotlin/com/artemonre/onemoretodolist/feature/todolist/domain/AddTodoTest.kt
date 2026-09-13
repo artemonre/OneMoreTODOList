@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
@@ -46,11 +47,11 @@ class AddTodoTest {
 
         val added = dataSource.observeTodos().first().first { it.text == "Water the plants" }
         assertEquals(recurrence, added.recurrence)
-        assertEquals(added.creationDate, added.recurrenceAnchorDate)
+        assertNotNull(added.recurrenceAnchorInstant)
     }
 
     @Test
-    fun `an AfterCompletion recurrence is carried over without an anchor date`() = runTest {
+    fun `an AfterCompletion recurrence is carried over without an anchor instant`() = runTest {
         val dataSource = FakeTodoLocalDataSource(initialTodos = emptyList())
         val addTodo = AddTodo(dataSource)
         val recurrence = Recurrence(type = RecurrenceType.AfterCompletion, interval = 3, unit = RecurrenceUnit.Day)
@@ -59,7 +60,7 @@ class AddTodoTest {
 
         val added = dataSource.observeTodos().first().first { it.text == "Refill water filter" }
         assertEquals(recurrence, added.recurrence)
-        assertNull(added.recurrenceAnchorDate)
+        assertNull(added.recurrenceAnchorInstant)
     }
 
     private fun todoItem(id: String, sortOrder: Int) = TodoItem(

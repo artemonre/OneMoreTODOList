@@ -207,7 +207,6 @@ internal fun TodoWidgetRow(item: TodoItemUi) {
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .clickable(actionRunCallback<ToggleTodoDoneAction>(actionParametersOf(todoIdKey to item.id)))
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -220,10 +219,20 @@ internal fun TodoWidgetRow(item: TodoItemUi) {
             )
         )
         Spacer(modifier = GlanceModifier.width(8.dp))
-        Text(
-            text = item.text,
-            maxLines = 3,
-            style = TextStyle(color = GlanceTheme.colors.onSurface)
-        )
+        // Fills the row's remaining width so tapping the text (not just the checkbox) opens the
+        // app instead of toggling the todo done - same pattern as TodoWidgetContentRow.
+        Box(
+            modifier = GlanceModifier
+                .defaultWeight()
+                .fillMaxHeight()
+                .clickable(actionStartActivity<MainActivity>()),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = item.text,
+                maxLines = 3,
+                style = TextStyle(color = GlanceTheme.colors.onSurface)
+            )
+        }
     }
 }

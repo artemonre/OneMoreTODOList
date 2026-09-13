@@ -12,11 +12,10 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.color.ColorProviders
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
-import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
-import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.presentation.toTodoItemUi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -34,19 +33,27 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
 
     private val observeActiveTodos: ObserveActiveTodos by inject()
     private val themeRepository: ThemeRepository by inject()
-    private val applyDueRecurrences: ApplyDueRecurrences by inject()
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Catches up recurring todos even if the main app hasn't been opened - the widget is
-        // often the only thing a user ever looks at, and its own composition runs independently
-        // of ContainerViewModel's app-startup call to the same use case.
-        applyDueRecurrences()
+        val activeTodos = observeActiveTodos().map { todos -> todos.map { it.toTodoItemUi() } }
+        val themeConfig = themeRepository.themeConfig
+
+        // Fetched before provideContent (instead of defaulting collectAsState to emptyList()/
+        // ThemeConfig()) so a fresh Glance session's very first frame already shows real data - a
+        // session tears down after ~45s idle, and every new one otherwise flashes empty content
+        // until the first Flow emission lands, which is very visible since AppWidget rendering is
+        // a RemoteViews swap, not an animated Compose recomposition.
+        //
+        // Recurring-todo catch-up deliberately no longer runs here - it's off this render path,
+        // relying instead on app open (ContainerScreen's OnStart) and the hourly
+        // ApplyDueRecurrencesWorker to keep todos due even when only the widget is ever looked at.
+        val initialTodos = activeTodos.first()
+        val initialThemeConfig = themeConfig.first()
+
         provideContent {
-            val todos by observeActiveTodos()
-                .map { todos -> todos.map { it.toTodoItemUi() } }
-                .collectAsState(initial = emptyList())
-            val themeConfig by themeRepository.themeConfig.collectAsState(initial = ThemeConfig())
-            val palette = themeConfig.palette.toColorPalette()
+            val todos by activeTodos.collectAsState(initial = initialTodos)
+            val theme by themeConfig.collectAsState(initial = initialThemeConfig)
+            val palette = theme.palette.toColorPalette()
             // surfaceContainer isn't one of the roles ColorProviders exposes, so it's carried
             // separately from the rest of the palette, which flows through GlanceTheme normally.
             val colors: ColorProviders = androidx.glance.material3.ColorProviders(light = palette.light, dark = palette.dark)

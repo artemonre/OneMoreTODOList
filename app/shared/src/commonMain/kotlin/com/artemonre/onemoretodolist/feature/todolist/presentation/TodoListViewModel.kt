@@ -13,13 +13,13 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
@@ -105,20 +105,23 @@ class TodoListViewModel(
                 null
             },
             recurrence = recurrence,
-            recurrenceAnchorDate = recurrenceAnchorDate(item, recurrence)
+            recurrenceAnchorInstant = recurrenceAnchorInstant(item, recurrence)
         )
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(updated)
         }
     }
 
-    // Editing keeps the existing anchor as long as the Every rule itself is unchanged (same type/
-    // interval/unit) - only a genuinely new or changed rule restarts the countdown from today.
-    // AfterCompletion needs no anchor at all (it reads completionDate directly).
-    private fun recurrenceAnchorDate(item: TodoItem, newRecurrence: Recurrence?): LocalDate? {
-        if (newRecurrence?.type != RecurrenceType.Every) return null
-        return item.recurrenceAnchorDate.takeIf { item.recurrence == newRecurrence }
-            ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
+    // Every keeps its existing anchor as long as the rule itself is unchanged (same type/interval/
+    // unit) - only a genuinely new or changed rule restarts the countdown from now. AfterCompletion
+    // always keeps whatever anchor it already had (null if never completed) regardless of edits -
+    // its anchor is tied to when it was actually completed, not to the rule, so a changed interval
+    // should still count from that same completion instant, not restart it.
+    private fun recurrenceAnchorInstant(item: TodoItem, newRecurrence: Recurrence?): Instant? {
+        if (newRecurrence?.type != RecurrenceType.Every) {
+            return item.recurrenceAnchorInstant.takeIf { newRecurrence?.type == RecurrenceType.AfterCompletion }
+        }
+        return item.recurrenceAnchorInstant.takeIf { item.recurrence == newRecurrence } ?: Clock.System.now()
     }
 
     private fun reorder(orderedIds: List<String>) {
