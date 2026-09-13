@@ -23,7 +23,6 @@ data class TodoItem(
     // The instant its current cycle started counting from - for Every, set on creation/edit and
     // advanced every time it fires; for AfterCompletion, set by ToggleTodoDone at the moment it's
     // marked Done. Null while there's no recurrence, or an AfterCompletion recurrence that's never
-    // been completed yet. A precise Instant (not a LocalDate) so short testing intervals (minutes)
-    // are representable - see Recurrence.toTestingDuration().
+    // been completed yet.
     val recurrenceAnchorInstant: Instant? = null
 )
