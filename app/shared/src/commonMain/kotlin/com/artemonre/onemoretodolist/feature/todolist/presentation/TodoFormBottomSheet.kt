@@ -1,10 +1,11 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Row
@@ -19,12 +20,16 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,6 +48,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -84,7 +90,6 @@ fun TodoFormBottomSheet(
             // title is redundant here - unlike TodoFormFullScreenDialog, which has nothing else
             // marking it as an add/edit form.
             showTitle = false,
-            fieldMinLines = 1,
             fieldMaxLines = Int.MAX_VALUE,
             actionsTopSpacing = 8.dp,
             awaitAutoFocusReady = { snapshotFlow { isSheetExpanded }.first { it } }
@@ -96,12 +101,14 @@ fun TodoFormBottomSheet(
 // flows), and gateway/todoList's QuickAddTodoActivity (widget quick-add) - same fields and
 // behavior, just hosted in a different container. Public since the widget's quick-add screen lives
 // in a separate Gradle module.
-// fieldMinLines/fieldMaxLines default to a 2-line field that fits the small dialog/bottom-sheet/
-// quick-add containers - TodoFormFullScreenDialog raises both to start at 3 lines and allow any
-// amount more. showTitle/actionsTopSpacing default to what the full-screen dialog and quick-add
-// screen use - TodoFormBottomSheet tightens both since its drag handle already separates it from
-// whatever is above. showRecurrence is off by default too - recurrence is a detailed-creation
-// concern, only TodoFormFullScreenDialog turns it on.
+// fieldMinLines starts at 1 line everywhere and grows with the text - TodoFormBottomSheet and
+// TodoFormFullScreenDialog both raise fieldMaxLines to unlimited so it can keep growing; the
+// default fieldMaxLines here (2) only applies to QuickAddTodoActivity, which doesn't override it.
+// showTitle/actionsTopSpacing default to what the full-screen dialog and quick-add screen use -
+// TodoFormBottomSheet tightens both since its drag handle already separates it from whatever is
+// above. showRecurrence is off by default too - recurrence is a detailed-creation concern, only
+// TodoFormFullScreenDialog turns it on.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoFormBody(
     editingItem: TodoItemUi?,
@@ -109,7 +116,7 @@ fun TodoFormBody(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
-    fieldMinLines: Int = 2,
+    fieldMinLines: Int = 1,
     fieldMaxLines: Int = 2,
     actionsTopSpacing: Dp = 20.dp,
     showRecurrence: Boolean = false,
@@ -235,61 +242,34 @@ fun TodoFormBody(
         }
         if (showRecurrence && repeatEnabled) {
             Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                var typeMenuExpanded by remember { mutableStateOf(false) }
-                Box(modifier = Modifier.weight(1.4f)) {
-                    Button(onClick = { typeMenuExpanded = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(recurrenceType.displayName())
-                    }
-                    DropdownMenu(
-                        expanded = typeMenuExpanded,
-                        onDismissRequest = { typeMenuExpanded = false }
-                    ) {
-                        RecurrenceType.entries.forEach { type ->
-                            DropdownMenuItem(
-                                text = { Text(type.displayName()) },
-                                onClick = {
-                                    recurrenceType = type
-                                    typeMenuExpanded = false
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
-                OutlinedTextField(
-                    value = recurrenceIntervalText,
-                    onValueChange = { value -> recurrenceIntervalText = value.filter { it.isDigit() } },
-                    placeholder = { Text("1") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(72.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                var unitMenuExpanded by remember { mutableStateOf(false) }
-                Box(modifier = Modifier.weight(1f)) {
-                    Button(onClick = { unitMenuExpanded = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(recurrenceUnit.displayName())
-                    }
-                    DropdownMenu(
-                        expanded = unitMenuExpanded,
-                        onDismissRequest = { unitMenuExpanded = false }
-                    ) {
-                        RecurrenceUnit.entries.forEach { unit ->
-                            DropdownMenuItem(
-                                text = { Text(unit.displayName()) },
-                                onClick = {
-                                    recurrenceUnit = unit
-                                    unitMenuExpanded = false
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
+            // A real bordered section for just the recurrence controls - not the Repeat checkbox
+            // above, which toggles the section rather than belonging inside it.
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    RecurrenceSegmentedRow(
+                        options = RecurrenceType.entries,
+                        selected = recurrenceType,
+                        onSelected = { recurrenceType = it },
+                        label = { it.displayName() },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    CompactOutlinedField(
+                        value = recurrenceIntervalText,
+                        onValueChange = { value -> recurrenceIntervalText = value.filter { it.isDigit() } },
+                        placeholder = { Text("1") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.width(72.dp)
+                    )
+                    RecurrenceSegmentedRow(
+                        options = RecurrenceUnit.entries,
+                        selected = recurrenceUnit,
+                        onSelected = { recurrenceUnit = it },
+                        label = { it.displayName() },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -307,6 +287,86 @@ fun TodoFormBody(
             ) {
                 Text(if (editingItem != null) "Save" else "OK")
             }
+        }
+    }
+}
+
+// A 40dp-tall OutlinedTextField-styled field, matching the height of the segmented buttons it sits
+// beside in the recurrence section - a plain OutlinedTextField can't go below its built-in 56dp
+// minimum height, so this builds the same look directly off BasicTextField + the decoration box
+// Material3 exposes for exactly this case.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CompactOutlinedField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+        keyboardOptions = keyboardOptions,
+        interactionSource = interactionSource,
+        modifier = modifier.height(40.dp),
+        decorationBox = { innerTextField ->
+            OutlinedTextFieldDefaults.DecorationBox(
+                value = value,
+                innerTextField = innerTextField,
+                enabled = true,
+                singleLine = true,
+                visualTransformation = VisualTransformation.None,
+                interactionSource = interactionSource,
+                isError = false,
+                label = null,
+                placeholder = placeholder,
+                leadingIcon = null,
+                trailingIcon = null,
+                prefix = null,
+                suffix = null,
+                supportingText = null,
+                colors = OutlinedTextFieldDefaults.colors(),
+                contentPadding = OutlinedTextFieldDefaults.contentPadding(
+                    start = 12.dp,
+                    top = 0.dp,
+                    end = 12.dp,
+                    bottom = 0.dp
+                ),
+                container = {
+                    OutlinedTextFieldDefaults.Container(
+                        enabled = true,
+                        isError = false,
+                        interactionSource = interactionSource
+                    )
+                }
+            )
+        }
+    )
+}
+
+// One row of segmented buttons for a whole enum's worth of options - used for both RecurrenceType
+// and RecurrenceUnit, stacked in a column rather than crammed into one row together.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> RecurrenceSegmentedRow(
+    options: List<T>,
+    selected: T,
+    onSelected: (T) -> Unit,
+    label: (T) -> String,
+    modifier: Modifier = Modifier
+) {
+    SingleChoiceSegmentedButtonRow(modifier = modifier) {
+        options.forEachIndexed { index, option ->
+            SegmentedButton(
+                selected = option == selected,
+                onClick = { onSelected(option) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                label = { Text(label(option)) }
+            )
         }
     }
 }

@@ -44,7 +44,6 @@ fun TodoFormFullScreenDialog(
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .verticalScroll(rememberScrollState()),
-                fieldMinLines = 3,
                 fieldMaxLines = Int.MAX_VALUE,
                 showRecurrence = true
             )
