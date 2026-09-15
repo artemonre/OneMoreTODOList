@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.settings.presentation
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,10 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -21,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,6 +35,7 @@ import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.designsystem.theme.isDynamicColorSupported
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
 import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
 import com.artemonre.onemoretodolist.core.theme.domain.FontOption
@@ -37,7 +44,14 @@ import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 import org.koin.compose.viewmodel.koinViewModel
 
+private const val SUPPORT_EMAIL_URI = "mailto:artemonsupport@gmail.com"
+private const val PRIVACY_POLICY_URL = "https://artemonre.github.io/OneMoreTODOList/privacy-policy"
+
 private val AVAILABLE_PALETTES = listOf(ColorPaletteOption.Default, ColorPaletteOption.Slate)
+
+// UI-only grouping for the Palette card's tabs - the persisted state is just ThemeConfig's
+// useDynamicColor flag; this enum exists only to drive AppSegmentedControl.
+private enum class PaletteSourceTab { Palettes, DynamicColor }
 
 @Composable
 fun SettingsRoot(
@@ -79,27 +93,56 @@ fun SettingsScreen(
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {
-                Text(
-                    text = "Palette",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(top = 12.dp)
-                ) {
-                    val isDarkTheme = when (state.themeMode) {
-                        ThemeMode.System -> isSystemInDarkTheme()
-                        ThemeMode.Light -> false
-                        ThemeMode.Dark -> true
+                // Dynamic color only exists on Android 12+ - everywhere else this card looks just
+                // like before (a plain "Palette" title, swatches always shown).
+                val dynamicColorSupported = isDynamicColorSupported()
+                if (dynamicColorSupported) {
+                    AppSegmentedControl(
+                        options = PaletteSourceTab.entries,
+                        selectedOption = if (state.useDynamicColor) {
+                            PaletteSourceTab.DynamicColor
+                        } else {
+                            PaletteSourceTab.Palettes
+                        },
+                        onOptionSelected = {
+                            onAction(SettingsAction.OnUseDynamicColorChanged(it == PaletteSourceTab.DynamicColor))
+                        },
+                        label = { it.displayName() },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    Text(
+                        text = "Palette",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+                if (!dynamicColorSupported || !state.useDynamicColor) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(top = 12.dp)
+                    ) {
+                        val isDarkTheme = when (state.themeMode) {
+                            ThemeMode.System -> isSystemInDarkTheme()
+                            ThemeMode.Light -> false
+                            ThemeMode.Dark -> true
+                        }
+                        AVAILABLE_PALETTES.forEach { option ->
+                            val palette = option.toColorPalette()
+                            PaletteSwatch(
+                                colorScheme = if (isDarkTheme) palette.dark else palette.light,
+                                selected = option == state.palette,
+                                onClick = { onAction(SettingsAction.OnPaletteSelected(option)) }
+                            )
+                        }
                     }
-                    AVAILABLE_PALETTES.forEach { option ->
-                        val palette = option.toColorPalette()
-                        PaletteSwatch(
-                            colorScheme = if (isDarkTheme) palette.dark else palette.light,
-                            selected = option == state.palette,
-                            onClick = { onAction(SettingsAction.OnPaletteSelected(option)) }
-                        )
-                    }
+                } else {
+                    Text(
+                        text = "Colors are pulled from your wallpaper instead of a fixed palette, " +
+                            "and update automatically if you change it.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
                 }
             }
         }
@@ -167,6 +210,37 @@ fun SettingsScreen(
                 )
             }
         }
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                Text(
+                    text = "Support",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                val uriHandler = LocalUriHandler.current
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { uriHandler.openUri(SUPPORT_EMAIL_URI) }
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(imageVector = Icons.Filled.Email, contentDescription = null)
+                    Text("Send an email")
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { uriHandler.openUri(PRIVACY_POLICY_URL) }
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(imageVector = Icons.Filled.PrivacyTip, contentDescription = null)
+                    Text("Privacy policy")
+                }
+            }
+        }
         Text(
             text = "App version: ${state.appVersion}",
             style = MaterialTheme.typography.bodySmall,
@@ -179,6 +253,11 @@ private fun ThemeMode.displayName(): String = when (this) {
     ThemeMode.System -> "System"
     ThemeMode.Light -> "Light"
     ThemeMode.Dark -> "Dark"
+}
+
+private fun PaletteSourceTab.displayName(): String = when (this) {
+    PaletteSourceTab.Palettes -> "Palettes"
+    PaletteSourceTab.DynamicColor -> "Dynamic color"
 }
 
 private fun FontOption.displayName(): String = when (this) {

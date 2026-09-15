@@ -28,7 +28,15 @@ fun AppTheme(
         ThemeMode.Dark -> true
     }
     val palette = themeConfig.palette.toColorPalette()
-    val colorScheme = if (useDarkTheme) palette.dark else palette.light
+    val paletteColorScheme = if (useDarkTheme) palette.dark else palette.light
+    // Falls back to the palette scheme if dynamic color isn't actually available (unsupported
+    // platform/OS version) even though the preference is set - e.g. after downgrading Android, or
+    // restoring settings on a different platform.
+    val colorScheme = if (themeConfig.useDynamicColor) {
+        dynamicColorScheme(useDarkTheme) ?: paletteColorScheme
+    } else {
+        paletteColorScheme
+    }
 
     CompositionLocalProvider(
         LocalAppIcons provides themeConfig.iconSet.toAppIcons(),
