@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.data
 
+import androidx.room3.DeleteColumn
 import androidx.room3.RenameColumn
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.migration.Migration
@@ -8,6 +9,13 @@ import androidx.sqlite.execSQL
 
 @RenameColumn(tableName = "todo_items", fromColumnName = "title", toColumnName = "text")
 class RenameTodoTitleToText : AutoMigrationSpec
+
+// recurrenceAnchorDate (LocalDate) was replaced by recurrenceAnchorInstant (Instant, precise to
+// the millisecond) - a genuine type change, not a rename, and this column never shipped to a real
+// user, so dropping it (Room's own AutoMigration adds the new nullable column automatically) is
+// simpler than trying to convert day-precision values into instants.
+@DeleteColumn(tableName = "todo_items", columnName = "recurrenceAnchorDate")
+class DropRecurrenceAnchorDate : AutoMigrationSpec
 
 // Splits the single `date` column into `creationDate` and `lastEditDate`. This can't be an
 // AutoMigration (@RenameColumn only handles a 1:1 rename) since it also introduces a genuinely

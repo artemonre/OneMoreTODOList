@@ -91,6 +91,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.work.runtime.ktx)
         }
         commonMain.dependencies {
             api(project(":core"))

@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +21,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
@@ -61,6 +63,7 @@ private val CARD_PRESS_MIN_VISIBLE_DURATION = 150.milliseconds
 fun ListItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -99,7 +102,12 @@ fun ListItemCard(
                 onClick = onClick
             ),
         shape = cardShape,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        colors = if (containerColor != null) {
+            CardDefaults.elevatedCardColors(containerColor = containerColor, contentColor = contentColorFor(containerColor))
+        } else {
+            CardDefaults.elevatedCardColors()
+        }
     ) {
         Box(modifier = Modifier.padding(CARD_CONTENT_PADDING)) {
             content()

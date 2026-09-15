@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
+import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 
 sealed interface TodoListAction {
@@ -8,9 +9,18 @@ sealed interface TodoListAction {
     data class OnReorder(val orderedIds: List<String>) : TodoListAction
     data object OnAddTodoClick : TodoListAction
     data object OnAddTodoFullScreenClick : TodoListAction
-    data class OnConfirmAddTodo(val text: String, val isPrioritized: Boolean) : TodoListAction
+    data class OnConfirmAddTodo(
+        val text: String,
+        val isPrioritized: Boolean,
+        val recurrence: Recurrence? = null
+    ) : TodoListAction
     data class OnEditTodoClick(val id: String) : TodoListAction
-    data class OnConfirmEditTodo(val id: String, val text: String, val isPrioritized: Boolean) : TodoListAction
+    data class OnConfirmEditTodo(
+        val id: String,
+        val text: String,
+        val isPrioritized: Boolean,
+        val recurrence: Recurrence? = null
+    ) : TodoListAction
     data class OnDeleteTodo(val id: String) : TodoListAction
     data object OnUndoClick : TodoListAction
 }

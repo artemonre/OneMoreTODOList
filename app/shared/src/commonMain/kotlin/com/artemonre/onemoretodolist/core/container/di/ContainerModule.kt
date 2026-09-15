@@ -5,5 +5,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val containerModule = module {
-    viewModel { params -> ContainerViewModel(contentTabs = params.get(), seedOnboardingTodos = get()) }
+    viewModel { params ->
+        ContainerViewModel(contentTabs = params.get(), seedOnboardingTodos = get(), applyDueRecurrences = get())
+    }
 }

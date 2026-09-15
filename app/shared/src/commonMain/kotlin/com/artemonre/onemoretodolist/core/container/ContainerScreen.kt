@@ -26,6 +26,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -79,7 +81,10 @@ fun ContainerRoot(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
+    // ON_START fires both on first launch and on every later foreground (unlike LaunchedEffect(Unit),
+    // which only ran once per process - see ContainerViewModel.OnStart for why a resume needs to
+    // re-run this too, not just a cold start.
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
         viewModel.onAction(ContainerAction.OnStart)
     }
 

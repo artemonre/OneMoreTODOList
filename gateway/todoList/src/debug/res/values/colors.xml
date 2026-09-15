@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Overrides the default (main) launcher background just for debug builds, so the dev app
+         icon is visually distinct from the release one on a device with both installed. -->
+    <color name="ic_launcher_background">#FF006C4F</color>
+</resources>
