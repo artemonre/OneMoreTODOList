@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.first
 
 private const val KEY_MODE = "theme_mode"
 private const val KEY_PALETTE = "theme_palette"
+private const val KEY_USE_DYNAMIC_COLOR = "theme_use_dynamic_color"
 private const val KEY_ICON_SET = "theme_icon_set"
 private const val KEY_FONT = "theme_font"
 private const val KEY_BACKGROUND = "theme_background"
@@ -32,6 +33,10 @@ class SettingsThemeRepository(
     override val themeConfig: Flow<ThemeConfig> = combine(
         settings.getStringFlow(KEY_MODE, ThemeMode.System.name),
         settings.getStringFlow(KEY_PALETTE, ColorPaletteOption.Default.name),
+        // A string, not settings.getBooleanFlow, so this stays in the same combine() overload as
+        // every other field here - combine()'s vararg overload requires one Flow<T> for all of
+        // them, and mixing in a single Flow<Boolean> makes T's inference degenerate.
+        settings.getStringFlow(KEY_USE_DYNAMIC_COLOR, false.toString()),
         settings.getStringFlow(KEY_ICON_SET, IconSetOption.Default.name),
         settings.getStringFlow(KEY_FONT, FontOption.Default.name),
         settings.getStringFlow(KEY_BACKGROUND, BackgroundOption.Solid.name),
@@ -41,11 +46,12 @@ class SettingsThemeRepository(
         ThemeConfig(
             mode = values[0].toEnumOrDefault(ThemeMode.System),
             palette = values[1].toEnumOrDefault(ColorPaletteOption.Default),
-            iconSet = values[2].toEnumOrDefault(IconSetOption.Default),
-            font = values[3].toEnumOrDefault(FontOption.Default),
-            background = values[4].toEnumOrDefault(BackgroundOption.Solid),
-            actionPlacement = values[5].toEnumOrDefault(ActionPlacement.End),
-            uiStyle = values[6].toEnumOrDefault(UiStyleOption.Material)
+            useDynamicColor = values[2].toBoolean(),
+            iconSet = values[3].toEnumOrDefault(IconSetOption.Default),
+            font = values[4].toEnumOrDefault(FontOption.Default),
+            background = values[5].toEnumOrDefault(BackgroundOption.Solid),
+            actionPlacement = values[6].toEnumOrDefault(ActionPlacement.End),
+            uiStyle = values[7].toEnumOrDefault(UiStyleOption.Material)
         )
     }
 
@@ -53,6 +59,7 @@ class SettingsThemeRepository(
         val next = transform(themeConfig.first())
         settings.putString(KEY_MODE, next.mode.name)
         settings.putString(KEY_PALETTE, next.palette.name)
+        settings.putString(KEY_USE_DYNAMIC_COLOR, next.useDynamicColor.toString())
         settings.putString(KEY_ICON_SET, next.iconSet.name)
         settings.putString(KEY_FONT, next.font.name)
         settings.putString(KEY_BACKGROUND, next.background.name)

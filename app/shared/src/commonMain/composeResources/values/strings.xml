@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The recurrence section's description ("Repeats every 2 weeks") - the count+unit phrase is
+         pluralized on its own via the plurals below, then dropped into one of these two sentence
+         shapes depending on RecurrenceType. Placeholders must be positional (%1$d, not bare %d) -
+         Compose Multiplatform's plural formatter only substitutes the former, see
+         https://github.com/JetBrains/compose-multiplatform/issues/4675. -->
+    <string name="recurrence_every">Repeats every %1$s</string>
+    <string name="recurrence_after_completion">Repeats %1$s after completion</string>
+
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">%1$d week</item>
+        <item quantity="other">%1$d weeks</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">%1$d month</item>
+        <item quantity="other">%1$d months</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">%1$d year</item>
+        <item quantity="other">%1$d years</item>
+    </plurals>
+</resources>

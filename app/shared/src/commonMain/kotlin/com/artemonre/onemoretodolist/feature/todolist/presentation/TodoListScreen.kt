@@ -134,8 +134,8 @@ fun TodoListRoot(
     if (showAddTodoSheet) {
         TodoFormBottomSheet(
             editingItem = null,
-            onConfirm = { text, isPrioritized ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized))
+            onConfirm = { text, isPrioritized, recurrence ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence))
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false }
@@ -144,8 +144,9 @@ fun TodoListRoot(
 
     if (showAddTodoFullScreenDialog) {
         TodoFormFullScreenDialog(
-            onConfirm = { text, isPrioritized ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized))
+            editingItem = null,
+            onConfirm = { text, isPrioritized, recurrence ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence))
                 showAddTodoFullScreenDialog = false
             },
             onDismiss = { showAddTodoFullScreenDialog = false }
@@ -153,10 +154,10 @@ fun TodoListRoot(
     }
 
     editingTodo?.let { item ->
-        TodoFormBottomSheet(
+        TodoFormFullScreenDialog(
             editingItem = item,
-            onConfirm = { text, isPrioritized ->
-                viewModel.onAction(TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized))
+            onConfirm = { text, isPrioritized, recurrence ->
+                viewModel.onAction(TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized, recurrence))
                 editingTodo = null
             },
             onDismiss = { editingTodo = null }
@@ -263,7 +264,7 @@ fun TodoListScreen(
                         text = if (state.sortOption == TodoSortOption.Archived) {
                             "No archived todos yet"
                         } else {
-                            "You completed all your tasks!\nMaybe you should add more?"
+                            "You completed all your tasks!\nAdd more whenever you need to — no rush."
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -452,6 +453,7 @@ private fun SwipeableTodoRow(
             text = item.text,
             isDone = item.status == TodoStatus.Done || isCompleting,
             formattedDate = item.formattedDate,
+            attention = item.attention,
             onToggleDone = {
                 if (item.status == TodoStatus.Active) {
                     isCompleting = true

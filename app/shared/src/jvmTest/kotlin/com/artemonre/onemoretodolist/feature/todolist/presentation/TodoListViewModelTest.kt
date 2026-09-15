@@ -7,6 +7,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
+import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -136,7 +137,13 @@ class TodoListViewModelTest {
     private fun todoListViewModel(
         dataSource: FakeTodoLocalDataSource,
         todoPreferences: FakeTodoPreferences = FakeTodoPreferences()
-    ) = TodoListViewModel(dataSource, AddTodo(dataSource), ToggleTodoDone(dataSource, todoPreferences), todoPreferences)
+    ) = TodoListViewModel(
+        dataSource,
+        AddTodo(dataSource),
+        ToggleTodoDone(dataSource, todoPreferences),
+        todoPreferences,
+        UpdateTopSince(dataSource, todoPreferences)
+    )
 
     private fun todoItem(
         id: String,

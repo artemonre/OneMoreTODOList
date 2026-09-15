@@ -11,10 +11,19 @@ import kotlin.coroutines.CoroutineContext
 
 @Database(
     entities = [TodoEntity::class],
-    version = 4,
+    version = 7,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class),
-        AutoMigration(from = 3, to = 4)
+        AutoMigration(from = 3, to = 4),
+        // Adds the (nullable) recurrenceType/recurrenceInterval/recurrenceUnit columns - a plain
+        // AutoMigration is enough since existing rows just get NULL (no recurrence).
+        AutoMigration(from = 4, to = 5),
+        // recurrenceAnchorDate (LocalDate, day precision) -> recurrenceAnchorInstant (Instant,
+        // precise) - unreleased column, so a drop+add is fine, no data to preserve.
+        AutoMigration(from = 5, to = 6, spec = DropRecurrenceAnchorDate::class),
+        // Adds the (nullable) topSince column - existing rows get NULL until
+        // TopSinceTrackingTodoLocalDataSource recomputes it on the next write.
+        AutoMigration(from = 6, to = 7)
     ]
 )
 @ColumnTypeConverters(TodoDateConverters::class)

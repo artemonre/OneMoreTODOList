@@ -33,6 +33,7 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.artemonre.onemoretodolist.MainActivity
 import com.artemonre.onemoretodolist.QuickAddTodoActivity
+import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoItemUi
 
 @Composable
@@ -134,15 +135,34 @@ fun TodoWidgetContentCompact(activeCount: Int, colors: ColorProviders, backgroun
 
 private fun formatWidgetCount(count: Int): String = if (count > 99) "99+" else count.toString()
 
+// null means "no override" (default row background/text). Only ever non-null for the top todo -
+// see TopSinceTrackingTodoLocalDataSource/topTodoAttention.
+@Composable
+private fun TopTodoAttention.background(): ColorProvider? = when (this) {
+    TopTodoAttention.None -> null
+    TopTodoAttention.Primary -> GlanceTheme.colors.primary
+    TopTodoAttention.PrimaryContainer -> GlanceTheme.colors.primaryContainer
+    TopTodoAttention.Error -> GlanceTheme.colors.error
+}
+
+@Composable
+private fun TopTodoAttention.content(): ColorProvider = when (this) {
+    TopTodoAttention.None -> GlanceTheme.colors.onSurface
+    TopTodoAttention.Primary -> GlanceTheme.colors.onPrimary
+    TopTodoAttention.PrimaryContainer -> GlanceTheme.colors.onPrimaryContainer
+    TopTodoAttention.Error -> GlanceTheme.colors.onError
+}
+
 // 2x1: one row tall - the single top active todo, interactive (reuses TodoWidgetRow), plus a
 // quick-add affordance since there's no room for a separate header.
 @Composable
 fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, background: ColorProvider) {
     GlanceTheme(colors = colors) {
+        val attentionBackground = topTodo?.attention?.background()
         Row(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(background)
+                .background(attentionBackground ?: background)
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -172,10 +192,10 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
                     text = topTodo?.text ?: "No active todos",
                     maxLines = 3,
                     style = TextStyle(
-                        color = if (topTodo != null) {
-                            GlanceTheme.colors.onSurface
-                        } else {
-                            GlanceTheme.colors.onSurfaceVariant
+                        color = when {
+                            topTodo == null -> GlanceTheme.colors.onSurfaceVariant
+                            attentionBackground != null -> topTodo.attention.content()
+                            else -> GlanceTheme.colors.onSurface
                         }
                     ),
                     modifier = GlanceModifier.padding(vertical = 12.dp)
@@ -204,11 +224,12 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
 
 @Composable
 internal fun TodoWidgetRow(item: TodoItemUi) {
+    val attentionBackground = item.attention.background()
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .clickable(actionRunCallback<ToggleTodoDoneAction>(actionParametersOf(todoIdKey to item.id)))
-            .padding(vertical = 4.dp),
+            .let { if (attentionBackground != null) it.background(attentionBackground) else it }
+            .padding(vertical = 4.dp, horizontal = if (attentionBackground != null) 4.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         CheckBox(
@@ -220,10 +241,20 @@ internal fun TodoWidgetRow(item: TodoItemUi) {
             )
         )
         Spacer(modifier = GlanceModifier.width(8.dp))
-        Text(
-            text = item.text,
-            maxLines = 3,
-            style = TextStyle(color = GlanceTheme.colors.onSurface)
-        )
+        // Fills the row's remaining width so tapping the text (not just the checkbox) opens the
+        // app instead of toggling the todo done - same pattern as TodoWidgetContentRow.
+        Box(
+            modifier = GlanceModifier
+                .defaultWeight()
+                .fillMaxHeight()
+                .clickable(actionStartActivity<MainActivity>()),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = item.text,
+                maxLines = 3,
+                style = TextStyle(color = if (attentionBackground != null) item.attention.content() else GlanceTheme.colors.onSurface)
+            )
+        }
     }
 }

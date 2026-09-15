@@ -8,6 +8,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.updateFont
 import com.artemonre.onemoretodolist.core.theme.domain.updateMode
 import com.artemonre.onemoretodolist.core.theme.domain.updatePalette
 import com.artemonre.onemoretodolist.core.theme.domain.updateUiStyle
+import com.artemonre.onemoretodolist.core.theme.domain.updateUseDynamicColor
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.posthog.kmp.PostHog
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,6 +37,7 @@ class SettingsViewModel(
         SettingsState(
             themeMode = theme.mode,
             palette = theme.palette,
+            useDynamicColor = theme.useDynamicColor,
             font = theme.font,
             uiStyle = theme.uiStyle,
             archiveCompletedTodos = archive,
@@ -55,6 +57,15 @@ class SettingsViewModel(
                 captureSettingChanged(section = "Palette", option = action.palette.name)
                 viewModelScope.launch {
                     themeRepository.updatePalette(action.palette)
+                }
+            }
+            is SettingsAction.OnUseDynamicColorChanged -> {
+                captureSettingChanged(
+                    section = "Palette",
+                    option = if (action.useDynamicColor) "Dynamic Color" else "Palettes"
+                )
+                viewModelScope.launch {
+                    themeRepository.updateUseDynamicColor(action.useDynamicColor)
                 }
             }
             is SettingsAction.OnFontSelected -> {

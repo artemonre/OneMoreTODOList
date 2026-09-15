@@ -3,14 +3,18 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
+import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
+import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
+import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -26,7 +30,8 @@ class TodoListViewModel(
     private val todoLocalDataSource: TodoLocalDataSource,
     private val addTodoUseCase: AddTodo,
     private val toggleTodoDoneUseCase: ToggleTodoDone,
-    private val todoPreferences: TodoPreferences
+    private val todoPreferences: TodoPreferences,
+    private val updateTopSince: UpdateTopSince
 ) : ViewModel() {
 
     private val todos = todoLocalDataSource.observeTodos()
@@ -53,6 +58,9 @@ class TodoListViewModel(
             is TodoListAction.OnToggleDone -> toggleDone(action.id)
             is TodoListAction.OnSortOptionSelected -> viewModelScope.launch {
                 todoPreferences.setSortOption(action.option)
+                // Switching sort alone doesn't touch the todo list, so nothing else would
+                // otherwise recompute who's "top" under the newly selected order.
+                updateTopSince()
             }
             is TodoListAction.OnReorder -> reorder(action.orderedIds)
             is TodoListAction.OnAddTodoClick -> {
@@ -65,17 +73,17 @@ class TodoListViewModel(
                     _events.send(TodoListEvent.ShowAddTodoFullScreenDialog)
                 }
             }
-            is TodoListAction.OnConfirmAddTodo -> addTodo(action.text, action.isPrioritized)
+            is TodoListAction.OnConfirmAddTodo -> addTodo(action.text, action.isPrioritized, action.recurrence)
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
-            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized)
+            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized, action.recurrence)
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
             is TodoListAction.OnUndoClick -> undo()
         }
     }
 
-    private fun addTodo(text: String, isPrioritized: Boolean) {
+    private fun addTodo(text: String, isPrioritized: Boolean, recurrence: Recurrence?) {
         viewModelScope.launch {
-            addTodoUseCase(text, isPrioritized)
+            addTodoUseCase(text, isPrioritized, recurrence)
         }
     }
 
@@ -86,7 +94,7 @@ class TodoListViewModel(
         }
     }
 
-    private fun editTodo(id: String, text: String, isPrioritized: Boolean) {
+    private fun editTodo(id: String, text: String, isPrioritized: Boolean, recurrence: Recurrence?) {
         val currentTodos = todos.value
         val item = currentTodos.firstOrNull { it.id == id } ?: return
         // Only newly-prioritized items jump to the top of Manual sort too - an item that was
@@ -100,11 +108,25 @@ class TodoListViewModel(
                 item.priorityOrder ?: prioritize(isPrioritized = true, currentTodos = currentTodos)
             } else {
                 null
-            }
+            },
+            recurrence = recurrence,
+            recurrenceAnchorInstant = recurrenceAnchorInstant(item, recurrence)
         )
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(updated)
         }
+    }
+
+    // Every keeps its existing anchor as long as the rule itself is unchanged (same type/interval/
+    // unit) - only a genuinely new or changed rule restarts the countdown from now. AfterCompletion
+    // always keeps whatever anchor it already had (null if never completed) regardless of edits -
+    // its anchor is tied to when it was actually completed, not to the rule, so a changed interval
+    // should still count from that same completion instant, not restart it.
+    private fun recurrenceAnchorInstant(item: TodoItem, newRecurrence: Recurrence?): Instant? {
+        if (newRecurrence?.type != RecurrenceType.Every) {
+            return item.recurrenceAnchorInstant.takeIf { newRecurrence?.type == RecurrenceType.AfterCompletion }
+        }
+        return item.recurrenceAnchorInstant.takeIf { item.recurrence == newRecurrence } ?: Clock.System.now()
     }
 
     private fun reorder(orderedIds: List<String>) {
