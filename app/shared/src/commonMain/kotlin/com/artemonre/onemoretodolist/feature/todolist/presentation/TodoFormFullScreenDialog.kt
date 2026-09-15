@@ -17,6 +17,13 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 
+// decorFitsSystemWindows = false (Android only - see the .android.kt actual) hands insets
+// (including the keyboard's) to Compose instead of the OS - without it, WindowInsets.safeDrawing
+// below reports a 0 ime inset and the form's own verticalScroll can't tell there's a keyboard to
+// scroll past, so the Create/Discard row can end up hidden behind it. Other platforms don't have
+// this property at all, hence expect/actual rather than a plain shared DialogProperties(...) call.
+internal expect fun fullScreenDialogProperties(): DialogProperties
+
 // The modern (non-DialogFragment) replacement for a full-screen modal: a full-size Dialog hosting
 // the same TodoFormBody used by the quick-add bottom sheet. Used for both the detailed add flow
 // and editing an existing todo - editingItem == null means "add" mode, same convention as
@@ -30,11 +37,7 @@ fun TodoFormFullScreenDialog(
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        // decorFitsSystemWindows = false hands insets (including the keyboard's) to Compose instead
-        // of the OS - without it, WindowInsets.safeDrawing below reports a 0 ime inset and the
-        // form's own verticalScroll can't tell there's a keyboard to scroll past, so the Create/
-        // Discard row can end up hidden behind it.
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+        properties = fullScreenDialogProperties()
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),

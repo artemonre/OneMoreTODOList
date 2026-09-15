@@ -4,6 +4,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
+import com.artemonre.onemoretodolist.feature.todolist.domain.daysAtTop
 import com.artemonre.onemoretodolist.feature.todolist.domain.topTodoAttention
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format.MonthNames
@@ -17,7 +18,8 @@ data class TodoItemUi(
     val formattedDate: String,
     val isPrioritized: Boolean = false,
     val recurrence: Recurrence? = null,
-    val attention: TopTodoAttention = TopTodoAttention.None
+    val attention: TopTodoAttention = TopTodoAttention.None,
+    val daysAtTop: Long? = null
 )
 
 fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
@@ -28,7 +30,8 @@ fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
     formattedDate = dateFormat.format(creationDate),
     isPrioritized = priorityOrder != null,
     recurrence = recurrence,
-    attention = topTodoAttention(topSince)
+    attention = topTodoAttention(topSince),
+    daysAtTop = daysAtTop(topSince)
 )
 
 private val dateFormat = LocalDate.Format {

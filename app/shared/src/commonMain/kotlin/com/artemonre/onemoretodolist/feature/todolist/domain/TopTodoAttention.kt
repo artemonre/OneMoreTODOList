@@ -20,3 +20,10 @@ fun topTodoAttention(topSince: Instant?, now: Instant = Clock.System.now()): Top
         else -> TopTodoAttention.Error
     }
 }
+
+// How long a todo has continuously been top, in whole days - for explaining the attention color to
+// users (see TodoDetailDialog). Null while it isn't currently top, same as topTodoAttention.
+fun daysAtTop(topSince: Instant?, now: Instant = Clock.System.now()): Long? {
+    if (topSince == null) return null
+    return (now - topSince).inWholeDays
+}

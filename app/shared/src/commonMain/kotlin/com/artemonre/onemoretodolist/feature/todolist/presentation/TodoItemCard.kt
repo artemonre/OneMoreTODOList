@@ -42,7 +42,7 @@ fun TodoItemCard(
 }
 
 @Composable
-private fun TopTodoAttention.containerColor(): Color? = when (this) {
+internal fun TopTodoAttention.containerColor(): Color? = when (this) {
     TopTodoAttention.None -> null
     TopTodoAttention.Primary -> MaterialTheme.colorScheme.primary
     TopTodoAttention.PrimaryContainer -> MaterialTheme.colorScheme.primaryContainer

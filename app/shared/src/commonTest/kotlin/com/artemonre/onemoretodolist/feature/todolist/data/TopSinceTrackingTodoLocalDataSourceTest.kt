@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -114,6 +115,36 @@ class TopSinceTrackingTodoLocalDataSourceTest {
         tracked.upsertTodo(fake.observeTodos().first().single().copy(text = "Edited"))
 
         assertEquals(originalTopSince, fake.observeTodos().first().single().topSince)
+    }
+
+    @Test
+    fun `editing the top todo with a changed lastEditDate restarts its topSince`() = runTest {
+        val fake = FakeTodoLocalDataSource()
+        val tracked = TopSinceTrackingTodoLocalDataSource(fake, FakeTodoPreferences())
+        tracked.upsertTodo(todoItem(id = "1"))
+        val originalTopSince = fake.observeTodos().first().single().topSince
+
+        tracked.upsertTodo(
+            fake.observeTodos().first().single().copy(lastEditDate = LocalDate(2026, 1, 2))
+        )
+
+        val restartedTopSince = fake.observeTodos().first().single().topSince
+        assertNotNull(originalTopSince)
+        assertNotNull(restartedTopSince)
+        assertTrue(restartedTopSince >= originalTopSince)
+    }
+
+    @Test
+    fun `editing a non-top todo with a changed lastEditDate does not give it a topSince`() = runTest {
+        val fake = FakeTodoLocalDataSource()
+        val tracked = TopSinceTrackingTodoLocalDataSource(fake, FakeTodoPreferences())
+        tracked.upsertTodo(todoItem(id = "1", creationDate = LocalDate(2026, 1, 1)))
+        tracked.upsertTodo(todoItem(id = "2", creationDate = LocalDate(2026, 1, 2)))
+        val notTop = fake.observeTodos().first().single { it.id == "2" }
+
+        tracked.upsertTodo(notTop.copy(lastEditDate = LocalDate(2026, 1, 3)))
+
+        assertNull(fake.observeTodos().first().single { it.id == "2" }.topSince)
     }
 
     private fun todoItem(

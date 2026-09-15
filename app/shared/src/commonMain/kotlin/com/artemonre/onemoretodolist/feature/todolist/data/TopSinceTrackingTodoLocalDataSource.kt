@@ -7,7 +7,9 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 /**
  * Wraps a [TodoLocalDataSource], recomputing [TodoItem.topSince] (via [UpdateTopSince]) after every
@@ -26,7 +28,13 @@ class TopSinceTrackingTodoLocalDataSource(
     override fun observeTodos(): Flow<List<TodoItem>> = delegate.observeTodos()
 
     override suspend fun upsertTodo(todo: TodoItem): EmptyResult<DataError.Local> {
-        val result = delegate.upsertTodo(todo)
+        // A genuine edit (lastEditDate actually moved, as opposed to a write that leaves it alone -
+        // completing, reordering, a recurrence catch-up) counts as the user dealing with this todo,
+        // so it restarts the "how long has this sat at the top" clock even if it never left the top.
+        val previousEditDate = delegate.observeTodos().first().firstOrNull { it.id == todo.id }?.lastEditDate
+        val wasEdited = previousEditDate != null && previousEditDate != todo.lastEditDate
+        val toSave = if (wasEdited) todo.copy(topSince = Clock.System.now()) else todo
+        val result = delegate.upsertTodo(toSave)
         if (result is Result.Success) updateTopSince()
         return result
     }
