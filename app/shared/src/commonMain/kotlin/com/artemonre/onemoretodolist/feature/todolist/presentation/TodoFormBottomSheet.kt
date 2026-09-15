@@ -1,5 +1,7 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -128,6 +131,10 @@ fun TodoFormBody(
     fieldMaxLines: Int = 2,
     actionsTopSpacing: Dp = 20.dp,
     showRecurrence: Boolean = false,
+    // Off by default: the quick-add bottom sheet and widget already rely on Android's own IME
+    // "Done" handling and keep their existing no-op-on-blank behavior. TodoFormFullScreenDialog
+    // turns this on since it's the one flow where a stray blank-text save was reachable.
+    requireText: Boolean = false,
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
     var text by remember { mutableStateOf(editingItem?.text.orEmpty()) }
@@ -142,6 +149,7 @@ fun TodoFormBody(
     } else {
         null
     }
+    val canSubmit = text.isNotBlank() || !requireText
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val speechController = rememberSpeechToText(onResult = { text = it })
@@ -173,6 +181,7 @@ fun TodoFormBody(
             value = text,
             onValueChange = { text = it },
             label = { Text("A todo text") },
+            placeholder = { Text("e.g., Book airline tickets") },
             singleLine = false,
             minLines = fieldMinLines,
             maxLines = fieldMaxLines,
@@ -181,7 +190,7 @@ fun TodoFormBody(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { onConfirm(text.trim(), isPrioritized, recurrence) }
+                onDone = { if (canSubmit) onConfirm(text.trim(), isPrioritized, recurrence) }
             ),
             trailingIcon = if (text.isNotEmpty()) {
                 {
@@ -208,7 +217,6 @@ fun TodoFormBody(
                 .fillMaxWidth()
                 .focusRequester(textFocusRequester)
         )
-        Spacer(Modifier.height(12.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -228,7 +236,7 @@ fun TodoFormBody(
             Text("Put on top")
         }
         if (showRecurrence) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(4.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -254,8 +262,7 @@ fun TodoFormBody(
             // above, which toggles the section rather than belonging inside it.
             OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(12.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -268,6 +275,7 @@ fun TodoFormBody(
                             onValueChange = { recurrenceInterval = it }
                         )
                     }
+                    Spacer(Modifier.height(8.dp))
                     RecurrenceSegmentedRow(
                         options = RecurrenceUnit.entries,
                         selected = recurrenceUnit,
@@ -275,6 +283,9 @@ fun TodoFormBody(
                         label = { it.displayName() },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    // Padding lives on the row itself (rather than the spacedBy gap the rest of this
+                    // Column used to rely on) so the toggle's clickable area grows with it - the
+                    // visual spacing above/below stays the same 8dp as before.
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -288,7 +299,8 @@ fun TodoFormBody(
                                     }
                                 },
                                 role = Role.Checkbox
-                            ),
+                            )
+                            .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AppCheckToggle(
@@ -302,7 +314,13 @@ fun TodoFormBody(
                         Text(
                             text = current.describe(),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.background,
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .padding(horizontal = 8.dp, vertical = 8.dp)
                         )
                     }
                 }
@@ -314,13 +332,14 @@ fun TodoFormBody(
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Discard")
             }
             Spacer(Modifier.width(8.dp))
             Button(
-                onClick = { onConfirm(text.trim(), isPrioritized, recurrence) }
+                onClick = { onConfirm(text.trim(), isPrioritized, recurrence) },
+                enabled = canSubmit
             ) {
-                Text(if (editingItem != null) "Save" else "OK")
+                Text(if (editingItem != null) "Save" else "Create")
             }
         }
     }
@@ -331,7 +350,10 @@ fun TodoFormBody(
 private const val MIN_RECURRENCE_INTERVAL = 1
 
 // A -/value/+ stepper instead of free-text entry, so the interval can never be blank, zero, or
-// otherwise invalid - onValueChange only ever fires with a valid positive value.
+// otherwise invalid - onValueChange only ever fires with a valid positive value. Material3 has no
+// spec'd counter/stepper component, so this is a custom composition of standard M3 IconButtons -
+// bordered in the theme's medium (card-like) shape, rather than a hardcoded radius, so it stays
+// matched if the theme's shape scale changes.
 @Composable
 private fun IntervalCounter(
     value: Int,
@@ -339,12 +361,17 @@ private fun IntervalCounter(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier.border(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline,
+            shape = MaterialTheme.shapes.medium
+        ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
             onClick = { onValueChange(value - 1) },
-            enabled = value > MIN_RECURRENCE_INTERVAL
+            enabled = value > MIN_RECURRENCE_INTERVAL,
+            modifier = Modifier.size(40.dp)
         ) {
             Icon(imageVector = Icons.Filled.Remove, contentDescription = "Decrease")
         }
@@ -354,7 +381,10 @@ private fun IntervalCounter(
             textAlign = TextAlign.Center,
             modifier = Modifier.width(32.dp)
         )
-        IconButton(onClick = { onValueChange(value + 1) }) {
+        IconButton(
+            onClick = { onValueChange(value + 1) },
+            modifier = Modifier.size(40.dp)
+        ) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "Increase")
         }
     }

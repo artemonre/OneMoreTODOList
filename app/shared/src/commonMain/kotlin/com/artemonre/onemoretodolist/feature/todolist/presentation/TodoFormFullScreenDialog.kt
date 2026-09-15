@@ -30,7 +30,11 @@ fun TodoFormFullScreenDialog(
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        // decorFitsSystemWindows = false hands insets (including the keyboard's) to Compose instead
+        // of the OS - without it, WindowInsets.safeDrawing below reports a 0 ime inset and the
+        // form's own verticalScroll can't tell there's a keyboard to scroll past, so the Create/
+        // Discard row can end up hidden behind it.
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -45,7 +49,8 @@ fun TodoFormFullScreenDialog(
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .verticalScroll(rememberScrollState()),
                 fieldMaxLines = Int.MAX_VALUE,
-                showRecurrence = true
+                showRecurrence = true,
+                requireText = true
             )
         }
     }
