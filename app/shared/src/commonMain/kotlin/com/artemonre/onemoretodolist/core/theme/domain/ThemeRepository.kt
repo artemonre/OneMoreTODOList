@@ -9,6 +9,7 @@ interface ThemeRepository {
 
 suspend fun ThemeRepository.updateMode(mode: ThemeMode) = update { it.copy(mode = mode) }
 suspend fun ThemeRepository.updatePalette(palette: ColorPaletteOption) = update { it.copy(palette = palette) }
+suspend fun ThemeRepository.updateUseDynamicColor(useDynamicColor: Boolean) = update { it.copy(useDynamicColor = useDynamicColor) }
 suspend fun ThemeRepository.updateIconSet(iconSet: IconSetOption) = update { it.copy(iconSet = iconSet) }
 suspend fun ThemeRepository.updateFont(font: FontOption) = update { it.copy(font = font) }
 suspend fun ThemeRepository.updateBackground(background: BackgroundOption) = update { it.copy(background = background) }

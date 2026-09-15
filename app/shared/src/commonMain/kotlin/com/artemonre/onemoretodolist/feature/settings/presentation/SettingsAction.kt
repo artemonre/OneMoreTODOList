@@ -8,6 +8,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 sealed interface SettingsAction {
     data class OnThemeModeSelected(val mode: ThemeMode) : SettingsAction
     data class OnPaletteSelected(val palette: ColorPaletteOption) : SettingsAction
+    data class OnUseDynamicColorChanged(val useDynamicColor: Boolean) : SettingsAction
     data class OnFontSelected(val font: FontOption) : SettingsAction
     data class OnUiStyleSelected(val uiStyle: UiStyleOption) : SettingsAction
     data class OnArchiveCompletedTodosChanged(val archive: Boolean) : SettingsAction

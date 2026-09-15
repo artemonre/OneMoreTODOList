@@ -3,6 +3,9 @@ package com.artemonre.onemoretodolist.core.theme.domain
 data class ThemeConfig(
     val mode: ThemeMode = ThemeMode.System,
     val palette: ColorPaletteOption = ColorPaletteOption.Default,
+    // Android 12+ (Material You) only - see isDynamicColorSupported(). Kept independent of
+    // [palette] so switching back off dynamic color restores whichever palette was last picked.
+    val useDynamicColor: Boolean = false,
     val iconSet: IconSetOption = IconSetOption.Default,
     val font: FontOption = FontOption.Default,
     val background: BackgroundOption = BackgroundOption.Solid,
