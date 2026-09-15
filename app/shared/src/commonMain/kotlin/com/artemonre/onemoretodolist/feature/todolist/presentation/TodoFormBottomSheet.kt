@@ -2,10 +2,8 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Row
@@ -16,8 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,7 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -47,8 +46,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -62,6 +60,16 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceUnit
 import com.artemonre.onemoretodolist.rememberSpeechToText
 import kotlinx.coroutines.flow.first
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.recurrence_after_completion
+import onemoretodolist.app.shared.generated.resources.recurrence_every
+import onemoretodolist.app.shared.generated.resources.recurrence_unit_day
+import onemoretodolist.app.shared.generated.resources.recurrence_unit_month
+import onemoretodolist.app.shared.generated.resources.recurrence_unit_week
+import onemoretodolist.app.shared.generated.resources.recurrence_unit_year
+import org.jetbrains.compose.resources.PluralStringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
 @Composable
@@ -126,12 +134,11 @@ fun TodoFormBody(
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
     var repeatEnabled by remember { mutableStateOf(editingItem?.recurrence != null) }
     var recurrenceType by remember { mutableStateOf(editingItem?.recurrence?.type ?: RecurrenceType.Every) }
-    var recurrenceIntervalText by remember { mutableStateOf(editingItem?.recurrence?.interval?.toString() ?: "1") }
-    var recurrenceUnit by remember { mutableStateOf(editingItem?.recurrence?.unit ?: RecurrenceUnit.Week) }
+    // A counter (not free text) so this is always a valid positive interval - no parsing/validation needed.
+    var recurrenceInterval by remember { mutableStateOf(editingItem?.recurrence?.interval ?: 1) }
+    var recurrenceUnit by remember { mutableStateOf(editingItem?.recurrence?.unit ?: RecurrenceUnit.Day) }
     val recurrence = if (repeatEnabled) {
-        recurrenceIntervalText.toIntOrNull()
-            ?.takeIf { it > 0 }
-            ?.let { interval -> Recurrence(type = recurrenceType, interval = interval, unit = recurrenceUnit) }
+        Recurrence(type = recurrenceType, interval = recurrenceInterval, unit = recurrenceUnit)
     } else {
         null
     }
@@ -157,7 +164,8 @@ fun TodoFormBody(
         if (showTitle) {
             Text(
                 text = if (editingItem != null) "Edit todo" else "Add todo",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 8.dp)
             )
             Spacer(Modifier.height(16.dp))
         }
@@ -249,20 +257,17 @@ fun TodoFormBody(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    RecurrenceSegmentedRow(
-                        options = RecurrenceType.entries,
-                        selected = recurrenceType,
-                        onSelected = { recurrenceType = it },
-                        label = { it.displayName() },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    CompactOutlinedField(
-                        value = recurrenceIntervalText,
-                        onValueChange = { value -> recurrenceIntervalText = value.filter { it.isDigit() } },
-                        placeholder = { Text("1") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.width(72.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Every")
+                        Spacer(Modifier.width(8.dp))
+                        IntervalCounter(
+                            value = recurrenceInterval,
+                            onValueChange = { recurrenceInterval = it }
+                        )
+                    }
                     RecurrenceSegmentedRow(
                         options = RecurrenceUnit.entries,
                         selected = recurrenceUnit,
@@ -270,6 +275,36 @@ fun TodoFormBody(
                         label = { it.displayName() },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = recurrenceType == RecurrenceType.AfterCompletion,
+                                onValueChange = { afterCompletion ->
+                                    recurrenceType = if (afterCompletion) {
+                                        RecurrenceType.AfterCompletion
+                                    } else {
+                                        RecurrenceType.Every
+                                    }
+                                },
+                                role = Role.Checkbox
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AppCheckToggle(
+                            checked = recurrenceType == RecurrenceType.AfterCompletion,
+                            onCheckedChange = null
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text("Only after completion")
+                    }
+                    recurrence?.let { current ->
+                        Text(
+                            text = current.describe(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -291,65 +326,62 @@ fun TodoFormBody(
     }
 }
 
-// A 40dp-tall OutlinedTextField-styled field, matching the height of the segmented buttons it sits
-// beside in the recurrence section - a plain OutlinedTextField can't go below its built-in 56dp
-// minimum height, so this builds the same look directly off BasicTextField + the decoration box
-// Material3 exposes for exactly this case.
-@OptIn(ExperimentalMaterial3Api::class)
+// A minimum of 1 - going lower would either mean "never" or need a negative-interval concept
+// neither Recurrence nor its UI support.
+private const val MIN_RECURRENCE_INTERVAL = 1
+
+// A -/value/+ stepper instead of free-text entry, so the interval can never be blank, zero, or
+// otherwise invalid - onValueChange only ever fires with a valid positive value.
 @Composable
-private fun CompactOutlinedField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: @Composable (() -> Unit)? = null,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+private fun IntervalCounter(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-        keyboardOptions = keyboardOptions,
-        interactionSource = interactionSource,
-        modifier = modifier.height(40.dp),
-        decorationBox = { innerTextField ->
-            OutlinedTextFieldDefaults.DecorationBox(
-                value = value,
-                innerTextField = innerTextField,
-                enabled = true,
-                singleLine = true,
-                visualTransformation = VisualTransformation.None,
-                interactionSource = interactionSource,
-                isError = false,
-                label = null,
-                placeholder = placeholder,
-                leadingIcon = null,
-                trailingIcon = null,
-                prefix = null,
-                suffix = null,
-                supportingText = null,
-                colors = OutlinedTextFieldDefaults.colors(),
-                contentPadding = OutlinedTextFieldDefaults.contentPadding(
-                    start = 12.dp,
-                    top = 0.dp,
-                    end = 12.dp,
-                    bottom = 0.dp
-                ),
-                container = {
-                    OutlinedTextFieldDefaults.Container(
-                        enabled = true,
-                        isError = false,
-                        interactionSource = interactionSource
-                    )
-                }
-            )
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { onValueChange(value - 1) },
+            enabled = value > MIN_RECURRENCE_INTERVAL
+        ) {
+            Icon(imageVector = Icons.Filled.Remove, contentDescription = "Decrease")
         }
-    )
+        Text(
+            text = value.toString(),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(32.dp)
+        )
+        IconButton(onClick = { onValueChange(value + 1) }) {
+            Icon(imageVector = Icons.Filled.Add, contentDescription = "Increase")
+        }
+    }
 }
 
-// One row of segmented buttons for a whole enum's worth of options - used for both RecurrenceType
-// and RecurrenceUnit, stacked in a column rather than crammed into one row together.
+// The count+unit phrase ("2 weeks") is pluralized on its own via a real plurals resource - not
+// just an English-only "add an s" rule - then dropped into one of the two sentence shapes below.
+// Real (locale-aware, CLDR one/few/many/other) plural resources work identically across every
+// Compose Multiplatform target, not just Android.
+@Composable
+private fun Recurrence.describe(): String {
+    val unitPhrase = pluralStringResource(unit.pluralResource(), interval, interval)
+    return when (type) {
+        RecurrenceType.Every -> stringResource(Res.string.recurrence_every, unitPhrase)
+        RecurrenceType.AfterCompletion -> stringResource(Res.string.recurrence_after_completion, unitPhrase)
+    }
+}
+
+private fun RecurrenceUnit.pluralResource(): PluralStringResource = when (this) {
+    RecurrenceUnit.Day -> Res.plurals.recurrence_unit_day
+    RecurrenceUnit.Week -> Res.plurals.recurrence_unit_week
+    RecurrenceUnit.Month -> Res.plurals.recurrence_unit_month
+    RecurrenceUnit.Year -> Res.plurals.recurrence_unit_year
+}
+
+// One row of segmented buttons for a whole enum's worth of options - currently just RecurrenceUnit,
+// kept generic in case another enum picker needs the same look later.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun <T> RecurrenceSegmentedRow(
@@ -369,11 +401,6 @@ private fun <T> RecurrenceSegmentedRow(
             )
         }
     }
-}
-
-private fun RecurrenceType.displayName(): String = when (this) {
-    RecurrenceType.Every -> "Every"
-    RecurrenceType.AfterCompletion -> "After completion"
 }
 
 private fun RecurrenceUnit.displayName(): String = when (this) {
