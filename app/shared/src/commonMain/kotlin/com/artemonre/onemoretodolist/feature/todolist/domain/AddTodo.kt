@@ -24,7 +24,7 @@ class AddTodo(
             id = Uuid.random().toString(),
             text = text.ifBlank { defaultText() },
             status = TodoStatus.Active,
-            // Prioritized ("put on top") also leads Manual sort, not just Date's priorityOrder.
+            // Prioritized ("put to top") also leads Manual sort, not just Date's priorityOrder.
             sortOrder = if (isPrioritized) topSortOrder(currentTodos) else (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
             creationDate = today,
             lastEditDate = today,

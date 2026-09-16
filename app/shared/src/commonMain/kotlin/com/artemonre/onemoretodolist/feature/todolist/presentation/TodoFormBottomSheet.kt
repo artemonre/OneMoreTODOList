@@ -80,6 +80,7 @@ fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
     onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?) -> Unit,
     onDismiss: () -> Unit,
+    onMoreSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isSheetExpanded by remember { mutableStateOf(false) }
@@ -89,6 +90,21 @@ fun TodoFormBottomSheet(
         modifier = modifier,
         onExpanded = { isSheetExpanded = true }
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Quick add",
+                style = MaterialTheme.typography.titleLarge
+            )
+            TextButton(onClick = onMoreSettingsClick) {
+                Text("More settings")
+            }
+        }
         TodoFormBody(
             editingItem = editingItem,
             onConfirm = onConfirm,
@@ -233,7 +249,7 @@ fun TodoFormBody(
                 onCheckedChange = null
             )
             Spacer(Modifier.width(12.dp))
-            Text("Put on top")
+            Text("Put to top")
         }
         if (showRecurrence) {
             Spacer(Modifier.height(4.dp))
@@ -447,7 +463,8 @@ private fun TodoFormBottomSheetPreview() {
         TodoFormBottomSheet(
             editingItem = null,
             onConfirm = { _, _, _ -> },
-            onDismiss = {}
+            onDismiss = {},
+            onMoreSettingsClick = {}
         )
     }
 }

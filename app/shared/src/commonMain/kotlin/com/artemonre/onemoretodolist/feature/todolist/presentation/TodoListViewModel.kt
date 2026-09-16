@@ -21,7 +21,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 
 private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
@@ -39,9 +42,16 @@ class TodoListViewModel(
 
     val state = combine(todos, todoPreferences.sortOption) { todos, sortOption ->
         val statusFilter = if (sortOption == TodoSortOption.Archived) TodoStatus.Done else TodoStatus.Active
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        // ISO week - Monday is day 1, so this is always this week's Monday, even on a Sunday.
+        val startOfWeek = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
         TodoListState(
             sortOption = sortOption,
-            items = todos.filter { it.status == statusFilter }.sortedByOption(sortOption).map { it.toTodoItemUi() }
+            items = todos.filter { it.status == statusFilter }.sortedByOption(sortOption).map { it.toTodoItemUi() },
+            activeCount = todos.count { it.status == TodoStatus.Active },
+            archivedCount = todos.count { it.status == TodoStatus.Done },
+            doneTodayCount = todos.count { it.completionDate == today },
+            doneThisWeekCount = todos.count { it.completionDate != null && it.completionDate >= startOfWeek }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), TodoListState())
 
