@@ -17,7 +17,9 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.presentation.toTodoItemUi
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -37,12 +39,20 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
     private val themeRepository: ThemeRepository by inject()
     private val todoPreferences: TodoPreferences by inject()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Collected reactively via flatMapLatest (not read once with .first()) so a sort change
+        // is picked up even while a Glance session is still alive: updateAll() only triggers a
+        // recomposition of an already-running session rather than a fresh provideGlance call, so
+        // a one-shot snapshot here would silently miss the change until the session had happened
+        // to already tear down (~45s idle) - which is why the old code updated inconsistently.
+        //
         // Archived isn't an ordering of the active list at all (it's the Done-only view) - same
         // fallback UpdateTopSince uses, so the widget's order and its notion of "top" always agree.
-        val sortOption = todoPreferences.sortOption.first()
-            .takeUnless { it == TodoSortOption.Archived } ?: TodoSortOption.Date
-        val activeTodos = observeActiveTodos(sortOption).map { todos -> todos.map { it.toTodoItemUi() } }
+        val activeTodos = todoPreferences.sortOption
+            .map { it.takeUnless { option -> option == TodoSortOption.Archived } ?: TodoSortOption.Date }
+            .flatMapLatest { sortOption -> observeActiveTodos(sortOption) }
+            .map { todos -> todos.map { it.toTodoItemUi() } }
         val themeConfig = themeRepository.themeConfig
 
         // Fetched before provideContent (instead of defaulting collectAsState to emptyList()/
