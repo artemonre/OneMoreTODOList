@@ -197,7 +197,7 @@ fun TodoFormBody(
             value = text,
             onValueChange = { text = it },
             label = { Text("A todo text") },
-            placeholder = { Text("e.g., Book airline tickets") },
+            placeholder = { Text("e.g., Book a flight") },
             singleLine = false,
             minLines = fieldMinLines,
             maxLines = fieldMaxLines,

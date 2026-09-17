@@ -1,6 +1,10 @@
+import com.github.triplet.gradle.androidpublisher.ReleaseStatus
+import com.github.triplet.gradle.androidpublisher.ResolutionStrategy
+
 plugins {
     id("gateway.application")
     alias(libs.plugins.sentryAndroidGradle)
+    alias(libs.plugins.gradlePlayPublisher)
 }
 
 android {
@@ -40,6 +44,32 @@ sentry {
     autoInstallation {
         enabled.set(false)
     }
+}
+
+// Uploads the AAB to Play Console via `./gradlew publishBundle` instead of a manual drag-and-drop.
+// Credentials come from a local, gitignored service account JSON key file rather than the
+// ANDROID_PUBLISHER_CREDENTIALS environment variable - Windows env vars silently truncate a key
+// this long (~2.3KB), so the file is the only reliable option locally. Needs a one-time Google
+// Cloud service account with Play Console API access before it'll authenticate.
+//
+// track defaults to "alpha" - the Play Developer API's fixed identifier for the app's current
+// Closed testing track (Play Console shows it as "Closed testing - Alpha"; the actual track
+// name/title, not "closed" or "closed testing", is what the API expects). A real production
+// release needs an explicit `--track production` override, so a bare `publishBundle` can never
+// accidentally go live.
+// updatePriority is deliberately left unset (GPP defaults it to 0) since it varies per release -
+// pass it explicitly at release time instead, e.g. `--update-priority 5` to force the update on
+// app startup (blocking); anything below 5 just surfaces the Update button in Settings, left for
+// the user to tap whenever they like.
+play {
+    serviceAccountCredentials.set(rootProject.file("gateway/play-publisher-credentials.json"))
+    track.set("alpha")
+    releaseStatus.set(ReleaseStatus.COMPLETED)
+    defaultToAppBundles.set(true)
+    // Replaces the old manual "bump versionCode by 1 on every merge to master" convention -
+    // GPP now picks a versionCode higher than whatever's already live on Play at publish time,
+    // instead of failing the build when defaultConfig's versionCode has already been used.
+    resolutionStrategy.set(ResolutionStrategy.AUTO)
 }
 
 dependencies {

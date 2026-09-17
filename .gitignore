@@ -6,6 +6,7 @@ xcuserdata
 !src/**/build/
 local.properties
 keystore.properties
+play-publisher-credentials.json
 sentry.properties
 posthog.properties
 *.jks

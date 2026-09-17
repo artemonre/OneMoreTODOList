@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -30,6 +31,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.rememberAppUpdateLauncher
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
@@ -66,6 +68,7 @@ fun SettingsScreen(
     state: SettingsState,
     onAction: (SettingsAction) -> Unit
 ) {
+    val startAppUpdate = rememberAppUpdateLauncher()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -241,6 +244,26 @@ fun SettingsScreen(
                 }
             }
         }
+        if (state.updateAvailable) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "New version has come",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Button(
+                    onClick = {
+                        onAction(SettingsAction.OnUpdateClick)
+                        startAppUpdate?.invoke()
+                    }
+                ) {
+                    Text("Update")
+                }
+            }
+        }
         Text(
             text = "App version: ${state.appVersion}",
             style = MaterialTheme.typography.bodySmall,
@@ -281,6 +304,23 @@ private fun SettingsScreenPreview() {
                 palette = ColorPaletteOption.Default,
                 font = FontOption.Default,
                 uiStyle = UiStyleOption.Material
+            ),
+            onAction = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun SettingsScreenUpdateAvailablePreview() {
+    AppTheme(themeConfig = ThemeConfig()) {
+        SettingsScreen(
+            state = SettingsState(
+                themeMode = ThemeMode.System,
+                palette = ColorPaletteOption.Default,
+                font = FontOption.Default,
+                uiStyle = UiStyleOption.Material,
+                updateAvailable = true
             ),
             onAction = {}
         )
