@@ -6,6 +6,7 @@ xcuserdata
 !src/**/build/
 local.properties
 keystore.properties
+play-publisher-credentials.json
 sentry.properties
 posthog.properties
 *.jks
@@ -22,3 +23,4 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+/release-notes/

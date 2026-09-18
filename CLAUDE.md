@@ -28,6 +28,10 @@ This is a Kotlin Multiplatform (KMP) project built with Gradle. On Windows use `
 
 No detekt/ktlint config and no CI workflows exist in this repo yet.
 
+### Release publishing
+
+`gateway/todoList` uses the Gradle Play Publisher plugin (`./gradlew :gateway:todoList:publishBundle`) with `resolutionStrategy.set(ResolutionStrategy.AUTO)`. This **overrides** the shared convention's "every merge into master auto-increments versionCode by 1" rule for this project — GPP picks a versionCode higher than whatever's already live on Play at publish time, so `defaultConfig`'s `versionCode` no longer needs manual bumping. `versionName` is still always asked for manually, per the shared convention.
+
 ## Architecture
 
 Gradle modules (declared in `settings.gradle.kts`):

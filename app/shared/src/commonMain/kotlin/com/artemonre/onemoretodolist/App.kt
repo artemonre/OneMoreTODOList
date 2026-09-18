@@ -26,7 +26,9 @@ fun App(platformModules: List<Module>, contentTabs: List<NavigationTab>) {
         }
     ) {
         AppTheme {
-            ContainerRoot(contentTabs = contentTabs)
+            MandatoryAppUpdateGate {
+                ContainerRoot(contentTabs = contentTabs)
+            }
         }
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -138,7 +139,11 @@ fun TodoListRoot(
                 viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence))
                 showAddTodoSheet = false
             },
-            onDismiss = { showAddTodoSheet = false }
+            onDismiss = { showAddTodoSheet = false },
+            onMoreSettingsClick = {
+                showAddTodoSheet = false
+                showAddTodoFullScreenDialog = true
+            }
         )
     }
 
@@ -222,36 +227,50 @@ fun TodoListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Sort",
-                        style = MaterialTheme.typography.labelLarge
+                        text = "Todos ${
+                            if (state.sortOption == TodoSortOption.Archived) state.archivedCount else state.activeCount
+                        }",
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                shape = MaterialTheme.shapes.small
+                            )
+                            .padding(8.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box {
-                        Button(onClick = { sortMenuExpanded = true }) {
-                            Text(state.sortOption.displayName())
-                        }
-                        DropdownMenu(
-                            expanded = sortMenuExpanded,
-                            onDismissRequest = { sortMenuExpanded = false }
-                        ) {
-                            TodoSortOption.entries.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option.displayName()) },
-                                    onClick = {
-                                        onAction(TodoListAction.OnSortOptionSelected(option))
-                                        sortMenuExpanded = false
-                                    },
-                                    trailingIcon = if (option == state.sortOption) {
-                                        { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
-                                    } else {
-                                        null
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Sort",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box {
+                            Button(onClick = { sortMenuExpanded = true }) {
+                                Text(state.sortOption.displayName())
+                            }
+                            DropdownMenu(
+                                expanded = sortMenuExpanded,
+                                onDismissRequest = { sortMenuExpanded = false }
+                            ) {
+                                TodoSortOption.entries.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option.displayName()) },
+                                        onClick = {
+                                            onAction(TodoListAction.OnSortOptionSelected(option))
+                                            sortMenuExpanded = false
+                                        },
+                                        trailingIcon = if (option == state.sortOption) {
+                                            { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
+                                        } else {
+                                            null
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
                         }
                     }

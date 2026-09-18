@@ -10,6 +10,9 @@ import com.artemonre.onemoretodolist.feature.todolist.work.schedulePeriodicTodoM
 import com.artemonre.onemoretodolist.observability.initSentry
 import com.artemonre.onemoretodolist.widget.TodoWidget
 import com.posthog.kmp.PostHogContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -60,5 +63,14 @@ class TodoListApplication : Application() {
             )
         }
         schedulePeriodicTodoMaintenance(this@TodoListApplication)
+
+        // The hooks above only refresh the widget lazily, after a todo/theme write - so a process
+        // restart with no write yet (e.g. right after an app update) would otherwise leave every
+        // widget instance showing whatever it last rendered until the next write, the 30-minute
+        // updatePeriodMillis fallback, or the hourly PeriodicTodoMaintenanceWorker tick. This forces
+        // a fresh provideGlance() pass on every cold start instead.
+        CoroutineScope(Dispatchers.Default).launch {
+            TodoWidget().updateAll(this@TodoListApplication)
+        }
     }
 }

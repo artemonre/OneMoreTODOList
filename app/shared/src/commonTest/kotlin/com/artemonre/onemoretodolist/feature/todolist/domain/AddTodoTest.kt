@@ -30,10 +30,10 @@ class AddTodoTest {
         )
         val addTodo = AddTodo(dataSource)
 
-        addTodo("Put on top", isPrioritized = true)
+        addTodo("Put to top", isPrioritized = true)
 
         val todos = dataSource.observeTodos().first()
-        val added = todos.first { it.text == "Put on top" }
+        val added = todos.first { it.text == "Put to top" }
         assertTrue(added.sortOrder < todos.filterNot { it.id == added.id }.minOf { it.sortOrder })
     }
 
