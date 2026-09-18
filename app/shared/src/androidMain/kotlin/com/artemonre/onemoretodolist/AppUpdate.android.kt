@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.InstallException
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.ktx.requestAppUpdateInfo
@@ -35,10 +36,21 @@ private const val MANDATORY_UPDATE_MIN_PRIORITY = 5
 // Reads the Context Koin already binds in TodoListApplication.onCreate() (androidContext(...))
 // instead of threading Context through this expect/actual's signature, same pattern as
 // AppVersion.android.kt.
+//
+// requestAppUpdateInfo() throws InstallException on any Play Core failure - most notably
+// ERROR_APP_NOT_OWNED, which fires whenever the app wasn't installed via Play (Play's own
+// Pre-launch report test devices hit this on every release, and it also fires for anyone
+// sideloading a build). Left uncaught, this crashed the whole app on startup, since this check
+// runs inside MandatoryAppUpdateGate, which wraps all of App(). Any failure here means we can't
+// determine update status, so fail safe: no update.
 actual suspend fun isAppUpdateAvailable(): Boolean {
     val context = GlobalContext.get().get<Context>()
-    val appUpdateInfo = AppUpdateManagerFactory.create(context).requestAppUpdateInfo()
-    return appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+    return try {
+        val appUpdateInfo = AppUpdateManagerFactory.create(context).requestAppUpdateInfo()
+        appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+    } catch (e: InstallException) {
+        false
+    }
 }
 
 // Priority 5 (set via `--update-priority` on `publishBundle`, see
@@ -46,9 +58,13 @@ actual suspend fun isAppUpdateAvailable(): Boolean {
 // startup via MandatoryAppUpdateGate instead of leaving it to the user in Settings.
 actual suspend fun isAppUpdateMandatory(): Boolean {
     val context = GlobalContext.get().get<Context>()
-    val appUpdateInfo = AppUpdateManagerFactory.create(context).requestAppUpdateInfo()
-    return appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
-        appUpdateInfo.updatePriority() >= MANDATORY_UPDATE_MIN_PRIORITY
+    return try {
+        val appUpdateInfo = AppUpdateManagerFactory.create(context).requestAppUpdateInfo()
+        appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
+            appUpdateInfo.updatePriority() >= MANDATORY_UPDATE_MIN_PRIORITY
+    } catch (e: InstallException) {
+        false
+    }
 }
 
 @Composable
@@ -64,15 +80,19 @@ actual fun rememberAppUpdateLauncher(): (() -> Unit)? {
 
     return remember(appUpdateManager, launcher) {
         {
-            appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
-                if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
-                    appUpdateManager.startUpdateFlowForResult(
-                        appUpdateInfo,
-                        launcher,
-                        AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
-                    )
+            appUpdateManager.appUpdateInfo
+                .addOnSuccessListener { appUpdateInfo ->
+                    if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+                        appUpdateManager.startUpdateFlowForResult(
+                            appUpdateInfo,
+                            launcher,
+                            AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
+                        )
+                    }
                 }
-            }
+                // Same InstallException (e.g. ERROR_APP_NOT_OWNED) as isAppUpdateAvailable() can
+                // fail this Task too - same fail-safe response, just leave the user where they are.
+                .addOnFailureListener { }
         }
     }
 }
