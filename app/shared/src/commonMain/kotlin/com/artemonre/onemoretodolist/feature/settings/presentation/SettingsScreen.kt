@@ -245,22 +245,24 @@ fun SettingsScreen(
             }
         }
         if (state.updateAvailable) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "New version has come",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Button(
-                    onClick = {
-                        onAction(SettingsAction.OnUpdateClick)
-                        startAppUpdate?.invoke()
-                    }
+            AppCard(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Update")
+                    Text(
+                        text = "New version has come",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Button(
+                        onClick = {
+                            onAction(SettingsAction.OnUpdateClick)
+                            startAppUpdate?.invoke()
+                        }
+                    ) {
+                        Text("Update")
+                    }
                 }
             }
         }
