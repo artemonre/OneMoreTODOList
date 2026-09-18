@@ -10,7 +10,9 @@ import com.artemonre.onemoretodolist.core.theme.domain.updatePalette
 import com.artemonre.onemoretodolist.core.theme.domain.updateUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.updateUseDynamicColor
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
+import com.artemonre.onemoretodolist.isAppUpdateAvailable
 import com.posthog.kmp.PostHog
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -32,8 +34,19 @@ class SettingsViewModel(
 ) : ViewModel() {
 
     private val appVersion = appVersionName()
+    private val updateAvailable = MutableStateFlow(false)
 
-    val state = combine(themeRepository.themeConfig, todoPreferences.archiveCompletedTodos) { theme, archive ->
+    init {
+        viewModelScope.launch {
+            updateAvailable.value = isAppUpdateAvailable()
+        }
+    }
+
+    val state = combine(
+        themeRepository.themeConfig,
+        todoPreferences.archiveCompletedTodos,
+        updateAvailable
+    ) { theme, archive, updateAvailable ->
         SettingsState(
             themeMode = theme.mode,
             palette = theme.palette,
@@ -41,7 +54,8 @@ class SettingsViewModel(
             font = theme.font,
             uiStyle = theme.uiStyle,
             archiveCompletedTodos = archive,
-            appVersion = appVersion
+            appVersion = appVersion,
+            updateAvailable = updateAvailable
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), SettingsState())
 
@@ -89,6 +103,10 @@ class SettingsViewModel(
                     todoPreferences.setArchiveCompletedTodos(action.archive)
                 }
             }
+            // The actual update flow needs an Activity (Play In-App Updates on Android), which a
+            // ViewModel doesn't have - SettingsScreen starts it directly via
+            // rememberAppUpdateLauncher() instead of routing it through here.
+            is SettingsAction.OnUpdateClick -> Unit
         }
     }
 }

@@ -12,4 +12,5 @@ sealed interface SettingsAction {
     data class OnFontSelected(val font: FontOption) : SettingsAction
     data class OnUiStyleSelected(val uiStyle: UiStyleOption) : SettingsAction
     data class OnArchiveCompletedTodosChanged(val archive: Boolean) : SettingsAction
+    data object OnUpdateClick : SettingsAction
 }

@@ -34,6 +34,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
+import com.artemonre.onemoretodolist.core.designsystem.components.AppFlipVisibility
 import com.artemonre.onemoretodolist.core.designsystem.components.AppNavigationBar
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
@@ -160,9 +161,17 @@ fun ContainerScreen(
             )
         }
 
-        state.tabs.getOrNull(state.selectedTabIndex)?.fab?.let { fab ->
+        val currentFab = state.tabs.getOrNull(state.selectedTabIndex)?.fab
+        // Remembered so the outgoing tab's FAB content is still around to flip out by - currentFab
+        // itself goes null the instant the tab switches, before AppFlipVisibility's exit animation
+        // gets a chance to play.
+        var lastFab by remember { mutableStateOf(currentFab) }
+        if (currentFab != null) lastFab = currentFab
+
+        lastFab?.let { fab ->
             val navBarHeight = with(density) { navBarHeightPx.toDp() }
-            Box(
+            AppFlipVisibility(
+                visible = currentFab != null,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset(y = -(navBarHeight - FAB_NAV_BAR_OVERLAP))

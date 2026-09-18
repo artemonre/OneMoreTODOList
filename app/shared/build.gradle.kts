@@ -92,6 +92,7 @@ kotlin {
             implementation(libs.compose.uiTooling)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.work.runtime.ktx)
+            implementation(libs.play.appUpdate.ktx)
         }
         commonMain.dependencies {
             api(project(":core"))
