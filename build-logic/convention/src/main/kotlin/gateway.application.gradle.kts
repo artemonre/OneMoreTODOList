@@ -46,8 +46,8 @@ android {
     defaultConfig {
         minSdk = libs.findVersion("android-minSdk").get().requiredVersion.toInt()
         targetSdk = libs.findVersion("android-targetSdk").get().requiredVersion.toInt()
-        versionCode = 6
-        versionName = "0.4.0"
+        versionCode = 7
+        versionName = "0.4.1"
         buildConfigField("String", "SENTRY_DSN", "\"${sentryProperties.getProperty("dsn", "")}\"")
         buildConfigField("String", "POSTHOG_API_KEY", "\"${posthogProperties.getProperty("apiKey", "")}\"")
     }
