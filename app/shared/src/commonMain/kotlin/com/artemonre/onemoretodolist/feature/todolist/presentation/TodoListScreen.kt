@@ -277,34 +277,6 @@ fun TodoListScreen(
                 }
             }
 
-            if (state.sortOption != TodoSortOption.Archived) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        Text(
-                            text = "Completed:",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        // A Column, not a single "today X\nthis week Y" string, so "this week"
-                        // lines up exactly under "today" regardless of font metrics.
-                        Column {
-                            Text(
-                                text = "today ${state.doneTodayCount}",
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                            Text(
-                                text = "this week ${state.doneThisWeekCount}",
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
-                }
-            }
-
             if (state.items.isEmpty()) {
                 item {
                     Text(
