@@ -11,7 +11,7 @@ import kotlin.coroutines.CoroutineContext
 
 @Database(
     entities = [TodoEntity::class],
-    version = 7,
+    version = 8,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class),
         AutoMigration(from = 3, to = 4),
@@ -23,7 +23,11 @@ import kotlin.coroutines.CoroutineContext
         AutoMigration(from = 5, to = 6, spec = DropRecurrenceAnchorDate::class),
         // Adds the (nullable) topSince column - existing rows get NULL until
         // TopSinceTrackingTodoLocalDataSource recomputes it on the next write.
-        AutoMigration(from = 6, to = 7)
+        AutoMigration(from = 6, to = 7),
+        // Adds the (nullable) dueDate/dueTime/dueTimeMode columns - existing rows get NULL (no due
+        // time). Wall-clock local values, not a resolved instant, so "10am" keeps meaning 10am
+        // local even if the timezone changes before it fires - see TodoItem.dueInstant.
+        AutoMigration(from = 7, to = 8)
     ]
 )
 @ColumnTypeConverters(TodoDateConverters::class)

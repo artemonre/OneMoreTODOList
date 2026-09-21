@@ -4,9 +4,12 @@ import android.app.Application
 import androidx.glance.appwidget.updateAll
 import com.artemonre.onemoretodolist.analytics.initPostHog
 import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
+import com.artemonre.onemoretodolist.feature.todolist.di.androidDueTimeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
 import com.artemonre.onemoretodolist.feature.todolist.work.WidgetRefresher
 import com.artemonre.onemoretodolist.feature.todolist.work.schedulePeriodicTodoMaintenance
+import com.artemonre.onemoretodolist.notification.PostDueNotification
+import com.artemonre.onemoretodolist.notification.createDueTodoNotificationChannel
 import com.artemonre.onemoretodolist.observability.initSentry
 import com.artemonre.onemoretodolist.widget.TodoWidget
 import com.posthog.kmp.PostHogContext
@@ -34,6 +37,7 @@ class TodoListApplication : Application() {
                 platform = "android"
             )
         }
+        createDueTodoNotificationChannel(this@TodoListApplication)
         startKoin {
             androidContext(this@TodoListApplication)
             modules(
@@ -51,12 +55,16 @@ class TodoListApplication : Application() {
                             // needs an explicit refresh to reach the widget promptly.
                             TodoWidget().updateAll(this@TodoListApplication)
                         },
+                        androidDueTimeModule(this@TodoListApplication),
                         module {
                             // Lets PeriodicTodoMaintenanceWorker repaint the widget without
                             // app:shared depending on Glance - WorkManager (not Koin) constructs
                             // the worker itself, so this can't just be a constructor lambda like
                             // onDataChanged above.
                             single<WidgetRefresher> { WidgetRefresher { TodoWidget().updateAll(this@TodoListApplication) } }
+                            // Lives here rather than androidDueTimeModule - it needs R.drawable,
+                            // which only this module's own R class exposes.
+                            single { PostDueNotification(this@TodoListApplication) }
                         }
                     )
                 )

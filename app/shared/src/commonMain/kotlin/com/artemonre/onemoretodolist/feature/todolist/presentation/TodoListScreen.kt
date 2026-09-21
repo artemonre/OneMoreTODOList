@@ -142,8 +142,8 @@ fun TodoListRoot(
     if (showAddTodoSheet) {
         TodoFormBottomSheet(
             editingItem = null,
-            onConfirm = { text, isPrioritized, recurrence ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence))
+            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode))
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
@@ -158,8 +158,8 @@ fun TodoListRoot(
     if (showAddTodoFullScreenDialog) {
         TodoFormFullScreenDialog(
             editingItem = null,
-            onConfirm = { text, isPrioritized, recurrence ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence))
+            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode))
                 showAddTodoFullScreenDialog = false
             },
             onDismiss = { showAddTodoFullScreenDialog = false },
@@ -170,8 +170,10 @@ fun TodoListRoot(
     editingTodo?.let { item ->
         TodoFormFullScreenDialog(
             editingItem = item,
-            onConfirm = { text, isPrioritized, recurrence ->
-                viewModel.onAction(TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized, recurrence))
+            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
+                viewModel.onAction(
+                    TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode)
+                )
                 editingTodo = null
             },
             onDismiss = { editingTodo = null }

@@ -68,11 +68,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.artemonre.onemoretodolist.SpeechRecognitionState
+import com.artemonre.onemoretodolist.rememberDueTimeNotificationPermissionState
 import com.artemonre.onemoretodolist.rememberExactAlarmPermissionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceUnit
@@ -103,7 +105,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
-    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?) -> Unit,
+    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?, dueDate: LocalDate?, dueTime: LocalTime?, dueTimeMode: DueTimeMode?) -> Unit,
     onDismiss: () -> Unit,
     // Carries whatever the user had already typed into the sheet along to the full-screen dialog,
     // so switching to "More settings" doesn't lose it.
@@ -170,7 +172,7 @@ fun TodoFormBottomSheet(
 @Composable
 fun TodoFormBody(
     editingItem: TodoItemUi?,
-    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?) -> Unit,
+    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?, dueDate: LocalDate?, dueTime: LocalTime?, dueTimeMode: DueTimeMode?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
@@ -206,19 +208,38 @@ fun TodoFormBody(
     // null where exact alarms aren't a distinct grantable permission (pre-Android 12, or any
     // non-Android target) - the "Grant permission" button only shows where it's actually needed.
     val exactAlarmPermission = rememberExactAlarmPermissionState()
-    // UI-only for now - not read from editingItem (nothing to read yet) and not threaded into
-    // onConfirm. Values survive unchecking "Due time" the same way recurrenceInterval/Unit do.
-    var dueTimeEnabled by remember { mutableStateOf(false) }
+    // null on any non-Android target - request() is called once, the first time "Due time" is
+    // turned on (see below); declining doesn't block saving, unlike exactAlarmPermission.
+    val notificationPermission = rememberDueTimeNotificationPermissionState()
+    // Values survive unchecking "Due time" the same way recurrenceInterval/Unit do. Prefilled from
+    // editingItem, same as the recurrence fields above.
+    var dueTimeEnabled by remember { mutableStateOf(editingItem?.dueDate != null) }
     // Off = approximate (the silent default/fallback, no extra permission needed) - on is an
     // explicit opt-in for exact-time delivery, not a mode the user is forced to pick upfront.
-    // Defaults to on if the permission is already granted - no reason to make someone who's
-    // already cleared that hurdle opt in again every time.
-    var exactTimeEnabled by remember { mutableStateOf(exactAlarmPermission?.isGranted == true) }
-    var dueDate by remember { mutableStateOf<LocalDate?>(null) }
-    var dueTime by remember { mutableStateOf<LocalTime?>(null) }
+    // Defaults to on when editing an already-exact todo, or (when adding) if the permission is
+    // already granted - no reason to make someone who's already cleared that hurdle opt in again.
+    var exactTimeEnabled by remember {
+        mutableStateOf(
+            editingItem?.dueTimeMode == DueTimeMode.Exact ||
+                (editingItem == null && exactAlarmPermission?.isGranted == true)
+        )
+    }
+    // Wall-clock local values, not a resolved instant - "10am" should keep meaning 10am local even
+    // if the timezone changes before it fires, see TodoItem.dueInstant.
+    var dueDate by remember { mutableStateOf(editingItem?.dueDate) }
+    var dueTime by remember { mutableStateOf(editingItem?.dueTime) }
     var showDueDatePicker by remember { mutableStateOf(false) }
     var showDueTimePicker by remember { mutableStateOf(false) }
-    val canSubmit = text.isNotBlank() || !requireText
+    val dueTimeMode = if (dueTimeEnabled && dueDate != null && dueTime != null) {
+        if (exactTimeEnabled) DueTimeMode.Exact else DueTimeMode.Approximate
+    } else {
+        null
+    }
+    // Due time checked but not both fields actually picked would otherwise silently discard the
+    // user's intent on save - block it the same way a missing exact-alarm permission is blocked.
+    val dueTimeIncomplete = dueTimeEnabled && (dueDate == null || dueTime == null)
+    val dueTimeExactPermissionMissing = dueTimeEnabled && exactTimeEnabled && exactAlarmPermission?.isGranted == false
+    val canSubmit = (text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeExactPermissionMissing
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val speechController = rememberSpeechToText(onResult = { text = it; onTextChange(it) })
@@ -259,7 +280,7 @@ fun TodoFormBody(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { if (canSubmit) onConfirm(text.trim(), isPrioritized, recurrence) }
+                onDone = { if (canSubmit) onConfirm(text.trim(), isPrioritized, recurrence, dueDate, dueTime, dueTimeMode) }
             ),
             trailingIcon = if (text.isNotEmpty()) {
                 {
@@ -311,7 +332,12 @@ fun TodoFormBody(
                     .fillMaxWidth()
                     .toggleable(
                         value = dueTimeEnabled,
-                        onValueChange = { dueTimeEnabled = it },
+                        onValueChange = { newValue ->
+                            dueTimeEnabled = newValue
+                            // Both delivery modes ultimately post a system notification - ask once,
+                            // the first time this is turned on. Declining doesn't block saving.
+                            if (newValue) notificationPermission?.request()
+                        },
                         role = Role.Checkbox
                     )
                     .padding(vertical = 8.dp),
@@ -413,7 +439,11 @@ fun TodoFormBody(
                 }
             }
             val datePickerState = rememberDatePickerState(
-                initialSelectedDateMillis = dueDate?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds(),
+                // Defaults to today rather than leaving nothing selected - opening the picker and
+                // immediately hitting OK should just work.
+                initialSelectedDateMillis = (dueDate ?: Clock.System.todayIn(TimeZone.currentSystemDefault()))
+                    .atStartOfDayIn(TimeZone.UTC)
+                    .toEpochMilliseconds(),
                 selectableDates = selectableDates
             )
             DatePickerDialog(
@@ -439,7 +469,7 @@ fun TodoFormBody(
         }
         if (showDueTimePicker) {
             val timePickerState = rememberTimePickerState(
-                initialHour = dueTime?.hour ?: 12,
+                initialHour = dueTime?.hour ?: 10,
                 initialMinute = dueTime?.minute ?: 0,
                 is24Hour = true
             )
@@ -574,7 +604,7 @@ fun TodoFormBody(
             }
             Spacer(Modifier.width(8.dp))
             Button(
-                onClick = { onConfirm(text.trim(), isPrioritized, recurrence) },
+                onClick = { onConfirm(text.trim(), isPrioritized, recurrence, dueDate, dueTime, dueTimeMode) },
                 enabled = canSubmit
             ) {
                 Text(if (editingItem != null) "Save" else "Create")
@@ -733,7 +763,7 @@ private fun TodoFormBottomSheetPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoFormBottomSheet(
             editingItem = null,
-            onConfirm = { _, _, _ -> },
+            onConfirm = { _, _, _, _, _, _ -> },
             onDismiss = {},
             onMoreSettingsClick = {}
         )

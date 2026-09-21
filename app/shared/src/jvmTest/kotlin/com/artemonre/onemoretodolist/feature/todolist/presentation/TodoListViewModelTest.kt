@@ -3,6 +3,7 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoPreferences
+import com.artemonre.onemoretodolist.feature.todolist.domain.NoOpDueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
@@ -139,10 +140,11 @@ class TodoListViewModelTest {
         todoPreferences: FakeTodoPreferences = FakeTodoPreferences()
     ) = TodoListViewModel(
         dataSource,
-        AddTodo(dataSource),
-        ToggleTodoDone(dataSource, todoPreferences),
+        AddTodo(dataSource, NoOpDueTimeScheduler()),
+        ToggleTodoDone(dataSource, todoPreferences, NoOpDueTimeScheduler()),
         todoPreferences,
-        UpdateTopSince(dataSource, todoPreferences)
+        UpdateTopSince(dataSource, todoPreferences),
+        NoOpDueTimeScheduler()
     )
 
     private fun todoItem(

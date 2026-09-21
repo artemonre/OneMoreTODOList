@@ -5,6 +5,11 @@
     <!-- Special app access, not a runtime prompt - canScheduleExactAlarms()/
          ACTION_REQUEST_SCHEDULE_EXACT_ALARM only apply from Android 12 (API 31) onward. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Runtime-prompted on Android 13+ (API 33), normal/auto-granted below that - required to
+         actually show a due-time notification. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- AlarmManager alarms are wiped on reboot - this lets BootCompletedReceiver re-arm them. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".TodoListApplication"
@@ -69,6 +74,26 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/todo_widget_row_info" />
+        </receiver>
+
+        <!-- Fired by AlarmManager via a PendingIntent this app creates itself - not exported, no
+             other app can reach it, and the system delivers under our own PendingIntent identity
+             regardless. Targeted by an implicit, package-scoped Intent (see
+             AndroidAlarmDueTimeScheduler) since app:shared can't reference this gateway-only class. -->
+        <receiver
+            android:name=".notification.DueTimeAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.artemonre.onemoretodolist.ACTION_TODO_DUE" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".notification.BootCompletedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
         </receiver>
     </application>
 

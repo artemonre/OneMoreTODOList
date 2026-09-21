@@ -29,7 +29,7 @@ class ApplyDueRecurrences(
                 status = TodoStatus.Active,
                 completionDate = null,
                 sortOrder = topSortOrder(todos),
-                priorityOrder = prioritize(todos),
+                priorityOrder = topPriorityOrder(todos),
                 recurrenceAnchorInstant = if (recurrence.type == RecurrenceType.Every) now else item.recurrenceAnchorInstant
             )
             dataSource.upsertTodo(updated)
@@ -54,10 +54,4 @@ class ApplyDueRecurrences(
             }
         }
     }
-
-    private fun prioritize(currentTodos: List<TodoItem>): Double =
-        (currentTodos.mapNotNull { it.priorityOrder }.minOrNull() ?: 1.0) * 0.9
-
-    private fun topSortOrder(currentTodos: List<TodoItem>): Int =
-        (currentTodos.minOfOrNull { it.sortOrder } ?: 0) - 1
 }

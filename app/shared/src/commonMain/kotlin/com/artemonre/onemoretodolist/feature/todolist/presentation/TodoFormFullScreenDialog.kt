@@ -25,7 +25,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 // decorFitsSystemWindows = false (Android only - see the .android.kt actual) hands insets
 // (including the keyboard's) to Compose instead of the OS - without it, WindowInsets.safeDrawing
@@ -53,7 +56,7 @@ internal expect fun ConfigureFullScreenDialogStatusBarIcons(darkIcons: Boolean)
 @Composable
 fun TodoFormFullScreenDialog(
     editingItem: TodoItemUi?,
-    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?) -> Unit,
+    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?, dueDate: LocalDate?, dueTime: LocalTime?, dueTimeMode: DueTimeMode?) -> Unit,
     onDismiss: () -> Unit,
     // Only used when editingItem == null - seeds the field from a draft carried over from
     // TodoFormBottomSheet's "More settings" button.
@@ -111,7 +114,7 @@ private fun TodoFormFullScreenDialogPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoFormFullScreenDialog(
             editingItem = null,
-            onConfirm = { _, _, _ -> },
+            onConfirm = { _, _, _, _, _, _ -> },
             onDismiss = {}
         )
     }
