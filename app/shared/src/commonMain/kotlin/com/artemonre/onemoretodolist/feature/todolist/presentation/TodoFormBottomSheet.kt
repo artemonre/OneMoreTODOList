@@ -2,7 +2,10 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -18,11 +21,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,9 +38,14 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -53,7 +66,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.artemonre.onemoretodolist.SpeechRecognitionState
+import com.artemonre.onemoretodolist.rememberExactAlarmPermissionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -62,7 +77,17 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceUnit
 import com.artemonre.onemoretodolist.rememberSpeechToText
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.todayIn
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.recurrence_after_completion
 import onemoretodolist.app.shared.generated.resources.recurrence_every
@@ -80,10 +105,15 @@ fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
     onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?) -> Unit,
     onDismiss: () -> Unit,
-    onMoreSettingsClick: () -> Unit,
+    // Carries whatever the user had already typed into the sheet along to the full-screen dialog,
+    // so switching to "More settings" doesn't lose it.
+    onMoreSettingsClick: (text: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isSheetExpanded by remember { mutableStateOf(false) }
+    // Mirrors TodoFormBody's own internal text state (which it otherwise keeps private) just so
+    // "More settings" has something to hand off - not the source of truth for the field itself.
+    var currentText by remember { mutableStateOf(editingItem?.text.orEmpty()) }
 
     AppBottomSheet(
         onDismissRequest = onDismiss,
@@ -101,7 +131,7 @@ fun TodoFormBottomSheet(
                 text = "Quick add",
                 style = MaterialTheme.typography.titleLarge
             )
-            TextButton(onClick = onMoreSettingsClick) {
+            TextButton(onClick = { onMoreSettingsClick(currentText) }) {
                 Text("More settings")
             }
         }
@@ -109,6 +139,7 @@ fun TodoFormBottomSheet(
             editingItem = editingItem,
             onConfirm = onConfirm,
             onDismiss = onDismiss,
+            onTextChange = { currentText = it },
             // A short window (JVM/desktop, or a small/rotated phone) can leave less height than
             // the form needs - without this the Cancel/OK row can end up positioned below the
             // visible sheet instead of being reachable by scrolling.
@@ -133,8 +164,8 @@ fun TodoFormBottomSheet(
 // default fieldMaxLines here (2) only applies to QuickAddTodoActivity, which doesn't override it.
 // showTitle/actionsTopSpacing default to what the full-screen dialog and quick-add screen use -
 // TodoFormBottomSheet tightens both since its drag handle already separates it from whatever is
-// above. showRecurrence is off by default too - recurrence is a detailed-creation concern, only
-// TodoFormFullScreenDialog turns it on.
+// above. showDueTime/showRecurrence are off by default too - both are detailed-creation concerns,
+// only TodoFormFullScreenDialog turns them on.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoFormBody(
@@ -146,14 +177,21 @@ fun TodoFormBody(
     fieldMinLines: Int = 1,
     fieldMaxLines: Int = 2,
     actionsTopSpacing: Dp = 20.dp,
+    // Off by default for the same reason as showRecurrence below - detailed scheduling only
+    // belongs in TodoFormFullScreenDialog, which is the only caller that turns this on.
+    showDueTime: Boolean = false,
     showRecurrence: Boolean = false,
     // Off by default: the quick-add bottom sheet and widget already rely on Android's own IME
     // "Done" handling and keep their existing no-op-on-blank behavior. TodoFormFullScreenDialog
     // turns this on since it's the one flow where a stray blank-text save was reachable.
     requireText: Boolean = false,
+    // Only used when editingItem == null - lets a caller (TodoFormFullScreenDialog, handed a draft
+    // from TodoFormBottomSheet's "More settings") seed the field without pretending it's an edit.
+    initialText: String = "",
+    onTextChange: (String) -> Unit = {},
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
-    var text by remember { mutableStateOf(editingItem?.text.orEmpty()) }
+    var text by remember { mutableStateOf(editingItem?.text ?: initialText) }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
     var repeatEnabled by remember { mutableStateOf(editingItem?.recurrence != null) }
     var recurrenceType by remember { mutableStateOf(editingItem?.recurrence?.type ?: RecurrenceType.Every) }
@@ -165,10 +203,25 @@ fun TodoFormBody(
     } else {
         null
     }
+    // null where exact alarms aren't a distinct grantable permission (pre-Android 12, or any
+    // non-Android target) - the "Grant permission" button only shows where it's actually needed.
+    val exactAlarmPermission = rememberExactAlarmPermissionState()
+    // UI-only for now - not read from editingItem (nothing to read yet) and not threaded into
+    // onConfirm. Values survive unchecking "Due time" the same way recurrenceInterval/Unit do.
+    var dueTimeEnabled by remember { mutableStateOf(false) }
+    // Off = approximate (the silent default/fallback, no extra permission needed) - on is an
+    // explicit opt-in for exact-time delivery, not a mode the user is forced to pick upfront.
+    // Defaults to on if the permission is already granted - no reason to make someone who's
+    // already cleared that hurdle opt in again every time.
+    var exactTimeEnabled by remember { mutableStateOf(exactAlarmPermission?.isGranted == true) }
+    var dueDate by remember { mutableStateOf<LocalDate?>(null) }
+    var dueTime by remember { mutableStateOf<LocalTime?>(null) }
+    var showDueDatePicker by remember { mutableStateOf(false) }
+    var showDueTimePicker by remember { mutableStateOf(false) }
     val canSubmit = text.isNotBlank() || !requireText
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val speechController = rememberSpeechToText(onResult = { text = it })
+    val speechController = rememberSpeechToText(onResult = { text = it; onTextChange(it) })
 
     LaunchedEffect(Unit) {
         // Wait for the host (bottom sheet) to finish its entrance animation before grabbing focus -
@@ -195,7 +248,7 @@ fun TodoFormBody(
         }
         OutlinedTextField(
             value = text,
-            onValueChange = { text = it },
+            onValueChange = { text = it; onTextChange(it) },
             label = { Text("A todo text") },
             placeholder = { Text("e.g., Book a flight") },
             singleLine = false,
@@ -210,7 +263,7 @@ fun TodoFormBody(
             ),
             trailingIcon = if (text.isNotEmpty()) {
                 {
-                    IconButton(onClick = { text = "" }) {
+                    IconButton(onClick = { text = ""; onTextChange("") }) {
                         Icon(imageVector = Icons.Filled.Close, contentDescription = "Clear text")
                     }
                 }
@@ -250,6 +303,175 @@ fun TodoFormBody(
             )
             Spacer(Modifier.width(12.dp))
             Text("Put to top")
+        }
+        if (showDueTime) {
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = dueTimeEnabled,
+                        onValueChange = { dueTimeEnabled = it },
+                        role = Role.Checkbox
+                    )
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppCheckToggle(
+                    checked = dueTimeEnabled,
+                    onCheckedChange = null
+                )
+                Spacer(Modifier.width(12.dp))
+                Text("Due time")
+            }
+        }
+        if (showDueTime && dueTimeEnabled) {
+            Spacer(Modifier.height(8.dp))
+            // Mirrors the Recurrence section's bordered card below - same convention for a
+            // checkbox-toggled block of detailed settings.
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ReadOnlyPickerField(
+                            value = dueDate?.let { dueDateFormat.format(it) }.orEmpty(),
+                            label = "Date",
+                            placeholder = "Select date",
+                            icon = Icons.Filled.CalendarMonth,
+                            iconContentDescription = "Pick date",
+                            onClick = { showDueDatePicker = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                        ReadOnlyPickerField(
+                            value = dueTime?.let { dueTimeFormat.format(it) }.orEmpty(),
+                            label = "Time",
+                            placeholder = "Select time",
+                            icon = Icons.Filled.Schedule,
+                            iconContentDescription = "Pick time",
+                            onClick = { showDueTimePicker = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // An opt-in, not a mode picker - approximate delivery is the silent default/
+                    // fallback (no extra permission needed), so most people never need to touch this.
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = exactTimeEnabled,
+                                onValueChange = { exactTimeEnabled = it },
+                                role = Role.Checkbox
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AppCheckToggle(
+                            checked = exactTimeEnabled,
+                            onCheckedChange = null
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text("Exact time")
+                    }
+                    Text(
+                        text = when {
+                            !exactTimeEnabled ->
+                                "The notification will arrive within a 15-minute window around the specified time."
+                            exactAlarmPermission?.isGranted == false ->
+                                "Requires an extra permission that you'll need to grant."
+                            else -> "Notifications will arrive at the exact time you set."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.background,
+                                shape = MaterialTheme.shapes.small
+                            )
+                            .padding(horizontal = 8.dp, vertical = 8.dp)
+                    )
+                    exactAlarmPermission?.let { permission ->
+                        if (exactTimeEnabled && !permission.isGranted) {
+                            TextButton(onClick = permission::request) {
+                                Text("Grant permission")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (showDueDatePicker) {
+            val selectableDates = remember {
+                object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        val candidateDate = Instant.fromEpochMilliseconds(utcTimeMillis).toLocalDateTime(TimeZone.UTC).date
+                        return candidateDate >= Clock.System.todayIn(TimeZone.currentSystemDefault())
+                    }
+                }
+            }
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = dueDate?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds(),
+                selectableDates = selectableDates
+            )
+            DatePickerDialog(
+                onDismissRequest = { showDueDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            dueDate = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date
+                        }
+                        showDueDatePicker = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDueDatePicker = false }) {
+                        Text("Cancel")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+        if (showDueTimePicker) {
+            val timePickerState = rememberTimePickerState(
+                initialHour = dueTime?.hour ?: 12,
+                initialMinute = dueTime?.minute ?: 0,
+                is24Hour = true
+            )
+            Dialog(onDismissRequest = { showDueTimePicker = false }) {
+                Surface(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        TimePicker(state = timePickerState)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = { showDueTimePicker = false }) {
+                                Text("Cancel")
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            TextButton(onClick = {
+                                dueTime = LocalTime(timePickerState.hour, timePickerState.minute)
+                                showDueTimePicker = false
+                            }) {
+                                Text("OK")
+                            }
+                        }
+                    }
+                }
+            }
         }
         if (showRecurrence) {
             Spacer(Modifier.height(4.dp))
@@ -403,6 +625,55 @@ private fun IntervalCounter(
         ) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "Increase")
         }
+    }
+}
+
+private val dueDateFormat = LocalDate.Format {
+    day()
+    char(' ')
+    monthName(MonthNames.ENGLISH_ABBREVIATED)
+    char(' ')
+    year()
+}
+
+private val dueTimeFormat = LocalTime.Format {
+    hour()
+    char(':')
+    minute()
+}
+
+// A read-only OutlinedTextField that opens a picker on tap - the field itself exposes no onClick,
+// so a transparent clickable Box on top intercepts the tap instead (readOnly alone would still let
+// the field take focus without doing anything useful).
+@Composable
+private fun ReadOnlyPickerField(
+    value: String,
+    label: String,
+    placeholder: String,
+    icon: ImageVector,
+    iconContentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            placeholder = { Text(placeholder) },
+            trailingIcon = { Icon(imageVector = icon, contentDescription = iconContentDescription) },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick
+                )
+        )
     }
 }
 

@@ -103,13 +103,20 @@ fun TodoListRoot(
     var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
     var showAddTodoSheet by remember { mutableStateOf(false) }
     var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
+    // Text carried from the quick-add sheet's "More settings" button into the full-screen dialog -
+    // cleared whenever the full-screen dialog is opened directly, so that path never inherits a
+    // stale draft left over from an earlier "More settings" hop.
+    var addTodoDraftText by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
-            TodoListEvent.ShowAddTodoFullScreenDialog -> showAddTodoFullScreenDialog = true
+            TodoListEvent.ShowAddTodoFullScreenDialog -> {
+                addTodoDraftText = ""
+                showAddTodoFullScreenDialog = true
+            }
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
             is TodoListEvent.ShowUndoSnackbar -> {
                 coroutineScope.launch {
@@ -140,8 +147,9 @@ fun TodoListRoot(
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
-            onMoreSettingsClick = {
+            onMoreSettingsClick = { draftText ->
                 showAddTodoSheet = false
+                addTodoDraftText = draftText
                 showAddTodoFullScreenDialog = true
             }
         )
@@ -154,7 +162,8 @@ fun TodoListRoot(
                 viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence))
                 showAddTodoFullScreenDialog = false
             },
-            onDismiss = { showAddTodoFullScreenDialog = false }
+            onDismiss = { showAddTodoFullScreenDialog = false },
+            initialText = addTodoDraftText
         )
     }
 

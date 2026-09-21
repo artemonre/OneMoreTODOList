@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Special app access, not a runtime prompt - canScheduleExactAlarms()/
+         ACTION_REQUEST_SCHEDULE_EXACT_ALARM only apply from Android 12 (API 31) onward. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:name=".TodoListApplication"
