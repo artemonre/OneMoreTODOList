@@ -2,11 +2,13 @@ package com.artemonre.onemoretodolist.feature.todolist.data
 
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceUnit
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 @Entity(tableName = "todo_items")
 data class TodoEntity(
@@ -24,5 +26,10 @@ data class TodoEntity(
     val recurrenceInterval: Int? = null,
     val recurrenceUnit: RecurrenceUnit? = null,
     val recurrenceAnchorInstant: Instant? = null,
-    val topSince: Instant? = null
+    val topSince: Instant? = null,
+    // dueDate/dueTime/dueTimeMode null together means "no due time set" - wall-clock local values,
+    // not a resolved instant - see TodoMappers/TodoItem.
+    val dueDate: LocalDate? = null,
+    val dueTime: LocalTime? = null,
+    val dueTimeMode: DueTimeMode? = null
 )

@@ -18,7 +18,10 @@ fun TodoEntity.toTodoItem(): TodoItem = TodoItem(
         Recurrence(type = type, interval = interval, unit = unit)
     },
     recurrenceAnchorInstant = recurrenceAnchorInstant,
-    topSince = topSince
+    topSince = topSince,
+    dueDate = dueDate,
+    dueTime = dueTime,
+    dueTimeMode = dueTimeMode
 )
 
 fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
@@ -34,5 +37,8 @@ fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
     recurrenceInterval = recurrence?.interval,
     recurrenceUnit = recurrence?.unit,
     recurrenceAnchorInstant = recurrenceAnchorInstant,
-    topSince = topSince
+    topSince = topSince,
+    dueDate = dueDate,
+    dueTime = dueTime,
+    dueTimeMode = dueTimeMode
 )

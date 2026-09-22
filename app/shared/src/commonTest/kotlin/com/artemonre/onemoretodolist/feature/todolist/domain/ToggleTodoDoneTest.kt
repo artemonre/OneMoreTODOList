@@ -14,7 +14,7 @@ class ToggleTodoDoneTest {
     fun `completing a recurring todo marks it done without spawning a copy`() = runTest {
         val recurrence = Recurrence(type = RecurrenceType.Every, interval = 1, unit = RecurrenceUnit.Week)
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(recurringTodo(id = "1", recurrence = recurrence)))
-        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences())
+        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences(), NoOpDueTimeScheduler())
 
         toggleTodoDone("1")
 
@@ -29,7 +29,7 @@ class ToggleTodoDoneTest {
         val recurrence = Recurrence(type = RecurrenceType.AfterCompletion, interval = 2, unit = RecurrenceUnit.Day)
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(recurringTodo(id = "1", recurrence = recurrence)))
         val todoPreferences = FakeTodoPreferences(initialArchiveCompletedTodos = false)
-        val toggleTodoDone = ToggleTodoDone(dataSource, todoPreferences)
+        val toggleTodoDone = ToggleTodoDone(dataSource, todoPreferences, NoOpDueTimeScheduler())
 
         toggleTodoDone("1")
 
@@ -42,7 +42,7 @@ class ToggleTodoDoneTest {
     fun `a non-recurring todo is still deleted immediately when archiving is off`() = runTest {
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(recurringTodo(id = "1", recurrence = null)))
         val todoPreferences = FakeTodoPreferences(initialArchiveCompletedTodos = false)
-        val toggleTodoDone = ToggleTodoDone(dataSource, todoPreferences)
+        val toggleTodoDone = ToggleTodoDone(dataSource, todoPreferences, NoOpDueTimeScheduler())
 
         toggleTodoDone("1")
 
@@ -55,7 +55,7 @@ class ToggleTodoDoneTest {
         val dataSource = FakeTodoLocalDataSource(
             initialTodos = listOf(recurringTodo(id = "1", recurrence = recurrence, status = TodoStatus.Done))
         )
-        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences())
+        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences(), NoOpDueTimeScheduler())
 
         toggleTodoDone("1")
 
@@ -69,7 +69,7 @@ class ToggleTodoDoneTest {
     fun `completing an AfterCompletion todo sets its anchor to now`() = runTest {
         val recurrence = Recurrence(type = RecurrenceType.AfterCompletion, interval = 2, unit = RecurrenceUnit.Day)
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(recurringTodo(id = "1", recurrence = recurrence)))
-        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences())
+        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences(), NoOpDueTimeScheduler())
 
         toggleTodoDone("1")
 
@@ -82,7 +82,7 @@ class ToggleTodoDoneTest {
         val dataSource = FakeTodoLocalDataSource(
             initialTodos = listOf(recurringTodo(id = "1", recurrence = recurrence))
         )
-        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences())
+        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences(), NoOpDueTimeScheduler())
 
         toggleTodoDone("1")
 

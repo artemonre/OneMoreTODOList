@@ -14,7 +14,7 @@ class AddTodoTest {
     @Test
     fun `unprioritized todo is appended after the current highest sortOrder`() = runTest {
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
-        val addTodo = AddTodo(dataSource)
+        val addTodo = AddTodo(dataSource, NoOpDueTimeScheduler())
 
         addTodo("New todo", isPrioritized = false)
 
@@ -28,7 +28,7 @@ class AddTodoTest {
         val dataSource = FakeTodoLocalDataSource(
             initialTodos = listOf(todoItem(id = "1", sortOrder = 0), todoItem(id = "2", sortOrder = 1))
         )
-        val addTodo = AddTodo(dataSource)
+        val addTodo = AddTodo(dataSource, NoOpDueTimeScheduler())
 
         addTodo("Put to top", isPrioritized = true)
 
@@ -40,7 +40,7 @@ class AddTodoTest {
     @Test
     fun `an Every recurrence is carried over and anchored to today`() = runTest {
         val dataSource = FakeTodoLocalDataSource(initialTodos = emptyList())
-        val addTodo = AddTodo(dataSource)
+        val addTodo = AddTodo(dataSource, NoOpDueTimeScheduler())
         val recurrence = Recurrence(type = RecurrenceType.Every, interval = 2, unit = RecurrenceUnit.Week)
 
         addTodo("Water the plants", isPrioritized = true, recurrence = recurrence)
@@ -53,7 +53,7 @@ class AddTodoTest {
     @Test
     fun `an AfterCompletion recurrence is carried over without an anchor instant`() = runTest {
         val dataSource = FakeTodoLocalDataSource(initialTodos = emptyList())
-        val addTodo = AddTodo(dataSource)
+        val addTodo = AddTodo(dataSource, NoOpDueTimeScheduler())
         val recurrence = Recurrence(type = RecurrenceType.AfterCompletion, interval = 3, unit = RecurrenceUnit.Day)
 
         addTodo("Refill water filter", isPrioritized = false, recurrence = recurrence)

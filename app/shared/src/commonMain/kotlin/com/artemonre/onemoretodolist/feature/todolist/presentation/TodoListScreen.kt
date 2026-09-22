@@ -103,13 +103,20 @@ fun TodoListRoot(
     var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
     var showAddTodoSheet by remember { mutableStateOf(false) }
     var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
+    // Text carried from the quick-add sheet's "More settings" button into the full-screen dialog -
+    // cleared whenever the full-screen dialog is opened directly, so that path never inherits a
+    // stale draft left over from an earlier "More settings" hop.
+    var addTodoDraftText by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
-            TodoListEvent.ShowAddTodoFullScreenDialog -> showAddTodoFullScreenDialog = true
+            TodoListEvent.ShowAddTodoFullScreenDialog -> {
+                addTodoDraftText = ""
+                showAddTodoFullScreenDialog = true
+            }
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
             is TodoListEvent.ShowUndoSnackbar -> {
                 coroutineScope.launch {
@@ -135,13 +142,14 @@ fun TodoListRoot(
     if (showAddTodoSheet) {
         TodoFormBottomSheet(
             editingItem = null,
-            onConfirm = { text, isPrioritized, recurrence ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence))
+            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode))
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
-            onMoreSettingsClick = {
+            onMoreSettingsClick = { draftText ->
                 showAddTodoSheet = false
+                addTodoDraftText = draftText
                 showAddTodoFullScreenDialog = true
             }
         )
@@ -150,19 +158,22 @@ fun TodoListRoot(
     if (showAddTodoFullScreenDialog) {
         TodoFormFullScreenDialog(
             editingItem = null,
-            onConfirm = { text, isPrioritized, recurrence ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence))
+            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode))
                 showAddTodoFullScreenDialog = false
             },
-            onDismiss = { showAddTodoFullScreenDialog = false }
+            onDismiss = { showAddTodoFullScreenDialog = false },
+            initialText = addTodoDraftText
         )
     }
 
     editingTodo?.let { item ->
         TodoFormFullScreenDialog(
             editingItem = item,
-            onConfirm = { text, isPrioritized, recurrence ->
-                viewModel.onAction(TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized, recurrence))
+            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
+                viewModel.onAction(
+                    TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode)
+                )
                 editingTodo = null
             },
             onDismiss = { editingTodo = null }

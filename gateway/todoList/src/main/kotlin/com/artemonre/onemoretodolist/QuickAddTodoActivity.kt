@@ -54,7 +54,9 @@ class QuickAddTodoActivity : ComponentActivity() {
                     ) {
                         TodoFormBody(
                             editingItem = null,
-                            onConfirm = { text, isPrioritized, recurrence ->
+                            onConfirm = { text, isPrioritized, recurrence, _, _, _ ->
+                                // showDueTime is never enabled here, so the due-time params are
+                                // always null - AddTodo's 3-arg overload covers this widget flow.
                                 coroutineScope.launch { addTodo(text, isPrioritized, recurrence) }
                                 finish()
                             },

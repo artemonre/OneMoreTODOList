@@ -9,7 +9,8 @@ import kotlinx.datetime.todayIn
 // home-screen widget's checkbox rows share one "toggle done" implementation.
 class ToggleTodoDone(
     private val dataSource: TodoLocalDataSource,
-    private val todoPreferences: TodoPreferences
+    private val todoPreferences: TodoPreferences,
+    private val dueTimeScheduler: DueTimeScheduler
 ) {
     // allowImmediateDelete lets the widget's checkbox opt out of the archive-off delete branch -
     // a home-screen mis-tap has no Snackbar/undo surface available (Glance has no equivalent),
@@ -24,6 +25,7 @@ class ToggleTodoDone(
             !todoPreferences.archiveCompletedTodos.first()
         if (canImmediatelyDelete) {
             dataSource.deleteTodo(id)
+            dueTimeScheduler.cancel(id)
             return
         }
         val newStatus = item.status.toggled()
@@ -39,8 +41,21 @@ class ToggleTodoDone(
         } else {
             item.recurrenceAnchorInstant
         }
-        dataSource.upsertTodo(
-            item.copy(status = newStatus, completionDate = completionDate, recurrenceAnchorInstant = recurrenceAnchorInstant)
+        // A todo that becomes Done (whether then kept as Done or later deleted) is no longer
+        // active/due - one-way reset, same as any other "archive" of it. Toggling back to Active
+        // does not restore a due time.
+        val dueDate = if (newStatus == TodoStatus.Done) null else item.dueDate
+        val dueTime = if (newStatus == TodoStatus.Done) null else item.dueTime
+        val dueTimeMode = if (newStatus == TodoStatus.Done) null else item.dueTimeMode
+        val updated = item.copy(
+            status = newStatus,
+            completionDate = completionDate,
+            recurrenceAnchorInstant = recurrenceAnchorInstant,
+            dueDate = dueDate,
+            dueTime = dueTime,
+            dueTimeMode = dueTimeMode
         )
+        dataSource.upsertTodo(updated)
+        dueTimeScheduler.reschedule(updated)
     }
 }
