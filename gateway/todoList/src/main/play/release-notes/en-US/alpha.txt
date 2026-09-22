@@ -1,1 +1,3 @@
-Fixed a rare startup crash on some devices.
+- Set a due date and time on a todo to get notified when it's due.
+- Fixed the quick-add sheet's "More settings" button losing text you'd already typed.
+- Fixed unreadable (white-on-white) status bar icons when adding/editing a todo.
