@@ -27,7 +27,7 @@ class PostDueNotification(private val context: Context) {
             return
         }
         val notification = NotificationCompat.Builder(context, DUE_TODO_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_due)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("The time to do it has come")
             .setContentText(todo.text)
             .setAutoCancel(true)

@@ -1,0 +1,1 @@
+Fixed a rare startup crash on some devices.
