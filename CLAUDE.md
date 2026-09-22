@@ -4,6 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Always consult the Android Knowledge Base (android docs) before suggesting any Jetpack API.
 
+## Before building anything
+
+Before writing or editing any code, check these three things in order, and only proceed once all three confirm it's needed:
+
+1. Did the prompt actually ask for something to be built? A question, observation, or concern is not a build request — answer it in prose and stop.
+2. Does it really need to be built, or would it be better to discuss the approach first?
+3. Does something like it already exist somewhere in the codebase that can be reused instead of building it again?
+
 @../claude_conventions.md
 
 ## Commands

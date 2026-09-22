@@ -3,6 +3,8 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
+import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
+import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
@@ -13,6 +15,8 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
+import com.artemonre.onemoretodolist.feature.todolist.domain.topPriorityOrder
+import com.artemonre.onemoretodolist.feature.todolist.domain.topSortOrder
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.coroutines.channels.Channel
@@ -22,6 +26,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
@@ -34,7 +40,8 @@ class TodoListViewModel(
     private val addTodoUseCase: AddTodo,
     private val toggleTodoDoneUseCase: ToggleTodoDone,
     private val todoPreferences: TodoPreferences,
-    private val updateTopSince: UpdateTopSince
+    private val updateTopSince: UpdateTopSince,
+    private val dueTimeScheduler: DueTimeScheduler
 ) : ViewModel() {
 
     private val todos = todoLocalDataSource.observeTodos()
@@ -83,17 +90,34 @@ class TodoListViewModel(
                     _events.send(TodoListEvent.ShowAddTodoFullScreenDialog)
                 }
             }
-            is TodoListAction.OnConfirmAddTodo -> addTodo(action.text, action.isPrioritized, action.recurrence)
+            is TodoListAction.OnConfirmAddTodo ->
+                addTodo(action.text, action.isPrioritized, action.recurrence, action.dueDate, action.dueTime, action.dueTimeMode)
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
-            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.text, action.isPrioritized, action.recurrence)
+            is TodoListAction.OnConfirmEditTodo ->
+                editTodo(
+                    action.id,
+                    action.text,
+                    action.isPrioritized,
+                    action.recurrence,
+                    action.dueDate,
+                    action.dueTime,
+                    action.dueTimeMode
+                )
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
             is TodoListAction.OnUndoClick -> undo()
         }
     }
 
-    private fun addTodo(text: String, isPrioritized: Boolean, recurrence: Recurrence?) {
+    private fun addTodo(
+        text: String,
+        isPrioritized: Boolean,
+        recurrence: Recurrence?,
+        dueDate: LocalDate?,
+        dueTime: LocalTime?,
+        dueTimeMode: DueTimeMode?
+    ) {
         viewModelScope.launch {
-            addTodoUseCase(text, isPrioritized, recurrence)
+            addTodoUseCase(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode)
         }
     }
 
@@ -104,7 +128,15 @@ class TodoListViewModel(
         }
     }
 
-    private fun editTodo(id: String, text: String, isPrioritized: Boolean, recurrence: Recurrence?) {
+    private fun editTodo(
+        id: String,
+        text: String,
+        isPrioritized: Boolean,
+        recurrence: Recurrence?,
+        dueDate: LocalDate?,
+        dueTime: LocalTime?,
+        dueTimeMode: DueTimeMode?
+    ) {
         val currentTodos = todos.value
         val item = currentTodos.firstOrNull { it.id == id } ?: return
         // Only newly-prioritized items jump to the top of Manual sort too - an item that was
@@ -115,15 +147,19 @@ class TodoListViewModel(
             lastEditDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
             sortOrder = if (becomingPrioritized) topSortOrder(currentTodos) else item.sortOrder,
             priorityOrder = if (isPrioritized) {
-                item.priorityOrder ?: prioritize(isPrioritized = true, currentTodos = currentTodos)
+                item.priorityOrder ?: topPriorityOrder(currentTodos)
             } else {
                 null
             },
             recurrence = recurrence,
-            recurrenceAnchorInstant = recurrenceAnchorInstant(item, recurrence)
+            recurrenceAnchorInstant = recurrenceAnchorInstant(item, recurrence),
+            dueDate = dueDate,
+            dueTime = dueTime,
+            dueTimeMode = dueTimeMode
         )
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(updated)
+            dueTimeScheduler.reschedule(updated)
         }
     }
 
@@ -155,6 +191,7 @@ class TodoListViewModel(
         val item = todos.value.firstOrNull { it.id == id } ?: return
         viewModelScope.launch {
             todoLocalDataSource.deleteTodo(id)
+            dueTimeScheduler.cancel(id)
             pendingUndoItem = item
             _events.send(TodoListEvent.ShowUndoSnackbar("Todo deleted"))
         }
@@ -165,19 +202,9 @@ class TodoListViewModel(
         pendingUndoItem = null
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(item)
+            dueTimeScheduler.reschedule(item)
         }
     }
-
-    private fun prioritize(isPrioritized: Boolean, currentTodos: List<TodoItem>): Double? {
-        return if (isPrioritized) {
-            (currentTodos.mapNotNull { it.priorityOrder }.minOrNull() ?: 1.0) * 0.9
-        } else {
-            null
-        }
-    }
-
-    private fun topSortOrder(currentTodos: List<TodoItem>): Int =
-        (currentTodos.minOfOrNull { it.sortOrder } ?: 0) - 1
 
     private fun toggleDone(id: String) {
         val item = todos.value.firstOrNull { it.id == id } ?: return

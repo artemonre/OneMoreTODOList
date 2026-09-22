@@ -7,6 +7,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
+import com.artemonre.onemoretodolist.feature.todolist.domain.RearmDueTodoAlarms
 import java.util.concurrent.TimeUnit
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -30,6 +31,9 @@ fun interface WidgetRefresher {
 // 2. Repaints the widget - TopTodoAttention escalates purely from elapsed time, and nothing else
 //    pings the widget for that (writes do, via NotifyingTodoLocalDataSource, but time passing alone
 //    doesn't write anything).
+// 3. Re-arms due-time alarms as a safety net - not the primary delivery path (each due-time todo
+//    already gets its own AlarmManager alarm the moment it's saved), just a cheap reconciliation
+//    pass in case one was missed (e.g. a boot the BootCompletedReceiver somehow didn't catch).
 // WorkManager's own periodic minimum is 15 minutes, so 1h/15m stays close to that floor while
 // remaining battery-friendly.
 class PeriodicTodoMaintenanceWorker(
@@ -38,9 +42,11 @@ class PeriodicTodoMaintenanceWorker(
 ) : CoroutineWorker(context, params), KoinComponent {
     private val applyDueRecurrences: ApplyDueRecurrences by inject()
     private val widgetRefresher: WidgetRefresher by inject()
+    private val rearmDueTodoAlarms: RearmDueTodoAlarms by inject()
 
     override suspend fun doWork(): Result {
         applyDueRecurrences()
+        rearmDueTodoAlarms()
         widgetRefresher.refresh()
         return Result.success()
     }

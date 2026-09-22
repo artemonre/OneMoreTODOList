@@ -105,7 +105,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.serialization.core)
-            implementation(libs.kotlinx.datetime)
+            // api: TodoFormBody's onConfirm param exposes LocalDate/LocalTime to downstream
+            // consumers (gateway/*'s QuickAddTodoActivity) that implement it.
+            api(libs.kotlinx.datetime)
             implementation(libs.navigation3.ui)
             // api: App()'s platformModules param exposes Koin's Module type to downstream
             // consumers (gateway/*, desktopApp, webApp, iosApp) that construct it.
