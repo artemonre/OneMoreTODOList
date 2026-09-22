@@ -216,13 +216,11 @@ fun TodoFormBody(
     var dueTimeEnabled by remember { mutableStateOf(editingItem?.dueDate != null) }
     // Off = approximate (the silent default/fallback, no extra permission needed) - on is an
     // explicit opt-in for exact-time delivery, not a mode the user is forced to pick upfront.
-    // Defaults to on when editing an already-exact todo, or (when adding) if the permission is
-    // already granted - no reason to make someone who's already cleared that hurdle opt in again.
+    // Defaults purely off the current permission state, adding or editing alike - no reason to
+    // make someone who's already cleared that hurdle opt in again, regardless of whatever mode a
+    // given todo happened to be saved with before.
     var exactTimeEnabled by remember {
-        mutableStateOf(
-            editingItem?.dueTimeMode == DueTimeMode.Exact ||
-                (editingItem == null && exactAlarmPermission?.isGranted == true)
-        )
+        mutableStateOf(exactAlarmPermission?.isGranted == true)
     }
     // Wall-clock local values, not a resolved instant - "10am" should keep meaning 10am local even
     // if the timezone changes before it fires, see TodoItem.dueInstant.
@@ -370,7 +368,7 @@ fun TodoFormBody(
                             icon = Icons.Filled.CalendarMonth,
                             iconContentDescription = "Pick date",
                             onClick = { showDueDatePicker = true },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(3f)
                         )
                         ReadOnlyPickerField(
                             value = dueTime?.let { dueTimeFormat.format(it) }.orEmpty(),
@@ -379,7 +377,7 @@ fun TodoFormBody(
                             icon = Icons.Filled.Schedule,
                             iconContentDescription = "Pick time",
                             onClick = { showDueTimePicker = true },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(2f)
                         )
                     }
                     // An opt-in, not a mode picker - approximate delivery is the silent default/
@@ -402,13 +400,18 @@ fun TodoFormBody(
                         Spacer(Modifier.width(12.dp))
                         Text("Exact time")
                     }
+                    // Notifications being off blocks delivery entirely regardless of exact/
+                    // approximate mode, so it takes priority over that mode's own description -
+                    // one field, one message at a time, never both stacked.
                     Text(
                         text = when {
+                            notificationPermission?.isGranted == false ->
+                                "The notification won't arrive because notifications are turned off for this app."
                             !exactTimeEnabled ->
                                 "The notification will arrive within a 15-minute window around the specified time."
                             exactAlarmPermission?.isGranted == false ->
                                 "Requires an extra permission that you'll need to grant."
-                            else -> "Notifications will arrive at the exact time you set."
+                            else -> "The notification will arrive at the exact time you set."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -419,8 +422,13 @@ fun TodoFormBody(
                             )
                             .padding(horizontal = 8.dp, vertical = 8.dp)
                     )
+                    if (notificationPermission?.isGranted == false) {
+                        TextButton(onClick = { notificationPermission.request(allowSettingsRedirect = true) }) {
+                            Text("Allow notifications")
+                        }
+                    }
                     exactAlarmPermission?.let { permission ->
-                        if (exactTimeEnabled && !permission.isGranted) {
+                        if (notificationPermission?.isGranted != false && exactTimeEnabled && !permission.isGranted) {
                             TextButton(onClick = permission::request) {
                                 Text("Grant permission")
                             }

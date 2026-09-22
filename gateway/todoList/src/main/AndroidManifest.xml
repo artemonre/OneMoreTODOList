@@ -88,6 +88,16 @@
             </intent-filter>
         </receiver>
 
+        <!-- Fired by the notification's "Done" action button, same PendingIntent shape as
+             DueTimeAlarmReceiver above. -->
+        <receiver
+            android:name=".notification.MarkTodoDoneReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.artemonre.onemoretodolist.ACTION_MARK_TODO_DONE" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".notification.BootCompletedReceiver"
             android:exported="true">
