@@ -118,6 +118,7 @@ class TodoListViewModel(
     ) {
         viewModelScope.launch {
             addTodoUseCase(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode)
+            _events.send(TodoListEvent.TodoActivityHappened)
         }
     }
 
@@ -216,6 +217,7 @@ class TodoListViewModel(
             if (item.status == TodoStatus.Active) {
                 pendingUndoItem = item
                 _events.send(TodoListEvent.ShowUndoSnackbar("Todo completed"))
+                _events.send(TodoListEvent.TodoActivityHappened)
             }
         }
     }

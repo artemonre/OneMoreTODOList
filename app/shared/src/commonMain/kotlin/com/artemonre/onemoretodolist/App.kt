@@ -1,6 +1,7 @@
 package com.artemonre.onemoretodolist
 
 import androidx.compose.runtime.Composable
+import com.artemonre.onemoretodolist.core.ads.di.adsModule
 import com.artemonre.onemoretodolist.core.container.ContainerRoot
 import com.artemonre.onemoretodolist.core.container.NavigationTab
 import com.artemonre.onemoretodolist.core.container.di.containerModule
@@ -16,7 +17,7 @@ import org.koin.dsl.koinConfiguration
 // KoinApplication start and by any platform entry point (e.g. an Android Application subclass)
 // that needs to start Koin eagerly before App() ever composes.
 fun appKoinModules(platformModules: List<Module>): List<Module> =
-    listOf(todoListModule, themeModule, settingsModule, containerModule) + platformModules
+    listOf(todoListModule, themeModule, settingsModule, containerModule, adsModule) + platformModules
 
 @Composable
 fun App(platformModules: List<Module>, contentTabs: List<NavigationTab>) {

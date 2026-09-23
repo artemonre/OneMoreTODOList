@@ -3,6 +3,8 @@ package com.artemonre.onemoretodolist
 import android.app.Application
 import androidx.glance.appwidget.updateAll
 import com.artemonre.onemoretodolist.analytics.initPostHog
+import com.artemonre.onemoretodolist.core.ads.AdConfig
+import com.artemonre.onemoretodolist.core.ads.di.androidAdsModule
 import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidDueTimeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
@@ -12,6 +14,7 @@ import com.artemonre.onemoretodolist.notification.PostDueNotification
 import com.artemonre.onemoretodolist.notification.createDueTodoNotificationChannel
 import com.artemonre.onemoretodolist.observability.initSentry
 import com.artemonre.onemoretodolist.widget.TodoWidget
+import com.google.android.gms.ads.MobileAds
 import com.posthog.kmp.PostHogContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +41,7 @@ class TodoListApplication : Application() {
             )
         }
         createDueTodoNotificationChannel(this@TodoListApplication)
+        MobileAds.initialize(this@TodoListApplication)
         startKoin {
             androidContext(this@TodoListApplication)
             modules(
@@ -56,6 +60,13 @@ class TodoListApplication : Application() {
                             TodoWidget().updateAll(this@TodoListApplication)
                         },
                         androidDueTimeModule(this@TodoListApplication),
+                        androidAdsModule(
+                            this@TodoListApplication,
+                            AdConfig(
+                                bannerAdUnitId = BuildConfig.ADMOB_BANNER_AD_UNIT_ID,
+                                interstitialAdUnitId = BuildConfig.ADMOB_INTERSTITIAL_AD_UNIT_ID
+                            )
+                        ),
                         module {
                             // Lets PeriodicTodoMaintenanceWorker repaint the widget without
                             // app:shared depending on Glance - WorkManager (not Koin) constructs

@@ -5,8 +5,10 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -34,6 +36,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
+import com.artemonre.onemoretodolist.core.ads.AdBanner
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFlipVisibility
 import com.artemonre.onemoretodolist.core.designsystem.components.AppNavigationBar
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -123,25 +126,38 @@ fun ContainerScreen(
     // must not be able to grow the bottomBar's measured height (which would both push the nav bar
     // up within its slot and grow the content's reserved bottom inset). Its height is tracked here
     // purely to position the FAB relative to its top edge; it isn't read on every recomposition
-    // this causes, since the nav bar's own height never changes when the FAB expands.
-    var navBarHeightPx by remember { mutableIntStateOf(0) }
+    // this causes, since the nav bar's own height never changes when the FAB expands. Now the
+    // whole bottom stack's height (nav bar + AdBanner below it + the system nav bar inset), not
+    // just the nav bar alone - the FAB should still straddle the nav bar's top edge, which is the
+    // top of this whole stack since AdBanner sits below, not above, the nav bar.
+    var bottomBarHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
-                AppNavigationBar(
-                    items = state.tabs,
-                    selectedIndex = state.selectedTabIndex,
-                    onItemSelected = { index ->
-                        isTabMovingRight = index >= state.selectedTabIndex
-                        onAction(ContainerAction.OnTabSelected(index))
-                    },
-                    icon = { it.icon },
-                    label = { it.label },
-                    modifier = Modifier.onGloballyPositioned { navBarHeightPx = it.size.height }
-                )
+                Column(
+                    modifier = Modifier
+                        // Applied once to the whole stack instead of letting NavigationBar reserve
+                        // it internally (see MaterialNavigationBar) - AdBanner is the true
+                        // bottom-most element now, so it's the one that needs to sit above the
+                        // system nav bar, not the tab bar above it.
+                        .navigationBarsPadding()
+                        .onGloballyPositioned { bottomBarHeightPx = it.size.height }
+                ) {
+                    AppNavigationBar(
+                        items = state.tabs,
+                        selectedIndex = state.selectedTabIndex,
+                        onItemSelected = { index ->
+                            isTabMovingRight = index >= state.selectedTabIndex
+                            onAction(ContainerAction.OnTabSelected(index))
+                        },
+                        icon = { it.icon },
+                        label = { it.label }
+                    )
+                    AdBanner()
+                }
             }
         ) { innerPadding ->
             NavDisplay(
@@ -169,12 +185,12 @@ fun ContainerScreen(
         if (currentFab != null) lastFab = currentFab
 
         lastFab?.let { fab ->
-            val navBarHeight = with(density) { navBarHeightPx.toDp() }
+            val bottomBarHeight = with(density) { bottomBarHeightPx.toDp() }
             AppFlipVisibility(
                 visible = currentFab != null,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(y = -(navBarHeight - FAB_NAV_BAR_OVERLAP))
+                    .offset(y = -(bottomBarHeight - FAB_NAV_BAR_OVERLAP))
             ) {
                 fab()
             }

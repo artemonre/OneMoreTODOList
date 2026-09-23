@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.core.designsystem.components.material
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,7 +22,10 @@ fun <T> MaterialNavigationBar(
     label: (T) -> String,
     modifier: Modifier = Modifier
 ) {
-    NavigationBar(modifier = modifier) {
+    // windowInsets zeroed out - this bar isn't the true bottom-most element anymore (AdBanner
+    // renders below it, see ContainerScreen), so the system nav bar inset is applied once to
+    // that whole bottom stack instead of being reserved a second time in here.
+    NavigationBar(modifier = modifier, windowInsets = WindowInsets(0)) {
         items.forEachIndexed { index, item ->
             NavigationBarItem(
                 selected = index == selectedIndex,

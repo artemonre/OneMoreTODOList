@@ -19,6 +19,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <!-- Read by the Google Mobile Ads SDK at MobileAds.initialize() time - value supplied via
+             the admobAppId manifest placeholder, see gateway/todoList/build.gradle.kts. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
+
         <activity
             android:exported="true"
             android:launchMode="singleTop"

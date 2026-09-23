@@ -28,6 +28,7 @@ materialIconsCore = "1.7.3"
 multiplatformSettings = "1.3.0"
 navigation3 = "1.1.0-alpha01"
 playAppUpdate = "2.1.0"
+playServicesAds = "25.5.0"
 reorderable = "3.1.0"
 posthogKmp = "0.5.1"
 room3 = "3.0.1"
@@ -85,6 +86,7 @@ androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.re
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work" }
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 play-appUpdate-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 posthog-kmp = { module = "com.posthog:posthog-kmp", version.ref = "posthogKmp" }
 sentry-java = { module = "io.sentry:sentry", version.ref = "sentry" }
 sentry-kmp = { module = "io.sentry:sentry-kotlin-multiplatform", version.ref = "sentryKmp" }

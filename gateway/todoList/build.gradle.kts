@@ -1,5 +1,6 @@
 import com.github.triplet.gradle.androidpublisher.ReleaseStatus
 import com.github.triplet.gradle.androidpublisher.ResolutionStrategy
+import java.util.Properties
 
 plugins {
     id("gateway.application")
@@ -7,10 +8,35 @@ plugins {
     alias(libs.plugins.gradlePlayPublisher)
 }
 
+// Gitignored, this module's own directory - see admob.properties.template. Missing file (or any
+// blank value) falls back to Google's public test IDs below, which always serve test creatives -
+// safe for development, but a real release needs its own AdMob account and real IDs here. Ads are
+// wired here rather than in the shared gateway.application convention plugin since monetization is
+// a per-product decision, not something every future gateway automatically wants.
+val admobPropertiesFile = project.file("admob.properties")
+val admobProperties = Properties().apply {
+    if (admobPropertiesFile.exists()) {
+        admobPropertiesFile.inputStream().use { load(it) }
+    }
+}
+fun admobProperty(key: String, testFallback: String): String =
+    admobProperties.getProperty(key, "").ifBlank { testFallback }
+
 android {
     namespace = "com.artemonre.onemoretodolist"
     defaultConfig {
         applicationId = "com.artemonre.onemoretodolist"
+        manifestPlaceholders["admobAppId"] = admobProperty("appId", "ca-app-pub-3940256099942544~3347511713")
+        buildConfigField(
+            "String",
+            "ADMOB_BANNER_AD_UNIT_ID",
+            "\"${admobProperty("bannerAdUnitId", "ca-app-pub-3940256099942544/9214589741")}\""
+        )
+        buildConfigField(
+            "String",
+            "ADMOB_INTERSTITIAL_AD_UNIT_ID",
+            "\"${admobProperty("interstitialAdUnitId", "ca-app-pub-3940256099942544/1033173712")}\""
+        )
     }
     buildTypes {
         debug {
@@ -78,6 +104,7 @@ dependencies {
     implementation(libs.androidx.glance.material3)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    implementation(libs.play.services.ads)
     debugImplementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.glance.appwidget.preview)
 }

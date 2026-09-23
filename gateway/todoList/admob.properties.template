@@ -1,0 +1,13 @@
+# Copy this file to admob.properties (same directory) and fill in your real values.
+# admob.properties is gitignored - a missing file just builds with Google's public test ad
+# unit IDs (they always serve test creatives, safe for development but not for a real release).
+#
+# appId is the AdMob "App ID" from your app's Settings page in the AdMob console
+# (admob.google.com), format ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY.
+appId=
+
+# Ad unit IDs are created per ad format under your app in the AdMob console, format
+# ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY. Leave blank to fall back to Google's test unit for
+# that format.
+bannerAdUnitId=
+interstitialAdUnitId=

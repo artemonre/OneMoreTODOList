@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.createPlainTextClipEntry
 import com.artemonre.onemoretodolist.rememberNativeShareLauncher
+import com.artemonre.onemoretodolist.core.ads.rememberInterstitialAdTrigger
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -109,6 +110,7 @@ fun TodoListRoot(
     var addTodoDraftText by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val triggerInterstitialAd = rememberInterstitialAdTrigger()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
@@ -130,6 +132,7 @@ fun TodoListRoot(
                     }
                 }
             }
+            TodoListEvent.TodoActivityHappened -> triggerInterstitialAd()
         }
     }
 

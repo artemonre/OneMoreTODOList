@@ -93,6 +93,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.play.appUpdate.ktx)
+            implementation(libs.play.services.ads)
         }
         commonMain.dependencies {
             api(project(":core"))
