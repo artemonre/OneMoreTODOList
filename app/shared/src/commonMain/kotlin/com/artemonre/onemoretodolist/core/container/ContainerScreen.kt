@@ -7,10 +7,13 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List as ListIcon
 import androidx.compose.material.icons.filled.Settings
@@ -135,16 +138,25 @@ fun ContainerScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            // Only horizontal - top and bottom are each handled elsewhere (every screen handles
+            // its own top inset, e.g. TodoListScreen's LazyColumn; the bottom nav bar/AdBanner
+            // stack handles its own via navigationBarsPadding above). Left fully zeroed, this main
+            // content area rendered edge-to-edge under a landscape side nav bar (legacy 2/3-button
+            // navigation moves the system nav bar to a side edge in landscape, not the bottom).
+            contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
             bottomBar = {
                 Column(
                     modifier = Modifier
+                        // onGloballyPositioned must come before navigationBarsPadding in the chain
+                        // (outer, not inner) to observe the padded size - otherwise it measures
+                        // only the content inside the padding, under-counting the system inset and
+                        // leaving the FAB (positioned off this height below) sitting too low.
+                        .onGloballyPositioned { bottomBarHeightPx = it.size.height }
                         // Applied once to the whole stack instead of letting NavigationBar reserve
                         // it internally (see MaterialNavigationBar) - AdBanner is the true
                         // bottom-most element now, so it's the one that needs to sit above the
                         // system nav bar, not the tab bar above it.
                         .navigationBarsPadding()
-                        .onGloballyPositioned { bottomBarHeightPx = it.size.height }
                 ) {
                     AppNavigationBar(
                         items = state.tabs,
