@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.artemonre.onemoretodolist.core.ads.ConsentEligibilityTracker
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
@@ -41,7 +42,8 @@ class TodoListViewModel(
     private val toggleTodoDoneUseCase: ToggleTodoDone,
     private val todoPreferences: TodoPreferences,
     private val updateTopSince: UpdateTopSince,
-    private val dueTimeScheduler: DueTimeScheduler
+    private val dueTimeScheduler: DueTimeScheduler,
+    private val consentEligibilityTracker: ConsentEligibilityTracker
 ) : ViewModel() {
 
     private val todos = todoLocalDataSource.observeTodos()
@@ -116,6 +118,7 @@ class TodoListViewModel(
         dueTime: LocalTime?,
         dueTimeMode: DueTimeMode?
     ) {
+        consentEligibilityTracker.recordTodoAction()
         viewModelScope.launch {
             addTodoUseCase(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode)
             _events.send(TodoListEvent.TodoActivityHappened)
@@ -158,6 +161,7 @@ class TodoListViewModel(
             dueTime = dueTime,
             dueTimeMode = dueTimeMode
         )
+        consentEligibilityTracker.recordTodoAction()
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(updated)
             dueTimeScheduler.reschedule(updated)
@@ -190,6 +194,7 @@ class TodoListViewModel(
 
     private fun deleteTodo(id: String) {
         val item = todos.value.firstOrNull { it.id == id } ?: return
+        consentEligibilityTracker.recordTodoAction()
         viewModelScope.launch {
             todoLocalDataSource.deleteTodo(id)
             dueTimeScheduler.cancel(id)
@@ -216,6 +221,7 @@ class TodoListViewModel(
             // a reversal.
             if (item.status == TodoStatus.Active) {
                 pendingUndoItem = item
+                consentEligibilityTracker.recordTodoAction()
                 _events.send(TodoListEvent.ShowUndoSnackbar("Todo completed"))
                 _events.send(TodoListEvent.TodoActivityHappened)
             }

@@ -36,6 +36,7 @@ sentry = "8.56.0"
 sentryAndroidGradlePlugin = "6.22.0"
 sentryKmp = "0.27.0"
 sqlite = "2.7.0"
+umpSdk = "4.0.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -87,6 +88,7 @@ androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 play-appUpdate-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
+ump-sdk = { module = "com.google.android.ump:user-messaging-platform", version.ref = "umpSdk" }
 posthog-kmp = { module = "com.posthog:posthog-kmp", version.ref = "posthogKmp" }
 sentry-java = { module = "io.sentry:sentry", version.ref = "sentry" }
 sentry-kmp = { module = "io.sentry:sentry-kotlin-multiplatform", version.ref = "sentryKmp" }

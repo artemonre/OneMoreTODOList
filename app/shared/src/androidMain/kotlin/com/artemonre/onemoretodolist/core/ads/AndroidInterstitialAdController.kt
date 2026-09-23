@@ -17,8 +17,10 @@ import kotlinx.datetime.todayIn
 private const val PREFS_NAME = "interstitial_ad"
 private const val KEY_LAST_SHOWN_DATE = "last_shown_date"
 
-// Keeps one interstitial preloaded at all times and shows it at most once a day - see
-// rememberInterstitialAdTrigger, called after a todo is created or completed.
+// Keeps one interstitial preloaded and shows it at most once a day - see
+// rememberInterstitialAdTrigger, called after a todo is created or completed. Does NOT preload on
+// construction - onAdsAllowed() (called by RequestConsentIfEligible once consent is resolved)
+// starts the first load, so nothing is ever requested before that.
 class AndroidInterstitialAdController(
     private val context: Context,
     private val adConfig: AdConfig
@@ -26,7 +28,7 @@ class AndroidInterstitialAdController(
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private var interstitialAd: InterstitialAd? = null
 
-    init {
+    fun onAdsAllowed() {
         loadAd()
     }
 

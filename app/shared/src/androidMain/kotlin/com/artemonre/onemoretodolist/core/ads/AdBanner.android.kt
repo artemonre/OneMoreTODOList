@@ -3,11 +3,13 @@ package com.artemonre.onemoretodolist.core.ads
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -15,6 +17,12 @@ import org.koin.compose.koinInject
 
 @Composable
 actual fun AdBanner(modifier: Modifier) {
+    // Nothing is requested at all until consent is resolved (not required, or given) - see
+    // AdConsentState/RequestConsentIfEligible.
+    val adConsentState = koinInject<AdConsentState>()
+    val adsAllowed by adConsentState.adsAllowed.collectAsStateWithLifecycle()
+    if (!adsAllowed) return
+
     val context = LocalContext.current
     val adConfig = koinInject<AdConfig>()
     // Adaptive banner: spans the device's actual width (Google computes the height itself, a bit

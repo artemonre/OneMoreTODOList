@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
+import com.artemonre.onemoretodolist.core.ads.NoOpConsentEligibilityTracker
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoPreferences
@@ -144,7 +145,8 @@ class TodoListViewModelTest {
         ToggleTodoDone(dataSource, todoPreferences, NoOpDueTimeScheduler()),
         todoPreferences,
         UpdateTopSince(dataSource, todoPreferences),
-        NoOpDueTimeScheduler()
+        NoOpDueTimeScheduler(),
+        NoOpConsentEligibilityTracker()
     )
 
     private fun todoItem(

@@ -6,6 +6,7 @@ import com.artemonre.onemoretodolist.analytics.initPostHog
 import com.artemonre.onemoretodolist.core.ads.AdConfig
 import com.artemonre.onemoretodolist.core.ads.di.androidAdsModule
 import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
+import com.artemonre.onemoretodolist.debug.debugAdsModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidDueTimeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
 import com.artemonre.onemoretodolist.feature.todolist.work.WidgetRefresher
@@ -67,6 +68,9 @@ class TodoListApplication : Application() {
                                 interstitialAdUnitId = BuildConfig.ADMOB_INTERSTITIAL_AD_UNIT_ID
                             )
                         ),
+                        // Overrides androidAdsModule's default no-op DebugConsentSettingsProvider
+                        // in a debug build only - see DebugAdsModule's src/debug vs src/release.
+                        debugAdsModule(),
                         module {
                             // Lets PeriodicTodoMaintenanceWorker repaint the widget without
                             // app:shared depending on Glance - WorkManager (not Koin) constructs

@@ -94,6 +94,7 @@ kotlin {
             implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.play.appUpdate.ktx)
             implementation(libs.play.services.ads)
+            implementation(libs.ump.sdk)
         }
         commonMain.dependencies {
             api(project(":core"))

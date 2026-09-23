@@ -1,6 +1,7 @@
 package com.artemonre.onemoretodolist
 
 import androidx.compose.runtime.Composable
+import com.artemonre.onemoretodolist.core.ads.RequestConsentIfEligible
 import com.artemonre.onemoretodolist.core.ads.di.adsModule
 import com.artemonre.onemoretodolist.core.container.ContainerRoot
 import com.artemonre.onemoretodolist.core.container.NavigationTab
@@ -27,6 +28,7 @@ fun App(platformModules: List<Module>, contentTabs: List<NavigationTab>) {
         }
     ) {
         AppTheme {
+            RequestConsentIfEligible()
             MandatoryAppUpdateGate {
                 ContainerRoot(contentTabs = contentTabs)
             }

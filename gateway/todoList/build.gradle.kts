@@ -107,4 +107,6 @@ dependencies {
     implementation(libs.play.services.ads)
     debugImplementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.glance.appwidget.preview)
+    // Only DebugConsentSettingsProviderImpl (src/debug) references UMP classes directly.
+    debugImplementation(libs.ump.sdk)
 }
