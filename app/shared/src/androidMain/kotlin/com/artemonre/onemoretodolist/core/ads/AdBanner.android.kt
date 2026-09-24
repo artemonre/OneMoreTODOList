@@ -10,7 +10,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import org.koin.compose.koinInject
@@ -49,7 +48,7 @@ actual fun AdBanner(modifier: Modifier) {
             // covers the very first load, unifying it with the rotation-reload path.
             if (adView.adSize != adSize) {
                 adView.setAdSize(adSize)
-                adView.loadAd(AdRequest.Builder().build())
+                adView.loadAd(nonPersonalizedAdRequest())
             }
         },
         onRelease = { it.destroy() }
