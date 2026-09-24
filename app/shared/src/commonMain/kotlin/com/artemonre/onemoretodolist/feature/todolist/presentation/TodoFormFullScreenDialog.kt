@@ -27,6 +27,7 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
+import com.artemonre.onemoretodolist.feature.todolist.domain.isDueTimeUiSupported
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
@@ -98,7 +99,7 @@ fun TodoFormFullScreenDialog(
                         .windowInsetsPadding(WindowInsets.safeDrawing)
                         .verticalScroll(rememberScrollState()),
                     fieldMaxLines = Int.MAX_VALUE,
-                    showDueTime = true,
+                    showDueTime = isDueTimeUiSupported,
                     showRecurrence = true,
                     requireText = true,
                     initialText = initialText

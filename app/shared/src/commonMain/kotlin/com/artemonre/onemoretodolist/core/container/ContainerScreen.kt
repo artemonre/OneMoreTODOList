@@ -6,9 +6,12 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List as ListIcon
 import androidx.compose.material.icons.filled.Settings
@@ -129,7 +132,11 @@ fun ContainerScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            // Only horizontal - top is handled per-screen (e.g. TodoListScreen's LazyColumn) and
+            // bottom by the nav bar itself. Left fully zeroed, this main content area rendered
+            // edge-to-edge under a landscape side nav bar (legacy 2/3-button navigation moves the
+            // system nav bar to a side edge in landscape, not the bottom).
+            contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
             bottomBar = {
                 AppNavigationBar(
                     items = state.tabs,
