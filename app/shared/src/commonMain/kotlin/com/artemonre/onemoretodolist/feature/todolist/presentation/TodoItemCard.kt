@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCard
@@ -20,8 +21,9 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
  * [TodoItemCardContent]. Feature-specific composition lives here, not in `core.designsystem`.
  *
  * [id] seeds the card's cloudTexture decoration (see CloudTexture.kt) - trying this out per user
- * request, not a finalized design. Same id always draws the same texture; different todos get
- * different-looking ones.
+ * request, not a finalized design. Same id draws the same texture for the lifetime of this app
+ * launch (stable across recompositions); different todos get different-looking ones, and the
+ * whole set reshuffles again next time the app is started.
  */
 @Composable
 fun TodoItemCard(
@@ -42,7 +44,11 @@ fun TodoItemCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .cloudTexture(seed = id.hashCode(), color = MaterialTheme.colorScheme.outline)
+                .cloudTexture(
+                    seed = id.hashCode(),
+                    color = MaterialTheme.colorScheme.outline,
+                    isDarkTheme = MaterialTheme.colorScheme.surface.luminance() <= 0.5f
+                )
         ) {
             TodoItemCardContent(
                 text = text,
