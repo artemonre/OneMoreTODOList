@@ -39,9 +39,14 @@ data class TodoItem(
     // using whatever timezone is current *at that moment* - see AndroidAlarmDueTimeScheduler. A
     // stale alarm armed against an old zone is only corrected on the next boot or hourly
     // maintenance pass (see RearmDueTodoAlarms), not immediately on a timezone change - deliberate,
-    // see RearmDueTodoAlarms' own comment. Null means "no due time set". Cleared (one-shot) the
-    // moment the notification fires or the todo is marked Done - see
-    // HandleDueTodoFired/ToggleTodoDone. dueTimeMode is null iff dueDate/dueTime are.
+    // see RearmDueTodoAlarms' own comment. Null means "no due time set". dueTimeMode is null iff
+    // dueDate/dueTime are, EXCEPT for an AfterCompletion recurring todo between its due-time firing
+    // and its next completion, where dueTime/dueTimeMode are kept (as a frozen "time of day"
+    // template) while dueDate alone is null - see HandleDueTodoFired/ToggleTodoDone. For a
+    // non-recurring todo, all three are still cleared (one-shot) the moment the notification fires
+    // or the todo is marked Done. A recurring todo instead keeps or advances them so every
+    // occurrence keeps notifying - Every advances them itself when its alarm fires (independent of
+    // completion); AfterCompletion advances them when the todo is completed.
     val dueDate: LocalDate? = null,
     val dueTime: LocalTime? = null,
     val dueTimeMode: DueTimeMode? = null
