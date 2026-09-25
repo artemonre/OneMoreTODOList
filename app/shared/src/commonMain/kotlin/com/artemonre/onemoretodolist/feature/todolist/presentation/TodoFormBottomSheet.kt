@@ -60,8 +60,10 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -193,7 +195,13 @@ fun TodoFormBody(
     onTextChange: (String) -> Unit = {},
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
-    var text by remember { mutableStateOf(editingItem?.text ?: initialText) }
+    // TextFieldValue (not a plain String) so pre-filled text - editing an existing todo, or a
+    // draft carried over from the quick-add sheet - starts with the cursor at the end instead of
+    // Compose's default of the start, which is what you'd want to keep typing from.
+    var text by remember {
+        val prefilled = editingItem?.text ?: initialText
+        mutableStateOf(TextFieldValue(text = prefilled, selection = TextRange(prefilled.length)))
+    }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
     var repeatEnabled by remember { mutableStateOf(editingItem?.recurrence != null) }
     var recurrenceType by remember { mutableStateOf(editingItem?.recurrence?.type ?: RecurrenceType.Every) }
@@ -237,10 +245,12 @@ fun TodoFormBody(
     // user's intent on save - block it the same way a missing exact-alarm permission is blocked.
     val dueTimeIncomplete = dueTimeEnabled && (dueDate == null || dueTime == null)
     val dueTimeExactPermissionMissing = dueTimeEnabled && exactTimeEnabled && exactAlarmPermission?.isGranted == false
-    val canSubmit = (text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeExactPermissionMissing
+    val canSubmit = (text.text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeExactPermissionMissing
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val speechController = rememberSpeechToText(onResult = { text = it; onTextChange(it) })
+    val speechController = rememberSpeechToText(
+        onResult = { text = TextFieldValue(text = it, selection = TextRange(it.length)); onTextChange(it) }
+    )
 
     LaunchedEffect(Unit) {
         // Wait for the host (bottom sheet) to finish its entrance animation before grabbing focus -
@@ -267,7 +277,7 @@ fun TodoFormBody(
         }
         OutlinedTextField(
             value = text,
-            onValueChange = { text = it; onTextChange(it) },
+            onValueChange = { text = it; onTextChange(it.text) },
             label = { Text("A todo text") },
             placeholder = { Text("e.g., Book a flight") },
             singleLine = false,
@@ -278,11 +288,11 @@ fun TodoFormBody(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { if (canSubmit) onConfirm(text.trim(), isPrioritized, recurrence, dueDate, dueTime, dueTimeMode) }
+                onDone = { if (canSubmit) onConfirm(text.text.trim(), isPrioritized, recurrence, dueDate, dueTime, dueTimeMode) }
             ),
-            trailingIcon = if (text.isNotEmpty()) {
+            trailingIcon = if (text.text.isNotEmpty()) {
                 {
-                    IconButton(onClick = { text = ""; onTextChange("") }) {
+                    IconButton(onClick = { text = TextFieldValue(""); onTextChange("") }) {
                         Icon(imageVector = Icons.Filled.Close, contentDescription = "Clear text")
                     }
                 }
@@ -612,7 +622,7 @@ fun TodoFormBody(
             }
             Spacer(Modifier.width(8.dp))
             Button(
-                onClick = { onConfirm(text.trim(), isPrioritized, recurrence, dueDate, dueTime, dueTimeMode) },
+                onClick = { onConfirm(text.text.trim(), isPrioritized, recurrence, dueDate, dueTime, dueTimeMode) },
                 enabled = canSubmit
             ) {
                 Text(if (editingItem != null) "Save" else "Create")

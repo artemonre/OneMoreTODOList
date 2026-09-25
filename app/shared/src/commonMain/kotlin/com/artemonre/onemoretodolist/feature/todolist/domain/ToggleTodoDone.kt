@@ -2,8 +2,10 @@ package com.artemonre.onemoretodolist.feature.todolist.domain
 
 import kotlin.time.Clock
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import kotlinx.datetime.toInstant
 
 // Framework-free (no Android/Compose/Glance) so both the todo list screen and the Android
 // home-screen widget's checkbox rows share one "toggle done" implementation.
@@ -41,12 +43,31 @@ class ToggleTodoDone(
         } else {
             item.recurrenceAnchorInstant
         }
-        // A todo that becomes Done (whether then kept as Done or later deleted) is no longer
-        // active/due - one-way reset, same as any other "archive" of it. Toggling back to Active
-        // does not restore a due time.
-        val dueDate = if (newStatus == TodoStatus.Done) null else item.dueDate
-        val dueTime = if (newStatus == TodoStatus.Done) null else item.dueTime
-        val dueTimeMode = if (newStatus == TodoStatus.Done) null else item.dueTimeMode
+        // A one-shot todo (no recurrence) that becomes Done is no longer active/due - one-way
+        // reset, same as any other "archive" of it. Toggling back to Active does not restore a due
+        // time. A recurring todo instead keeps or advances its due time so the next occurrence
+        // still notifies - see the per-type handling below.
+        val zone = TimeZone.currentSystemDefault()
+        val (dueDate, dueTime, dueTimeMode) = when {
+            newStatus != TodoStatus.Done -> Triple(item.dueDate, item.dueTime, item.dueTimeMode)
+            item.recurrence == null -> Triple(null, null, null)
+            // Recurs on its own fixed schedule independent of completion (see
+            // ApplyDueRecurrences/HandleDueTodoFired) - completing it early shouldn't cancel its
+            // already-armed next alarm.
+            item.recurrence.type == RecurrenceType.Every -> Triple(item.dueDate, item.dueTime, item.dueTimeMode)
+            // The dueTime template survived HandleDueTodoFired clearing only dueDate on the last
+            // fire (or was never touched yet) - combine it with today to compute the next
+            // occurrence, N (interval) after this completion, at the same time of day.
+            item.recurrence.type == RecurrenceType.AfterCompletion && completionDate != null && item.dueTime != null -> {
+                val nextDate = item.recurrence.nextDate(
+                    LocalDateTime(completionDate, item.dueTime).toInstant(zone)
+                )
+                Triple(nextDate, item.dueTime, item.dueTimeMode)
+            }
+            // AfterCompletion with no due time ever set - pure interval recurrence, no
+            // notification, left to ApplyDueRecurrences as before.
+            else -> Triple(null, null, null)
+        }
         val updated = item.copy(
             status = newStatus,
             completionDate = completionDate,

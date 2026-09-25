@@ -480,6 +480,7 @@ private fun SwipeableTodoRow(
         }
 
         TodoItemCard(
+            id = item.id,
             text = item.text,
             isDone = item.status == TodoStatus.Done || isCompleting,
             formattedDate = item.formattedDate,
