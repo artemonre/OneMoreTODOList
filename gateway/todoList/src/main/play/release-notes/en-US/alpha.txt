@@ -1,3 +1,6 @@
-- Set a due date and time on a todo to get notified when it's due.
-- Fixed the quick-add sheet's "More settings" button losing text you'd already typed.
-- Fixed unreadable (white-on-white) status bar icons when adding/editing a todo.
+- Recurring todos with a due date/time now notify every time, not just once.
+- Fixed todos changing order when you added a new one.
+- Fixed the cursor starting at the beginning instead of the end when editing existing text.
+- Fixed the due-time picker appearing on platforms where it can't work yet.
+- Fixed landscape content overlapping the side navigation bar.
+- Fixed low-contrast widget icons and wasted space when resizing the widget larger.
