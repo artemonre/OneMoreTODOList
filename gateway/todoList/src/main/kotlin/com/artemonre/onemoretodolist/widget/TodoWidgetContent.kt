@@ -159,6 +159,10 @@ private fun TopTodoAttention.content(): ColorProvider = when (this) {
 fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, background: ColorProvider) {
     GlanceTheme(colors = colors) {
         val attentionBackground = topTodo?.attention?.background()
+        // Shared by the checkbox and the "+" affordance below, both of which sit on this same
+        // row background - the default primary color can otherwise be invisible or low-contrast
+        // against an attention background such as the error color used for overdue todos.
+        val accentColor = attentionBackground?.let { topTodo?.attention?.content() } ?: GlanceTheme.colors.primary
         Row(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -173,8 +177,8 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
                         actionParametersOf(todoIdKey to topTodo.id)
                     ),
                     colors = CheckboxDefaults.checkBoxColors(
-                        checkedColor = GlanceTheme.colors.primary,
-                        uncheckedColor = GlanceTheme.colors.primary
+                        checkedColor = accentColor,
+                        uncheckedColor = accentColor
                     )
                 )
                 Spacer(modifier = GlanceModifier.width(8.dp))
@@ -215,7 +219,7 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
             ) {
                 Text(
                     text = "+",
-                    style = TextStyle(color = GlanceTheme.colors.primary, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                    style = TextStyle(color = accentColor, fontWeight = FontWeight.Bold, fontSize = 24.sp)
                 )
             }
         }
@@ -232,12 +236,16 @@ internal fun TodoWidgetRow(item: TodoItemUi) {
             .padding(vertical = 4.dp, horizontal = if (attentionBackground != null) 4.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Matches the row's own background override above - the checkbox's default primary color
+        // can otherwise be invisible or low-contrast against an attention background such as the
+        // error color used for overdue todos.
+        val checkboxColor = if (attentionBackground != null) item.attention.content() else GlanceTheme.colors.primary
         CheckBox(
             checked = false,
             onCheckedChange = actionRunCallback<ToggleTodoDoneAction>(actionParametersOf(todoIdKey to item.id)),
             colors = CheckboxDefaults.checkBoxColors(
-                checkedColor = GlanceTheme.colors.primary,
-                uncheckedColor = GlanceTheme.colors.primary
+                checkedColor = checkboxColor,
+                uncheckedColor = checkboxColor
             )
         )
         Spacer(modifier = GlanceModifier.width(8.dp))

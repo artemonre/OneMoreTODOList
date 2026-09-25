@@ -3,8 +3,6 @@ package com.artemonre.onemoretodolist.widget
 import android.content.Context
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
@@ -24,16 +22,28 @@ import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-private const val MAX_WIDGET_ROWS = 5
-
 // Android's real widget cell-grid formula (70dp x cells - 30dp) - not this project's Compose-UI
 // dp%4 convention, same tradeoff as the provider XML's minWidth/minHeight (see todo_widget_info.xml).
-val SIZE_1X1: DpSize = DpSize(40.dp, 40.dp)
-val SIZE_2X1: DpSize = DpSize(110.dp, 40.dp)
-val SIZE_2X2: DpSize = DpSize(110.dp, 110.dp)
+// One cell is ~40dp tall/wide - used below only to classify the widget's current *actual* size
+// into small/row/full layout, not as a fixed rendering canvas.
+private const val ONE_CELL_DP = 40
+
+// The full-list layout's LazyColumn is a genuinely scrollable list (Glance backs it with a real
+// RemoteViewsService-based adapter, not a static render) - so this is just a sane ceiling on how
+// much data to ever load, not "however many rows fit the visible height". Capping to the visible
+// height instead would hand the scrollable list only exactly enough items to fill the screen,
+// leaving nothing for a scroll gesture to actually reveal.
+private const val MAX_WIDGET_ROWS = 30
 
 class TodoWidget : GlanceAppWidget(), KoinComponent {
-    override val sizeMode: SizeMode = SizeMode.Responsive(setOf(SIZE_1X1, SIZE_2X1, SIZE_2X2))
+    // Exact, not a fixed Responsive size set - the widget providers allow unbounded resize
+    // (resizeMode="horizontal|vertical", no maxResizeWidth/Height declared), so the row count and
+    // clickable area both need to track the widget's *actual* current size. A fixed Responsive set
+    // caps every widget at whatever its largest declared size is: content (and thus the click
+    // target) gets rendered for that small canvas regardless of how much bigger the widget is
+    // actually resized to, leaving the extra space dead - both the "resizing doesn't show more
+    // todos" and "the bottom part isn't clickable" bugs traced back to this.
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     private val observeActiveTodos: ObserveActiveTodos by inject()
     private val themeRepository: ThemeRepository by inject()
@@ -79,10 +89,14 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
                 night = palette.dark.surfaceContainer
             )
 
-            when (LocalSize.current) {
-                SIZE_1X1 -> TodoWidgetContentCompact(activeCount = todos.size, colors = colors, background = background)
-                SIZE_2X1 -> TodoWidgetContentRow(topTodo = todos.firstOrNull(), colors = colors, background = background)
-                else -> TodoWidgetContent(todos = todos.take(MAX_WIDGET_ROWS), colors = colors, background = background)
+            val size = LocalSize.current
+            when {
+                size.width.value <= ONE_CELL_DP && size.height.value <= ONE_CELL_DP ->
+                    TodoWidgetContentCompact(activeCount = todos.size, colors = colors, background = background)
+                size.height.value <= ONE_CELL_DP ->
+                    TodoWidgetContentRow(topTodo = todos.firstOrNull(), colors = colors, background = background)
+                else ->
+                    TodoWidgetContent(todos = todos.take(MAX_WIDGET_ROWS), colors = colors, background = background)
             }
         }
     }
