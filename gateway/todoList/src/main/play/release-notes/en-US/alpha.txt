@@ -1,6 +1,2 @@
-- Recurring todos with a due date/time now notify every time, not just once.
-- Fixed todos changing order when you added a new one.
-- Fixed the cursor starting at the beginning instead of the end when editing existing text.
-- Fixed the due-time picker appearing on platforms where it can't work yet.
-- Fixed landscape content overlapping the side navigation bar.
-- Fixed low-contrast widget icons and wasted space when resizing the widget larger.
+- Fixed widgets visuals.
+- Fixed a crash when tapping a todo in the home-screen widget's full list.
