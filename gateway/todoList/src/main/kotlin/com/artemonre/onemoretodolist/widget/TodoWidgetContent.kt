@@ -162,7 +162,7 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
         // Shared by the checkbox and the "+" affordance below, both of which sit on this same
         // row background - the default primary color can otherwise be invisible or low-contrast
         // against an attention background such as the error color used for overdue todos.
-        val accentColor = attentionBackground?.let { topTodo?.attention?.content() } ?: GlanceTheme.colors.primary
+        val accentColor = attentionBackground?.let { topTodo.attention.content() } ?: GlanceTheme.colors.primary
         Row(
             modifier = GlanceModifier
                 .fillMaxSize()

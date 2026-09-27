@@ -3,6 +3,7 @@ package com.artemonre.onemoretodolist.widget
 import android.content.Context
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
@@ -22,11 +23,23 @@ import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-// Android's real widget cell-grid formula (70dp x cells - 30dp) - not this project's Compose-UI
-// dp%4 convention, same tradeoff as the provider XML's minWidth/minHeight (see todo_widget_info.xml).
-// One cell is ~40dp tall/wide - used below only to classify the widget's current *actual* size
-// into small/row/full layout, not as a fixed rendering canvas.
-private const val ONE_CELL_DP = 40
+// These classify the widget's current *actual* size (from SizeMode.Exact below) into
+// small/row/full layout by what actually fits, not by Android's theoretical minWidth/minHeight
+// grid-cell formula (70dp x cells - 30dp, i.e. "one cell" = 40dp) that todo_widget_info.xml's
+// minWidth/minHeight are declared with - most launchers hand back a real size well above that
+// formula's floor even for a nominally "1 cell" widget, so comparing against 40dp classified
+// everything as either cramped into a layout with no room for it, or as compact when there was
+// actually room for a real row. MIN_WIDTH_FOR_TEXT is a checkbox + a few words + padding; a
+// narrower widget can't show a todo's text at all, only an icon/count.
+private val MIN_WIDTH_FOR_TEXT = 100.dp
+
+// TodoWidgetContent's own layout, added up: 16dp (Column's 8dp top/bottom padding) + 48dp (the
+// header row's height is set by its "+" Box, which is a fixed 48dp square) + 8dp (the Spacer
+// below the header) + ~40dp per todo row (TodoWidgetRow's 4dp top/bottom padding plus its
+// checkbox/text content) - so header + 2 rows needs on the order of 150dp. Anything shorter than
+// that has room for a header and, at best, one cramped/partial row - not a real list, just the
+// single-row layout's job.
+private val MIN_HEIGHT_FOR_LIST = 160.dp
 
 // The full-list layout's LazyColumn is a genuinely scrollable list (Glance backs it with a real
 // RemoteViewsService-based adapter, not a static render) - so this is just a sane ceiling on how
@@ -91,9 +104,9 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
 
             val size = LocalSize.current
             when {
-                size.width.value <= ONE_CELL_DP && size.height.value <= ONE_CELL_DP ->
+                size.width < MIN_WIDTH_FOR_TEXT ->
                     TodoWidgetContentCompact(activeCount = todos.size, colors = colors, background = background)
-                size.height.value <= ONE_CELL_DP ->
+                size.height < MIN_HEIGHT_FOR_LIST ->
                     TodoWidgetContentRow(topTodo = todos.firstOrNull(), colors = colors, background = background)
                 else ->
                     TodoWidgetContent(todos = todos.take(MAX_WIDGET_ROWS), colors = colors, background = background)
