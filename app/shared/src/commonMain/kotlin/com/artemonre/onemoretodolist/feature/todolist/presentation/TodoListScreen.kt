@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -30,6 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -81,6 +84,9 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.mascot_staying
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -92,6 +98,8 @@ private val SWIPE_ACTION_WIDTH = 56.dp
 // Clears the scroll-to-top button (56dp) plus its 16dp margin, with a little extra breathing
 // room, so the last list item never ends up hidden behind it after a full scroll.
 private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
+private val MASCOT_HEIGHT = 160.dp
+private const val MASCOT_AFTER_TODO_COUNT = 5
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
 
@@ -211,7 +219,7 @@ fun TodoListScreen(
     LaunchedEffect(state.items) { manualOrderItems = state.items }
 
     // from.index/to.index are positions in the whole LazyColumn, not in manualOrderItems - the
-    // "Sort" header item above shifts them by one. Look items up by key instead of trusting the
+    // "Sort" header and mascot items shift them. Look items up by key instead of trusting the
     // raw index.
     val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
         val fromIndex = manualOrderItems.indexOfFirst { it.id == from.key }
@@ -288,6 +296,36 @@ fun TodoListScreen(
                 }
             }
 
+            val todoRow: @Composable LazyItemScope.(TodoItemUi) -> Unit = { item ->
+                ReorderableItem(reorderableListState, key = item.id) { isDragging ->
+                    val rotation by animateFloatAsState(if (isDragging) DRAG_ROTATION_DEGREES else 0f)
+                    val rowModifier = Modifier
+                        .animateItem()
+                        .graphicsLayer { rotationZ = rotation }
+                        .let { base ->
+                            if (state.sortOption == TodoSortOption.Manual) {
+                                base.longPressDraggableHandle(
+                                    onDragStopped = {
+                                        onAction(TodoListAction.OnReorder(manualOrderItems.map { it.id }))
+                                    }
+                                )
+                            } else {
+                                base
+                            }
+                        }
+                    SwipeableTodoRow(
+                        item = item,
+                        modifier = rowModifier,
+                        swipeEnabled = !isDragging,
+                        onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
+                        onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
+                        onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
+                        onItemClick = { detailItem = item },
+                        onShareSwipe = { shareItem = item }
+                    )
+                }
+            }
+
             if (state.items.isEmpty()) {
                 item {
                     Text(
@@ -303,36 +341,24 @@ fun TodoListScreen(
                     )
                 }
             } else {
-                items(manualOrderItems, key = { it.id }) { item ->
-                    ReorderableItem(reorderableListState, key = item.id) { isDragging ->
-                        val rotation by animateFloatAsState(if (isDragging) DRAG_ROTATION_DEGREES else 0f)
-                        val rowModifier = Modifier
-                            .animateItem()
-                            .graphicsLayer { rotationZ = rotation }
-                            .let { base ->
-                                if (state.sortOption == TodoSortOption.Manual) {
-                                    base.longPressDraggableHandle(
-                                        onDragStopped = {
-                                            onAction(TodoListAction.OnReorder(manualOrderItems.map { it.id }))
-                                        }
-                                    )
-                                } else {
-                                    base
-                                }
-                            }
-                        SwipeableTodoRow(
-                            item = item,
-                            modifier = rowModifier,
-                            swipeEnabled = !isDragging,
-                            onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
-                            onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
-                            onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
-                            onItemClick = { detailItem = item },
-                            onShareSwipe = { shareItem = item }
-                        )
-                    }
-                }
+                items(manualOrderItems.take(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
             }
+
+            // Sits after the first MASCOT_AFTER_TODO_COUNT todos, or after all of them (or the
+            // empty-state message) when there are fewer. Not a ReorderableItem, so dragging a todo
+            // across it is a no-op - the reorder callback above looks items up by key and ignores
+            // anything outside manualOrderItems.
+            item(key = "mascot") {
+                Image(
+                    painter = painterResource(Res.drawable.mascot_staying),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(MASCOT_HEIGHT)
+                )
+            }
+
+            items(manualOrderItems.drop(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
         }
 
         androidx.compose.animation.AnimatedVisibility(
