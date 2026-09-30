@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.data
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
@@ -31,5 +32,10 @@ data class TodoEntity(
     // not a resolved instant - see TodoMappers/TodoItem.
     val dueDate: LocalDate? = null,
     val dueTime: LocalTime? = null,
-    val dueTimeMode: DueTimeMode? = null
+    val dueTimeMode: DueTimeMode? = null,
+    val snoozedUntil: Instant? = null,
+    // JSON arrays (see TodoMappers) rather than separate tables - both are small, always loaded
+    // together with their todo, and never queried on their own in SQL.
+    @ColumnInfo(defaultValue = "[]") val checklist: String = "[]",
+    @ColumnInfo(defaultValue = "[]") val tags: String = "[]"
 )

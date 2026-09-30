@@ -31,7 +31,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.artemonre.onemoretodolist.rememberAppUpdateLauncher
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
@@ -39,11 +38,40 @@ import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.isDynamicColorSupported
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
+import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
 import com.artemonre.onemoretodolist.core.theme.domain.FontOption
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
+import com.artemonre.onemoretodolist.rememberAppUpdateLauncher
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.settings_app_version
+import onemoretodolist.app.shared.generated.resources.settings_archive_completed
+import onemoretodolist.app.shared.generated.resources.settings_archive_completed_description
+import onemoretodolist.app.shared.generated.resources.settings_dynamic_color
+import onemoretodolist.app.shared.generated.resources.settings_dynamic_color_description
+import onemoretodolist.app.shared.generated.resources.settings_font
+import onemoretodolist.app.shared.generated.resources.settings_font_default
+import onemoretodolist.app.shared.generated.resources.settings_font_mono
+import onemoretodolist.app.shared.generated.resources.settings_font_serif
+import onemoretodolist.app.shared.generated.resources.settings_palette
+import onemoretodolist.app.shared.generated.resources.settings_palettes
+import onemoretodolist.app.shared.generated.resources.settings_privacy_policy
+import onemoretodolist.app.shared.generated.resources.settings_send_email
+import onemoretodolist.app.shared.generated.resources.settings_support
+import onemoretodolist.app.shared.generated.resources.settings_theme
+import onemoretodolist.app.shared.generated.resources.settings_theme_dark
+import onemoretodolist.app.shared.generated.resources.settings_theme_light
+import onemoretodolist.app.shared.generated.resources.settings_theme_system
+import onemoretodolist.app.shared.generated.resources.settings_todos
+import onemoretodolist.app.shared.generated.resources.settings_ui_style
+import onemoretodolist.app.shared.generated.resources.settings_ui_style_material
+import onemoretodolist.app.shared.generated.resources.settings_ui_style_paper
+import onemoretodolist.app.shared.generated.resources.settings_update
+import onemoretodolist.app.shared.generated.resources.settings_update_available
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val SUPPORT_EMAIL_URI = "mailto:artemonsupport@gmail.com"
@@ -80,14 +108,14 @@ fun SettingsScreen(
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    text = "Theme",
+                    text = stringResource(Res.string.settings_theme),
                     style = MaterialTheme.typography.titleMedium
                 )
                 AppSegmentedControl(
                     options = ThemeMode.entries,
                     selectedOption = state.themeMode,
                     onOptionSelected = { onAction(SettingsAction.OnThemeModeSelected(it)) },
-                    label = { it.displayName() },
+                    label = resourceLabels(ThemeMode.entries) { it.displayName() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp)
@@ -110,12 +138,12 @@ fun SettingsScreen(
                         onOptionSelected = {
                             onAction(SettingsAction.OnUseDynamicColorChanged(it == PaletteSourceTab.DynamicColor))
                         },
-                        label = { it.displayName() },
+                        label = resourceLabels(PaletteSourceTab.entries) { it.displayName() },
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
                     Text(
-                        text = "Palette",
+                        text = stringResource(Res.string.settings_palette),
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
@@ -140,8 +168,7 @@ fun SettingsScreen(
                     }
                 } else {
                     Text(
-                        text = "Colors are pulled from your wallpaper instead of a fixed palette, " +
-                            "and update automatically if you change it.",
+                        text = stringResource(Res.string.settings_dynamic_color_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 12.dp)
@@ -152,14 +179,14 @@ fun SettingsScreen(
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    text = "Font",
+                    text = stringResource(Res.string.settings_font),
                     style = MaterialTheme.typography.titleMedium
                 )
                 AppChipGroup(
                     options = FontOption.entries,
                     selectedOption = state.font,
                     onOptionSelected = { onAction(SettingsAction.OnFontSelected(it)) },
-                    label = { it.displayName() },
+                    label = resourceLabels(FontOption.entries) { it.displayName() },
                     modifier = Modifier.padding(top = 12.dp)
                 )
             }
@@ -167,7 +194,7 @@ fun SettingsScreen(
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    text = "UI Style",
+                    text = stringResource(Res.string.settings_ui_style),
                     style = MaterialTheme.typography.titleMedium
                 )
                 AppChipGroup(
@@ -177,7 +204,7 @@ fun SettingsScreen(
                     options = UiStyleOption.entries.filter { it != UiStyleOption.Paper },
                     selectedOption = state.uiStyle,
                     onOptionSelected = { onAction(SettingsAction.OnUiStyleSelected(it)) },
-                    label = { it.displayName() },
+                    label = resourceLabels(UiStyleOption.entries) { it.displayName() },
                     modifier = Modifier.padding(top = 12.dp)
                 )
             }
@@ -185,7 +212,7 @@ fun SettingsScreen(
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    text = "Todos",
+                    text = stringResource(Res.string.settings_todos),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Row(
@@ -195,7 +222,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Archive completed todos",
+                        text = stringResource(Res.string.settings_archive_completed),
                         modifier = Modifier.weight(1f)
                     )
                     Switch(
@@ -204,9 +231,7 @@ fun SettingsScreen(
                     )
                 }
                 Text(
-                    text = "When off, completing a todo in the app deletes it immediately (Undo is " +
-                        "offered via a snackbar). The widget's checkbox always archives instead, to " +
-                        "avoid an unrecoverable mis-tap.",
+                    text = stringResource(Res.string.settings_archive_completed_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
@@ -216,7 +241,7 @@ fun SettingsScreen(
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    text = "Support",
+                    text = stringResource(Res.string.settings_support),
                     style = MaterialTheme.typography.titleMedium
                 )
                 val uriHandler = LocalUriHandler.current
@@ -229,7 +254,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Filled.Email, contentDescription = null)
-                    Text("Send an email")
+                    Text(stringResource(Res.string.settings_send_email))
                 }
                 Row(
                     modifier = Modifier
@@ -240,7 +265,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Filled.PrivacyTip, contentDescription = null)
-                    Text("Privacy policy")
+                    Text(stringResource(Res.string.settings_privacy_policy))
                 }
             }
         }
@@ -252,7 +277,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "New version has come",
+                        text = stringResource(Res.string.settings_update_available),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Button(
@@ -261,39 +286,39 @@ fun SettingsScreen(
                             startAppUpdate?.invoke()
                         }
                     ) {
-                        Text("Update")
+                        Text(stringResource(Res.string.settings_update))
                     }
                 }
             }
         }
         Text(
-            text = "App version: ${state.appVersion}",
+            text = stringResource(Res.string.settings_app_version, state.appVersion),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
-private fun ThemeMode.displayName(): String = when (this) {
-    ThemeMode.System -> "System"
-    ThemeMode.Light -> "Light"
-    ThemeMode.Dark -> "Dark"
+private fun ThemeMode.displayName(): StringResource = when (this) {
+    ThemeMode.System -> Res.string.settings_theme_system
+    ThemeMode.Light -> Res.string.settings_theme_light
+    ThemeMode.Dark -> Res.string.settings_theme_dark
 }
 
-private fun PaletteSourceTab.displayName(): String = when (this) {
-    PaletteSourceTab.Palettes -> "Palettes"
-    PaletteSourceTab.DynamicColor -> "Dynamic color"
+private fun PaletteSourceTab.displayName(): StringResource = when (this) {
+    PaletteSourceTab.Palettes -> Res.string.settings_palettes
+    PaletteSourceTab.DynamicColor -> Res.string.settings_dynamic_color
 }
 
-private fun FontOption.displayName(): String = when (this) {
-    FontOption.Default -> "Default"
-    FontOption.Serif -> "Serif"
-    FontOption.Monospace -> "Mono"
+private fun FontOption.displayName(): StringResource = when (this) {
+    FontOption.Default -> Res.string.settings_font_default
+    FontOption.Serif -> Res.string.settings_font_serif
+    FontOption.Monospace -> Res.string.settings_font_mono
 }
 
-private fun UiStyleOption.displayName(): String = when (this) {
-    UiStyleOption.Material -> "Material"
-    UiStyleOption.Paper -> "Paper"
+private fun UiStyleOption.displayName(): StringResource = when (this) {
+    UiStyleOption.Material -> Res.string.settings_ui_style_material
+    UiStyleOption.Paper -> Res.string.settings_ui_style_paper
 }
 
 @Preview

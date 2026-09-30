@@ -26,7 +26,7 @@ class RearmDueTodoAlarms(
 ) {
     suspend operator fun invoke() {
         dataSource.observeTodos().first()
-            .filter { it.status == TodoStatus.Active && it.dueDate != null }
+            .filter { it.status == TodoStatus.Active && (it.dueDate != null || it.snoozedUntil != null) }
             .forEach { dueTimeScheduler.reschedule(it) }
     }
 }

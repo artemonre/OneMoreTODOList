@@ -6,9 +6,7 @@ import kotlinx.coroutines.flow.first
 // Keeps TodoItem.topSince in sync with whichever todo is currently top of the active list, under
 // whichever sort the user currently has selected - Date, Manual, or Text; "top" doesn't care which
 // one is in effect or why an item ended up there (added, completed, reordered, outranked, or the
-// sort itself just changed), only that it currently holds that spot. Archived isn't an ordering of
-// the active list at all (it's the Done-only view), so it falls back to Date, the same baseline
-// used before any sort was ever picked.
+// sort itself just changed), only that it currently holds that spot.
 //
 // Called two ways: reactively after every write, from TopSinceTrackingTodoLocalDataSource (bound
 // to its delegate, so its own writes here don't loop back through itself); and explicitly after a
@@ -21,7 +19,6 @@ class UpdateTopSince(
     suspend operator fun invoke() {
         val todos = dataSource.observeTodos().first()
         val sortOption = todoPreferences.sortOption.first()
-            .takeUnless { it == TodoSortOption.Archived } ?: TodoSortOption.Date
         val topId = todos.filter { it.status == TodoStatus.Active }
             .sortedByOption(sortOption)
             .firstOrNull()?.id

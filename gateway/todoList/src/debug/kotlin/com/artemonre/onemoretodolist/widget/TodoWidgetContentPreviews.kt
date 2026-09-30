@@ -10,13 +10,14 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
 import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoItemUi
+import kotlinx.datetime.LocalDate
 
 private fun previewTodoItem(id: String, text: String) = TodoItemUi(
     id = id,
     text = text,
     status = TodoStatus.Active,
     sortOrder = 0,
-    formattedDate = "04 Sep 2026"
+    creationDate = LocalDate(2026, 9, 4)
 )
 
 private val previewPalette = ColorPaletteOption.Default.toColorPalette()

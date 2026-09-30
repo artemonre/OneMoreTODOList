@@ -14,6 +14,7 @@ import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCar
 import com.artemonre.onemoretodolist.core.designsystem.components.cloudTexture
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
 
 /**
@@ -34,7 +35,10 @@ fun TodoItemCard(
     onToggleDone: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    attention: TopTodoAttention = TopTodoAttention.None
+    attention: TopTodoAttention = TopTodoAttention.None,
+    tags: List<TodoTag> = emptyList(),
+    checklistDone: Int = 0,
+    checklistTotal: Int = 0
 ) {
     AppListItemCard(
         onClick = onClick,
@@ -54,7 +58,10 @@ fun TodoItemCard(
                 text = text,
                 isDone = isDone,
                 formattedDate = formattedDate,
-                onToggleDone = onToggleDone
+                onToggleDone = onToggleDone,
+                tags = tags,
+                checklistDone = checklistDone,
+                checklistTotal = checklistTotal
             )
         }
     }

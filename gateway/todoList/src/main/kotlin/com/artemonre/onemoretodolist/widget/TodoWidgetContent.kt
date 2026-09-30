@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.LocalContext
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
@@ -33,6 +34,7 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.artemonre.onemoretodolist.MainActivity
 import com.artemonre.onemoretodolist.QuickAddTodoActivity
+import com.artemonre.onemoretodolist.R
 import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoItemUi
 
@@ -51,7 +53,7 @@ fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, backgroun
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "My Todos",
+                    text = LocalContext.current.getString(R.string.widget_title),
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurface,
                         fontWeight = FontWeight.Bold
@@ -77,7 +79,7 @@ fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, backgroun
             Spacer(modifier = GlanceModifier.height(8.dp))
             if (todos.isEmpty()) {
                 Text(
-                    text = "No active todos",
+                    text = LocalContext.current.getString(R.string.widget_empty),
                     style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant)
                 )
             } else {
@@ -193,7 +195,7 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = topTodo?.text ?: "No active todos",
+                    text = topTodo?.text ?: LocalContext.current.getString(R.string.widget_empty),
                     maxLines = 3,
                     style = TextStyle(
                         color = when {

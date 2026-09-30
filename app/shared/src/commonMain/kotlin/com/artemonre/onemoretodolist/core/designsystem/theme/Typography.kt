@@ -76,11 +76,13 @@ val AppTypography = Typography(
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
+    // The app's default body text (Material's Text/TextField default style) - 14sp rather than
+    // Material's stock 16sp, with the line height scaled down to match.
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(

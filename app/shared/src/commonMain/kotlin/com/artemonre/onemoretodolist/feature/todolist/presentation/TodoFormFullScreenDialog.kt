@@ -25,11 +25,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
-import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
-import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.isDueTimeUiSupported
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 
 // decorFitsSystemWindows = false (Android only - see the .android.kt actual) hands insets
 // (including the keyboard's) to Compose instead of the OS - without it, WindowInsets.safeDrawing
@@ -57,11 +54,12 @@ internal expect fun ConfigureFullScreenDialogStatusBarIcons(darkIcons: Boolean)
 @Composable
 fun TodoFormFullScreenDialog(
     editingItem: TodoItemUi?,
-    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?, dueDate: LocalDate?, dueTime: LocalTime?, dueTimeMode: DueTimeMode?) -> Unit,
+    onConfirm: (TodoDraft) -> Unit,
     onDismiss: () -> Unit,
     // Only used when editingItem == null - seeds the field from a draft carried over from
     // TodoFormBottomSheet's "More settings" button.
-    initialText: String = ""
+    initialText: String = "",
+    knownTags: List<TodoTag> = emptyList()
 ) {
     // A Dialog has no built-in enter/exit transition on any target here - animate the content in
     // and out ourselves (rather than relying on platform window animations, which differ per
@@ -101,6 +99,9 @@ fun TodoFormFullScreenDialog(
                     fieldMaxLines = Int.MAX_VALUE,
                     showDueTime = isDueTimeUiSupported,
                     showRecurrence = true,
+                    showTags = true,
+                    showChecklist = true,
+                    knownTags = knownTags,
                     requireText = true,
                     initialText = initialText
                 )
@@ -115,7 +116,7 @@ private fun TodoFormFullScreenDialogPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoFormFullScreenDialog(
             editingItem = null,
-            onConfirm = { _, _, _, _, _, _ -> },
+            onConfirm = {},
             onDismiss = {}
         )
     }

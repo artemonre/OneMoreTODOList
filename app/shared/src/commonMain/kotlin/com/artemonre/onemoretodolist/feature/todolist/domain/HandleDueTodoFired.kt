@@ -22,7 +22,23 @@ class HandleDueTodoFired(
         val recurrence = item.recurrence
         val isWaitingAfterCompletion = item.status == TodoStatus.Done && recurrence?.type == RecurrenceType.AfterCompletion
         if (item.status != TodoStatus.Active && !isWaitingAfterCompletion) return null
-        val dueInstant = item.dueInstant() ?: return null
+        val dueInstant = item.dueInstant()
+        // The one per-todo alarm is armed for whichever comes first (see nextAlarmInstant), so a
+        // snooze at or before the due time means this firing is the snooze. It only re-notifies
+        // and moves the todo to the top - recurrence and due fields stay untouched, and the
+        // reschedule below re-arms the regular due time, if there is one.
+        val snoozedUntil = item.snoozedUntil
+        if (snoozedUntil != null && (dueInstant == null || snoozedUntil <= dueInstant)) {
+            val updated = item.copy(
+                snoozedUntil = null,
+                sortOrder = topSortOrder(currentTodos),
+                priorityOrder = topPriorityOrder(currentTodos)
+            )
+            dataSource.upsertTodo(updated)
+            dueTimeScheduler.reschedule(updated)
+            return updated
+        }
+        if (dueInstant == null) return null
         val updated = when (recurrence?.type) {
             // Recurs on its own fixed schedule independent of completion - advance straight to the
             // next occurrence and re-arm, keeping dueTime/dueTimeMode (the time of day) fixed.

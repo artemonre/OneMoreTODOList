@@ -1,0 +1,15 @@
+<resources>
+    <string name="todo_widget_label">Список задач</string>
+    <string name="todo_widget_description">Показывает активные задачи и позволяет быстро добавлять и отмечать их</string>
+    <string name="todo_widget_compact_label">Список задач (компактный)</string>
+    <string name="todo_widget_compact_description">Показывает, сколько у тебя активных задач. Нажми, чтобы добавить новую</string>
+    <string name="todo_widget_row_label">Список задач (строка)</string>
+    <string name="todo_widget_row_description">Показывает следующую активную задачу. Нажми, чтобы добавить или отметить её</string>
+    <string name="widget_title">Мои задачи</string>
+    <string name="widget_empty">Нет активных задач</string>
+    <string name="due_notification_channel_name">Напоминания о задачах</string>
+    <string name="due_notification_title">Пора сделать это</string>
+    <string name="due_notification_action_done">Готово</string>
+    <string name="due_notification_action_snooze_hour">+1 час</string>
+    <string name="due_notification_action_snooze_tomorrow">Завтра</string>
+</resources>

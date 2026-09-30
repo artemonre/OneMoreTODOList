@@ -54,10 +54,10 @@ class QuickAddTodoActivity : ComponentActivity() {
                     ) {
                         TodoFormBody(
                             editingItem = null,
-                            onConfirm = { text, isPrioritized, recurrence, _, _, _ ->
-                                // showDueTime is never enabled here, so the due-time params are
-                                // always null - AddTodo's 3-arg overload covers this widget flow.
-                                coroutineScope.launch { addTodo(text, isPrioritized, recurrence) }
+                            onConfirm = { draft ->
+                                // Only text and "Put to top" are shown here - everything else in
+                                // the draft stays at its default, so AddTodo's defaults cover it.
+                                coroutineScope.launch { addTodo(draft.text, draft.isPrioritized, draft.recurrence) }
                                 finish()
                             },
                             onDismiss = { finish() },

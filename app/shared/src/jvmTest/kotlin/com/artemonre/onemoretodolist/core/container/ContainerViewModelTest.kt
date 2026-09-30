@@ -40,7 +40,7 @@ class ContainerViewModelTest {
             applyDueRecurrences = ApplyDueRecurrences(dataSource)
         )
 
-        viewModel.onAction(ContainerAction.OnStart)
+        viewModel.onAction(ContainerAction.OnStart(onboardingTexts = emptyList()))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(ONBOARDING_TODOS.size, dataSource.observeTodos().first().size)

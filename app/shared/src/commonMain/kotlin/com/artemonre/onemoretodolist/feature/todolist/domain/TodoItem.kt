@@ -49,7 +49,14 @@ data class TodoItem(
     // completion); AfterCompletion advances them when the todo is completed.
     val dueDate: LocalDate? = null,
     val dueTime: LocalTime? = null,
-    val dueTimeMode: DueTimeMode? = null
+    val dueTimeMode: DueTimeMode? = null,
+    // Set by the notification's snooze actions (see SnoozeTodo) - a one-off extra reminder that
+    // deliberately leaves dueDate/dueTime/recurrence alone, so snoozing a recurring todo never
+    // shifts its schedule. The alarm is armed for whichever of this and dueInstant() comes first;
+    // HandleDueTodoFired clears it once it fires, and ToggleTodoDone clears it on completion.
+    val snoozedUntil: Instant? = null,
+    val checklist: List<ChecklistItem> = emptyList(),
+    val tags: List<TodoTag> = emptyList()
 )
 
 fun TodoItem.dueInstant(zone: TimeZone = TimeZone.currentSystemDefault()): Instant? {
@@ -57,3 +64,8 @@ fun TodoItem.dueInstant(zone: TimeZone = TimeZone.currentSystemDefault()): Insta
     val time = dueTime ?: return null
     return LocalDateTime(date, time).toInstant(zone)
 }
+
+// When this todo's single per-todo alarm should fire next - the earlier of its due time and any
+// pending snooze. Null means nothing to arm.
+fun TodoItem.nextAlarmInstant(zone: TimeZone = TimeZone.currentSystemDefault()): Instant? =
+    listOfNotNull(dueInstant(zone), snoozedUntil).minOrNull()
