@@ -40,6 +40,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFlipVisibility
 import com.artemonre.onemoretodolist.core.designsystem.components.AppNavigationBar
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.settings.navigation.SettingsRoute
 import com.artemonre.onemoretodolist.feature.todolist.navigation.TodoListRoute
@@ -47,6 +48,15 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.onboarding_todo_1
+import onemoretodolist.app.shared.generated.resources.onboarding_todo_2
+import onemoretodolist.app.shared.generated.resources.onboarding_todo_3
+import onemoretodolist.app.shared.generated.resources.onboarding_todo_4
+import onemoretodolist.app.shared.generated.resources.onboarding_todo_5
+import onemoretodolist.app.shared.generated.resources.tab_settings
+import onemoretodolist.app.shared.generated.resources.tab_todo
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -88,8 +98,15 @@ fun ContainerRoot(
     // ON_START fires both on first launch and on every later foreground (unlike LaunchedEffect(Unit),
     // which only ran once per process - see ContainerViewModel.OnStart for why a resume needs to
     // re-run this too, not just a cold start.
+    val onboardingTexts = listOf(
+        stringResource(Res.string.onboarding_todo_1),
+        stringResource(Res.string.onboarding_todo_2),
+        stringResource(Res.string.onboarding_todo_3),
+        stringResource(Res.string.onboarding_todo_4),
+        stringResource(Res.string.onboarding_todo_5)
+    )
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
-        viewModel.onAction(ContainerAction.OnStart)
+        viewModel.onAction(ContainerAction.OnStart(onboardingTexts))
     }
 
     ContainerScreen(state = state, onAction = viewModel::onAction)
@@ -146,7 +163,7 @@ fun ContainerScreen(
                         onAction(ContainerAction.OnTabSelected(index))
                     },
                     icon = { it.icon },
-                    label = { it.label },
+                    label = resourceLabels(state.tabs) { it.label },
                     modifier = Modifier.onGloballyPositioned { navBarHeightPx = it.size.height }
                 )
             }
@@ -200,13 +217,13 @@ private fun ContainerScreenPreview() {
             state = ContainerState(
                 tabs = listOf(
                     NavigationTab(
-                        label = "Todo",
+                        label = Res.string.tab_todo,
                         icon = Icons.AutoMirrored.Filled.ListIcon,
                         startDestination = ContainerPreviewRoute,
                         entries = { entry(ContainerPreviewRoute) { } }
                     ),
                     NavigationTab(
-                        label = "Settings",
+                        label = Res.string.tab_settings,
                         icon = Icons.Filled.Settings,
                         startDestination = ContainerPreviewRoute,
                         entries = { entry(ContainerPreviewRoute) { } }

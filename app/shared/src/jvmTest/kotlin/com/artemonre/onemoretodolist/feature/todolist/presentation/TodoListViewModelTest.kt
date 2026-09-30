@@ -1,12 +1,15 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
+import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.NoOpDueTimeScheduler
+import com.artemonre.onemoretodolist.feature.todolist.domain.TagColor
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import kotlin.test.AfterTest
@@ -97,7 +100,7 @@ class TodoListViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(TodoListAction.OnSortOptionSelected(TodoSortOption.Manual))
-        viewModel.onAction(TodoListAction.OnConfirmEditTodo(id = "3", text = "Todo 3", isPrioritized = true))
+        viewModel.onAction(TodoListAction.OnConfirmEditTodo(id = "3", draft = TodoDraft(text = "Todo 3", isPrioritized = true)))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("3", viewModel.state.value.items.first().id)
@@ -133,6 +136,46 @@ class TodoListViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(emptyList(), dataSource.observeTodos().first())
+    }
+
+    @Test
+    fun `OnToggleChecklistItem ticks only that item and leaves the todo active`() = runTest(testDispatcher) {
+        val checklist = listOf(ChecklistItem(id = "a", text = "First"), ChecklistItem(id = "b", text = "Second"))
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0).copy(checklist = checklist)))
+        val viewModel = todoListViewModel(dataSource)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(TodoListAction.OnToggleChecklistItem(todoId = "1", itemId = "b"))
+        viewModel.onAction(TodoListAction.OnToggleChecklistItem(todoId = "1", itemId = "a"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val persisted = dataSource.observeTodos().first().single()
+        assertEquals(listOf(true, true), persisted.checklist.map { it.isDone })
+        assertEquals(TodoStatus.Active, persisted.status)
+    }
+
+    @Test
+    fun `OnConfirmEditTodo saves the draft's checklist and tags and exposes them as known tags`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
+        val viewModel = todoListViewModel(dataSource)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+        val tags = listOf(TodoTag("Work", TagColor.Blue))
+        val checklist = listOf(ChecklistItem(id = "a", text = "Step"))
+
+        viewModel.onAction(
+            TodoListAction.OnConfirmEditTodo(
+                id = "1",
+                draft = TodoDraft(text = "Todo 1", isPrioritized = false, checklist = checklist, tags = tags)
+            )
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val persisted = dataSource.observeTodos().first().single()
+        assertEquals(checklist, persisted.checklist)
+        assertEquals(tags, persisted.tags)
+        assertEquals(tags, viewModel.state.value.knownTags)
     }
 
     private fun todoListViewModel(

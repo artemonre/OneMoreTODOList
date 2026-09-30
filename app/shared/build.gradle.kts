@@ -77,6 +77,8 @@ kotlin {
             dependencies {
                 implementation(libs.androidx.room3.runtime)
                 implementation(libs.androidx.sqlite.bundled)
+                // Checklist items and tags are stored as JSON text columns - see TodoMappers.
+                implementation(libs.kotlinx.serialization.json)
             }
         }
         androidMain.dependsOn(roomMain)
@@ -129,6 +131,9 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+        }
+        jvmTest.dependencies {
+            implementation(libs.androidx.room3.testing)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)

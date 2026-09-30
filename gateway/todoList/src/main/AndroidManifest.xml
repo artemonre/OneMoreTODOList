@@ -98,6 +98,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- Fired by the notification's snooze action buttons, same shape as the Done one above. -->
+        <receiver
+            android:name=".notification.SnoozeTodoReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.artemonre.onemoretodolist.ACTION_SNOOZE_TODO" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".notification.BootCompletedReceiver"
             android:exported="true">

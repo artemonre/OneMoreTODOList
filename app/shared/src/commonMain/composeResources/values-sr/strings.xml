@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Serbian, Latin script. -->
+<resources>
+    <string name="recurrence_every">Ponavlja se jednom u %1$s</string>
+    <string name="recurrence_after_completion">Ponavlja se %1$s nakon završetka</string>
+
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">%1$d dan</item>
+        <item quantity="few">%1$d dana</item>
+        <item quantity="other">%1$d dana</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">%1$d nedelju</item>
+        <item quantity="few">%1$d nedelje</item>
+        <item quantity="other">%1$d nedelja</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">%1$d mesec</item>
+        <item quantity="few">%1$d meseca</item>
+        <item quantity="other">%1$d meseci</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">%1$d godinu</item>
+        <item quantity="few">%1$d godine</item>
+        <item quantity="other">%1$d godina</item>
+    </plurals>
+
+    <string name="todo_filter_active">Aktivni (%1$d)</string>
+    <string name="todo_filter_done">Završeni (%1$d)</string>
+    <string name="completed_summary_title">Završeni zadaci</string>
+    <string name="completed_summary_today">Danas %1$d</string>
+    <string name="completed_summary_this_week">Ove nedelje %1$d</string>
+    <string name="completed_summary_this_month">Ovog meseca %1$d</string>
+    <string name="todo_list_empty_completed">Još nema završenih zadataka</string>
+
+    <string name="tags_title">Oznake</string>
+    <string name="tag_add">Dodaj oznaku</string>
+    <string name="tag_remove">Ukloni oznaku %1$s</string>
+    <string name="tag_new_title">Nova oznaka</string>
+    <string name="tag_name">Naziv oznake</string>
+    <string name="tag_color">Boja</string>
+    <string name="tag_color_red">Crvena</string>
+    <string name="tag_color_orange">Narandžasta</string>
+    <string name="tag_color_yellow">Žuta</string>
+    <string name="tag_color_green">Zelena</string>
+    <string name="tag_color_teal">Tirkizna</string>
+    <string name="tag_color_blue">Plava</string>
+    <string name="tag_color_purple">Ljubičasta</string>
+    <string name="tag_color_pink">Roze</string>
+    <string name="checklist_title">Kontrolna lista</string>
+    <string name="checklist_item_placeholder">Stavka</string>
+    <string name="checklist_add_item">Dodaj stavku</string>
+    <string name="checklist_remove_item">Ukloni stavku</string>
+    <string name="checklist_progress">%1$d/%2$d</string>
+    <string name="checklist_progress_description">Završeno stavki: %1$d od %2$d</string>
+    <string name="form_add">Dodaj</string>
+    <string name="form_cancel">Otkaži</string>
+
+    <string name="tab_todo">Zadaci</string>
+    <string name="tab_settings">Podešavanja</string>
+    <string name="fab_create_todo">Napravi zadatak</string>
+    <string name="fab_capture_note">Fotografiši belešku</string>
+    <string name="fab_open_menu">Otvori meni</string>
+
+    <string name="todo_list_empty_active">Svi zadaci su završeni!\nDodaj nove kad god zatreba — bez žurbe.</string>
+    <string name="sort_label">Sortiranje</string>
+    <string name="sort_default">Podrazumevano</string>
+    <string name="sort_manual">Ručno</string>
+    <string name="sort_text">Po tekstu</string>
+    <string name="action_undo">Opozovi</string>
+    <string name="action_edit">Izmeni</string>
+    <string name="action_delete">Obriši</string>
+    <string name="action_close">Zatvori</string>
+    <string name="snackbar_copied">Kopirano u privremenu memoriju</string>
+    <string name="snackbar_todo_deleted">Zadatak je obrisan</string>
+    <string name="snackbar_todo_completed">Zadatak je završen</string>
+    <string name="detail_attention_info">Info:\nOvaj zadatak nije diran već %1$d dana, možda bi trebalo da ga izmeniš ili zameniš</string>
+    <string name="share_title">Podeli</string>
+    <string name="share_make_note">Napravi belešku</string>
+    <string name="share_coming_soon">Uskoro</string>
+    <string-array name="month_names_short">
+        <item>jan</item>
+        <item>feb</item>
+        <item>mar</item>
+        <item>apr</item>
+        <item>maj</item>
+        <item>jun</item>
+        <item>jul</item>
+        <item>avg</item>
+        <item>sep</item>
+        <item>okt</item>
+        <item>nov</item>
+        <item>dec</item>
+    </string-array>
+
+    <string name="form_quick_add">Brzo dodavanje</string>
+    <string name="form_more_settings">Više podešavanja</string>
+    <string name="form_title_add">Novi zadatak</string>
+    <string name="form_title_edit">Izmeni zadatak</string>
+    <string name="form_text_label">Tekst zadatka</string>
+    <string name="form_text_placeholder">npr. Rezerviši let</string>
+    <string name="form_clear_text">Obriši tekst</string>
+    <string name="form_stop_listening">Zaustavi slušanje</string>
+    <string name="form_speak_text">Izdiktiraj zadatak</string>
+    <string name="form_put_to_top">Stavi na vrh</string>
+    <string name="form_due_time">Podsetnik</string>
+    <string name="form_date">Datum</string>
+    <string name="form_select_date">Izaberi datum</string>
+    <string name="form_pick_date">Izaberi datum</string>
+    <string name="form_time">Vreme</string>
+    <string name="form_select_time">Izaberi vreme</string>
+    <string name="form_pick_time">Izaberi vreme</string>
+    <string name="form_exact_time">Tačno vreme</string>
+    <string name="form_notifications_off">Obaveštenje neće stići jer su obaveštenja za ovu aplikaciju isključena.</string>
+    <string name="form_approximate_description">Obaveštenje će stići u roku od 15 minuta oko zadatog vremena.</string>
+    <string name="form_exact_needs_permission">Potrebna je dodatna dozvola koju treba da odobriš.</string>
+    <string name="form_exact_description">Obaveštenje će stići tačno u zadato vreme.</string>
+    <string name="form_allow_notifications">Dozvoli obaveštenja</string>
+    <string name="form_grant_permission">Odobri dozvolu</string>
+    <string name="form_ok">U redu</string>
+    <string name="form_repeat">Ponavljaj</string>
+    <string name="form_every">Jednom u</string>
+    <string name="form_only_after_completion">Tek nakon završetka</string>
+    <string name="form_decrease">Smanji</string>
+    <string name="form_increase">Povećaj</string>
+    <string name="form_discard">Odbaci</string>
+    <string name="form_save">Sačuvaj</string>
+    <string name="form_create">Napravi</string>
+    <string name="form_default_text">Zadatak dodat u %1$s</string>
+    <string name="recurrence_day">Dan</string>
+    <string name="recurrence_week">Nedelja</string>
+    <string name="recurrence_month">Mesec</string>
+    <string name="recurrence_year">Godina</string>
+
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_system">Sistemska</string>
+    <string name="settings_theme_light">Svetla</string>
+    <string name="settings_theme_dark">Tamna</string>
+    <string name="settings_palette">Paleta</string>
+    <string name="settings_palettes">Palete</string>
+    <string name="settings_dynamic_color">Boje pozadine</string>
+    <string name="settings_dynamic_color_description">Boje se preuzimaju iz tvoje pozadine umesto iz gotove palete i menjaju se kada promeniš pozadinu.</string>
+    <string name="settings_font">Font</string>
+    <string name="settings_font_default">Podrazumevani</string>
+    <string name="settings_font_serif">Serifni</string>
+    <string name="settings_font_mono">Monospace</string>
+    <string name="settings_ui_style">Stil interfejsa</string>
+    <string name="settings_ui_style_material">Material</string>
+    <string name="settings_ui_style_paper">Papir</string>
+    <string name="settings_todos">Zadaci</string>
+    <string name="settings_archive_completed">Arhiviraj završene zadatke</string>
+    <string name="settings_archive_completed_description">Kada je isključeno, zadatak završen u aplikaciji odmah se briše (možeš ga vratiti dugmetom „Opozovi“). Polje za potvrdu u vidžetu uvek arhivira, da slučajan dodir ne bi bio nepovratan.</string>
+    <string name="settings_support">Podrška</string>
+    <string name="settings_send_email">Pošalji imejl</string>
+    <string name="settings_privacy_policy">Politika privatnosti</string>
+    <string name="settings_update_available">Stigla je nova verzija</string>
+    <string name="settings_update">Ažuriraj</string>
+    <string name="update_required_title">Dostupno je obavezno ažuriranje</string>
+    <string name="update_required_body">Za dalje korišćenje aplikacije potrebno je ažuriranje.</string>
+    <string name="settings_app_version">Verzija aplikacije: %1$s</string>
+
+    <string name="onboarding_todo_1">Prvi zadatak</string>
+    <string name="onboarding_todo_2">Drugi zadatak. Podrazumevano su zadaci sortirani po datumu, od najstarijeg ka najnovijem</string>
+    <string name="onboarding_todo_3">Treći zadatak. Ako je stavljen na vrh („Stavi na vrh“), ide na vrh liste</string>
+    <string name="onboarding_todo_4">Četvrti zadatak. Prevuci ulevo da ga izmeniš ili obrišeš</string>
+    <string name="onboarding_todo_5">Peti zadatak. Prevuci udesno da ga podeliš</string>
+</resources>

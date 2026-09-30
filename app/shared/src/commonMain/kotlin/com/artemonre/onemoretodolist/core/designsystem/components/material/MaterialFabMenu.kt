@@ -35,6 +35,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.BackHandler
 import com.artemonre.onemoretodolist.core.designsystem.components.FabMenuItem
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.fab_open_menu
+import org.jetbrains.compose.resources.stringResource
 
 // A hand-rolled trigger + item list, deliberately not built on Material3's
 // FloatingActionButtonMenu/FloatingActionButtonMenuItem: that component sizes its own combined
@@ -89,7 +92,7 @@ fun MaterialFabMenu(
                 .combinedClickable(
                     onClick = { if (expanded) onExpandedChange(false) else onClick() },
                     onLongClick = { onExpandedChange(true) },
-                    onLongClickLabel = "Open menu",
+                    onLongClickLabel = stringResource(Res.string.fab_open_menu),
                     role = Role.Button
                 ),
             shape = RoundedCornerShape(FAB_TRIGGER_CORNER_RADIUS),

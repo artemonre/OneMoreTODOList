@@ -1,6 +1,7 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 
 // Which todos the list shows - Active is the not-yet-completed todos, Done is the
 // completed-only view. Independent of TodoSortOption, which only orders the Active view.
@@ -18,5 +19,7 @@ data class TodoListState(
     val completedCount: Int = 0,
     val doneTodayCount: Int = 0,
     val doneThisWeekCount: Int = 0,
-    val doneThisMonthCount: Int = 0
+    val doneThisMonthCount: Int = 0,
+    // Every tag in use on any todo - the form suggests these, reusing their color.
+    val knownTags: List<TodoTag> = emptyList()
 )

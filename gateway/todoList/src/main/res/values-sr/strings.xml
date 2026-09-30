@@ -1,0 +1,16 @@
+<!-- Serbian, Latin script - matches the app's own values-sr compose resources. -->
+<resources>
+    <string name="todo_widget_label">Lista zadataka</string>
+    <string name="todo_widget_description">Prikazuje aktivne zadatke i omogućava brzo dodavanje i štikliranje</string>
+    <string name="todo_widget_compact_label">Lista zadataka (kompaktna)</string>
+    <string name="todo_widget_compact_description">Prikazuje koliko imaš aktivnih zadataka, dodirni da dodaš novi</string>
+    <string name="todo_widget_row_label">Lista zadataka (red)</string>
+    <string name="todo_widget_row_description">Prikazuje sledeći aktivni zadatak, dodirni da ga dodaš ili štikliraš</string>
+    <string name="widget_title">Moji zadaci</string>
+    <string name="widget_empty">Nema aktivnih zadataka</string>
+    <string name="due_notification_channel_name">Podsetnici za zadatke</string>
+    <string name="due_notification_title">Vreme je da se to uradi</string>
+    <string name="due_notification_action_done">Gotovo</string>
+    <string name="due_notification_action_snooze_hour">+1 sat</string>
+    <string name="due_notification_action_snooze_tomorrow">Sutra</string>
+</resources>

@@ -6,4 +6,11 @@
     <string name="todo_widget_compact_description">Shows how many active todos you have, tap to add one</string>
     <string name="todo_widget_row_label">Todo List (Row)</string>
     <string name="todo_widget_row_description">Shows your next active todo, tap to add or check it off</string>
+    <string name="widget_title">My Todos</string>
+    <string name="widget_empty">No active todos</string>
+    <string name="due_notification_channel_name">Todo due times</string>
+    <string name="due_notification_title">The time to do it has come</string>
+    <string name="due_notification_action_done">Done</string>
+    <string name="due_notification_action_snooze_hour">+1 hour</string>
+    <string name="due_notification_action_snooze_tomorrow">Tomorrow</string>
 </resources>

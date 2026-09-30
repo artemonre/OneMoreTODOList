@@ -74,7 +74,9 @@ class ToggleTodoDone(
             recurrenceAnchorInstant = recurrenceAnchorInstant,
             dueDate = dueDate,
             dueTime = dueTime,
-            dueTimeMode = dueTimeMode
+            dueTimeMode = dueTimeMode,
+            // A pending snooze is a reminder to do it - pointless once it's done.
+            snoozedUntil = if (newStatus == TodoStatus.Done) null else item.snoozedUntil
         )
         dataSource.upsertTodo(updated)
         dueTimeScheduler.reschedule(updated)

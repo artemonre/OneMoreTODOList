@@ -7,10 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -70,16 +70,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.artemonre.onemoretodolist.SpeechRecognitionState
-import com.artemonre.onemoretodolist.rememberDueTimeNotificationPermissionState
-import com.artemonre.onemoretodolist.rememberExactAlarmPermissionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceUnit
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
+import com.artemonre.onemoretodolist.rememberDueTimeNotificationPermissionState
+import com.artemonre.onemoretodolist.rememberExactAlarmPermissionState
 import com.artemonre.onemoretodolist.rememberSpeechToText
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -88,18 +90,58 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.todayIn
-import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.form_allow_notifications
+import onemoretodolist.app.shared.generated.resources.form_approximate_description
+import onemoretodolist.app.shared.generated.resources.form_cancel
+import onemoretodolist.app.shared.generated.resources.form_clear_text
+import onemoretodolist.app.shared.generated.resources.form_create
+import onemoretodolist.app.shared.generated.resources.form_date
+import onemoretodolist.app.shared.generated.resources.form_decrease
+import onemoretodolist.app.shared.generated.resources.form_default_text
+import onemoretodolist.app.shared.generated.resources.form_discard
+import onemoretodolist.app.shared.generated.resources.form_due_time
+import onemoretodolist.app.shared.generated.resources.form_every
+import onemoretodolist.app.shared.generated.resources.form_exact_description
+import onemoretodolist.app.shared.generated.resources.form_exact_needs_permission
+import onemoretodolist.app.shared.generated.resources.form_exact_time
+import onemoretodolist.app.shared.generated.resources.form_grant_permission
+import onemoretodolist.app.shared.generated.resources.form_increase
+import onemoretodolist.app.shared.generated.resources.form_more_settings
+import onemoretodolist.app.shared.generated.resources.form_notifications_off
+import onemoretodolist.app.shared.generated.resources.form_ok
+import onemoretodolist.app.shared.generated.resources.form_only_after_completion
+import onemoretodolist.app.shared.generated.resources.form_pick_date
+import onemoretodolist.app.shared.generated.resources.form_pick_time
+import onemoretodolist.app.shared.generated.resources.form_put_to_top
+import onemoretodolist.app.shared.generated.resources.form_quick_add
+import onemoretodolist.app.shared.generated.resources.form_repeat
+import onemoretodolist.app.shared.generated.resources.form_save
+import onemoretodolist.app.shared.generated.resources.form_select_date
+import onemoretodolist.app.shared.generated.resources.form_select_time
+import onemoretodolist.app.shared.generated.resources.form_speak_text
+import onemoretodolist.app.shared.generated.resources.form_stop_listening
+import onemoretodolist.app.shared.generated.resources.form_text_label
+import onemoretodolist.app.shared.generated.resources.form_text_placeholder
+import onemoretodolist.app.shared.generated.resources.form_time
+import onemoretodolist.app.shared.generated.resources.form_title_add
+import onemoretodolist.app.shared.generated.resources.form_title_edit
 import onemoretodolist.app.shared.generated.resources.recurrence_after_completion
+import onemoretodolist.app.shared.generated.resources.recurrence_day
 import onemoretodolist.app.shared.generated.resources.recurrence_every
+import onemoretodolist.app.shared.generated.resources.recurrence_month
 import onemoretodolist.app.shared.generated.resources.recurrence_unit_day
 import onemoretodolist.app.shared.generated.resources.recurrence_unit_month
 import onemoretodolist.app.shared.generated.resources.recurrence_unit_week
 import onemoretodolist.app.shared.generated.resources.recurrence_unit_year
+import onemoretodolist.app.shared.generated.resources.recurrence_week
+import onemoretodolist.app.shared.generated.resources.recurrence_year
 import org.jetbrains.compose.resources.PluralStringResource
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -107,7 +149,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
-    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?, dueDate: LocalDate?, dueTime: LocalTime?, dueTimeMode: DueTimeMode?) -> Unit,
+    onConfirm: (TodoDraft) -> Unit,
     onDismiss: () -> Unit,
     // Carries whatever the user had already typed into the sheet along to the full-screen dialog,
     // so switching to "More settings" doesn't lose it.
@@ -132,11 +174,11 @@ fun TodoFormBottomSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Quick add",
+                text = stringResource(Res.string.form_quick_add),
                 style = MaterialTheme.typography.titleLarge
             )
             TextButton(onClick = { onMoreSettingsClick(currentText) }) {
-                Text("More settings")
+                Text(stringResource(Res.string.form_more_settings))
             }
         }
         TodoFormBody(
@@ -174,7 +216,7 @@ fun TodoFormBottomSheet(
 @Composable
 fun TodoFormBody(
     editingItem: TodoItemUi?,
-    onConfirm: (text: String, isPrioritized: Boolean, recurrence: Recurrence?, dueDate: LocalDate?, dueTime: LocalTime?, dueTimeMode: DueTimeMode?) -> Unit,
+    onConfirm: (TodoDraft) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
@@ -185,6 +227,11 @@ fun TodoFormBody(
     // belongs in TodoFormFullScreenDialog, which is the only caller that turns this on.
     showDueTime: Boolean = false,
     showRecurrence: Boolean = false,
+    // Same "detailed creation only" reasoning - only TodoFormFullScreenDialog turns these on.
+    // knownTags feeds the tag picker's suggestions and is ignored while showTags is off.
+    showTags: Boolean = false,
+    showChecklist: Boolean = false,
+    knownTags: List<TodoTag> = emptyList(),
     // Off by default: the quick-add bottom sheet and widget already rely on Android's own IME
     // "Done" handling and keep their existing no-op-on-blank behavior. TodoFormFullScreenDialog
     // turns this on since it's the one flow where a stray blank-text save was reachable.
@@ -203,6 +250,8 @@ fun TodoFormBody(
         mutableStateOf(TextFieldValue(text = prefilled, selection = TextRange(prefilled.length)))
     }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
+    var tags by remember { mutableStateOf(editingItem?.tags.orEmpty()) }
+    var checklist by remember { mutableStateOf(editingItem?.checklist.orEmpty()) }
     var repeatEnabled by remember { mutableStateOf(editingItem?.recurrence != null) }
     var recurrenceType by remember { mutableStateOf(editingItem?.recurrence?.type ?: RecurrenceType.Every) }
     // A counter (not free text) so this is always a valid positive interval - no parsing/validation needed.
@@ -235,6 +284,7 @@ fun TodoFormBody(
     var dueDate by remember { mutableStateOf(editingItem?.dueDate) }
     var dueTime by remember { mutableStateOf(editingItem?.dueTime) }
     var showDueDatePicker by remember { mutableStateOf(false) }
+    val shortDateFormat = rememberShortDateFormat()
     var showDueTimePicker by remember { mutableStateOf(false) }
     val dueTimeMode = if (dueTimeEnabled && dueDate != null && dueTime != null) {
         if (exactTimeEnabled) DueTimeMode.Exact else DueTimeMode.Approximate
@@ -246,6 +296,28 @@ fun TodoFormBody(
     val dueTimeIncomplete = dueTimeEnabled && (dueDate == null || dueTime == null)
     val dueTimeExactPermissionMissing = dueTimeEnabled && exactTimeEnabled && exactAlarmPermission?.isGranted == false
     val canSubmit = (text.text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeExactPermissionMissing
+    val openedAt = remember {
+        dueTimeFormat.format(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time)
+    }
+    val defaultText = stringResource(Res.string.form_default_text, openedAt)
+    // Blank checklist lines (added but never typed into) are dropped rather than saved as empty
+    // items. Blank text falls back to defaultText - only reachable where requireText is off.
+    val submit = {
+        onConfirm(
+            TodoDraft(
+                text = text.text.trim().ifEmpty { defaultText },
+                isPrioritized = isPrioritized,
+                recurrence = recurrence,
+                dueDate = dueDate,
+                dueTime = dueTime,
+                dueTimeMode = dueTimeMode,
+                checklist = checklist
+                    .map { it.copy(text = it.text.trim()) }
+                    .filter { it.text.isNotEmpty() },
+                tags = tags
+            )
+        )
+    }
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val speechController = rememberSpeechToText(
@@ -269,7 +341,7 @@ fun TodoFormBody(
     ) {
         if (showTitle) {
             Text(
-                text = if (editingItem != null) "Edit todo" else "Add todo",
+                text = stringResource(if (editingItem != null) Res.string.form_title_edit else Res.string.form_title_add),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -278,8 +350,8 @@ fun TodoFormBody(
         OutlinedTextField(
             value = text,
             onValueChange = { text = it; onTextChange(it.text) },
-            label = { Text("A todo text") },
-            placeholder = { Text("e.g., Book a flight") },
+            label = { Text(stringResource(Res.string.form_text_label)) },
+            placeholder = { Text(stringResource(Res.string.form_text_placeholder)) },
             singleLine = false,
             minLines = fieldMinLines,
             maxLines = fieldMaxLines,
@@ -288,12 +360,12 @@ fun TodoFormBody(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = { if (canSubmit) onConfirm(text.text.trim(), isPrioritized, recurrence, dueDate, dueTime, dueTimeMode) }
+                onDone = { if (canSubmit) submit() }
             ),
             trailingIcon = if (text.text.isNotEmpty()) {
                 {
                     IconButton(onClick = { text = TextFieldValue(""); onTextChange("") }) {
-                        Icon(imageVector = Icons.Filled.Close, contentDescription = "Clear text")
+                        Icon(imageVector = Icons.Filled.Close, contentDescription = stringResource(Res.string.form_clear_text))
                     }
                 }
             } else {
@@ -305,7 +377,7 @@ fun TodoFormBody(
                         ) {
                             Icon(
                                 imageVector = if (isListening) Icons.Filled.Stop else Icons.Filled.Mic,
-                                contentDescription = if (isListening) "Stop listening" else "Speak todo text"
+                                contentDescription = stringResource(if (isListening) Res.string.form_stop_listening else Res.string.form_speak_text)
                             )
                         }
                     }
@@ -315,6 +387,14 @@ fun TodoFormBody(
                 .fillMaxWidth()
                 .focusRequester(textFocusRequester)
         )
+        if (showTags) {
+            Spacer(Modifier.height(12.dp))
+            TodoFormTagsSection(
+                tags = tags,
+                knownTags = knownTags,
+                onTagsChange = { tags = it }
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -331,7 +411,14 @@ fun TodoFormBody(
                 onCheckedChange = null
             )
             Spacer(Modifier.width(12.dp))
-            Text("Put to top")
+            Text(stringResource(Res.string.form_put_to_top))
+        }
+        if (showChecklist) {
+            Spacer(Modifier.height(4.dp))
+            TodoFormChecklistSection(
+                items = checklist,
+                onItemsChange = { checklist = it }
+            )
         }
         if (showDueTime) {
             Spacer(Modifier.height(4.dp))
@@ -356,7 +443,7 @@ fun TodoFormBody(
                     onCheckedChange = null
                 )
                 Spacer(Modifier.width(12.dp))
-                Text("Due time")
+                Text(stringResource(Res.string.form_due_time))
             }
         }
         if (showDueTime && dueTimeEnabled) {
@@ -372,20 +459,20 @@ fun TodoFormBody(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         ReadOnlyPickerField(
-                            value = dueDate?.let { dueDateFormat.format(it) }.orEmpty(),
-                            label = "Date",
-                            placeholder = "Select date",
+                            value = dueDate?.let { shortDateFormat.format(it) }.orEmpty(),
+                            label = stringResource(Res.string.form_date),
+                            placeholder = stringResource(Res.string.form_select_date),
                             icon = Icons.Filled.CalendarMonth,
-                            iconContentDescription = "Pick date",
+                            iconContentDescription = stringResource(Res.string.form_pick_date),
                             onClick = { showDueDatePicker = true },
                             modifier = Modifier.weight(3f)
                         )
                         ReadOnlyPickerField(
                             value = dueTime?.let { dueTimeFormat.format(it) }.orEmpty(),
-                            label = "Time",
-                            placeholder = "Select time",
+                            label = stringResource(Res.string.form_time),
+                            placeholder = stringResource(Res.string.form_select_time),
                             icon = Icons.Filled.Schedule,
-                            iconContentDescription = "Pick time",
+                            iconContentDescription = stringResource(Res.string.form_pick_time),
                             onClick = { showDueTimePicker = true },
                             modifier = Modifier.weight(2f)
                         )
@@ -408,7 +495,7 @@ fun TodoFormBody(
                             onCheckedChange = null
                         )
                         Spacer(Modifier.width(12.dp))
-                        Text("Exact time")
+                        Text(stringResource(Res.string.form_exact_time))
                     }
                     // Notifications being off blocks delivery entirely regardless of exact/
                     // approximate mode, so it takes priority over that mode's own description -
@@ -416,12 +503,12 @@ fun TodoFormBody(
                     Text(
                         text = when {
                             notificationPermission?.isGranted == false ->
-                                "The notification won't arrive because notifications are turned off for this app."
+                                stringResource(Res.string.form_notifications_off)
                             !exactTimeEnabled ->
-                                "The notification will arrive within a 15-minute window around the specified time."
+                                stringResource(Res.string.form_approximate_description)
                             exactAlarmPermission?.isGranted == false ->
-                                "Requires an extra permission that you'll need to grant."
-                            else -> "The notification will arrive at the exact time you set."
+                                stringResource(Res.string.form_exact_needs_permission)
+                            else -> stringResource(Res.string.form_exact_description)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -434,13 +521,13 @@ fun TodoFormBody(
                     )
                     if (notificationPermission?.isGranted == false) {
                         TextButton(onClick = { notificationPermission.request(allowSettingsRedirect = true) }) {
-                            Text("Allow notifications")
+                            Text(stringResource(Res.string.form_allow_notifications))
                         }
                     }
                     exactAlarmPermission?.let { permission ->
                         if (notificationPermission?.isGranted != false && exactTimeEnabled && !permission.isGranted) {
                             TextButton(onClick = permission::request) {
-                                Text("Grant permission")
+                                Text(stringResource(Res.string.form_grant_permission))
                             }
                         }
                     }
@@ -473,12 +560,12 @@ fun TodoFormBody(
                         }
                         showDueDatePicker = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(Res.string.form_ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDueDatePicker = false }) {
-                        Text("Cancel")
+                        Text(stringResource(Res.string.form_cancel))
                     }
                 }
             ) {
@@ -507,14 +594,14 @@ fun TodoFormBody(
                             horizontalArrangement = Arrangement.End
                         ) {
                             TextButton(onClick = { showDueTimePicker = false }) {
-                                Text("Cancel")
+                                Text(stringResource(Res.string.form_cancel))
                             }
                             Spacer(Modifier.width(8.dp))
                             TextButton(onClick = {
                                 dueTime = LocalTime(timePickerState.hour, timePickerState.minute)
                                 showDueTimePicker = false
                             }) {
-                                Text("OK")
+                                Text(stringResource(Res.string.form_ok))
                             }
                         }
                     }
@@ -539,7 +626,7 @@ fun TodoFormBody(
                     onCheckedChange = null
                 )
                 Spacer(Modifier.width(12.dp))
-                Text("Repeat")
+                Text(stringResource(Res.string.form_repeat))
             }
         }
         if (showRecurrence && repeatEnabled) {
@@ -554,7 +641,7 @@ fun TodoFormBody(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Every")
+                        Text(stringResource(Res.string.form_every))
                         Spacer(Modifier.width(8.dp))
                         IntervalCounter(
                             value = recurrenceInterval,
@@ -566,7 +653,7 @@ fun TodoFormBody(
                         options = RecurrenceUnit.entries,
                         selected = recurrenceUnit,
                         onSelected = { recurrenceUnit = it },
-                        label = { it.displayName() },
+                        label = resourceLabels(RecurrenceUnit.entries) { it.displayName() },
                         modifier = Modifier.fillMaxWidth()
                     )
                     // Padding lives on the row itself (rather than the spacedBy gap the rest of this
@@ -594,7 +681,7 @@ fun TodoFormBody(
                             onCheckedChange = null
                         )
                         Spacer(Modifier.width(12.dp))
-                        Text("Only after completion")
+                        Text(stringResource(Res.string.form_only_after_completion))
                     }
                     recurrence?.let { current ->
                         Text(
@@ -618,14 +705,14 @@ fun TodoFormBody(
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = onDismiss) {
-                Text("Discard")
+                Text(stringResource(Res.string.form_discard))
             }
             Spacer(Modifier.width(8.dp))
             Button(
-                onClick = { onConfirm(text.text.trim(), isPrioritized, recurrence, dueDate, dueTime, dueTimeMode) },
+                onClick = submit,
                 enabled = canSubmit
             ) {
-                Text(if (editingItem != null) "Save" else "Create")
+                Text(stringResource(if (editingItem != null) Res.string.form_save else Res.string.form_create))
             }
         }
     }
@@ -659,7 +746,7 @@ private fun IntervalCounter(
             enabled = value > MIN_RECURRENCE_INTERVAL,
             modifier = Modifier.size(40.dp)
         ) {
-            Icon(imageVector = Icons.Filled.Remove, contentDescription = "Decrease")
+            Icon(imageVector = Icons.Filled.Remove, contentDescription = stringResource(Res.string.form_decrease))
         }
         Text(
             text = value.toString(),
@@ -671,17 +758,9 @@ private fun IntervalCounter(
             onClick = { onValueChange(value + 1) },
             modifier = Modifier.size(40.dp)
         ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = "Increase")
+            Icon(imageVector = Icons.Filled.Add, contentDescription = stringResource(Res.string.form_increase))
         }
     }
-}
-
-private val dueDateFormat = LocalDate.Format {
-    day()
-    char(' ')
-    monthName(MonthNames.ENGLISH_ABBREVIATED)
-    char(' ')
-    year()
 }
 
 private val dueTimeFormat = LocalTime.Format {
@@ -768,11 +847,11 @@ private fun <T> RecurrenceSegmentedRow(
     }
 }
 
-private fun RecurrenceUnit.displayName(): String = when (this) {
-    RecurrenceUnit.Day -> "Day"
-    RecurrenceUnit.Week -> "Week"
-    RecurrenceUnit.Month -> "Month"
-    RecurrenceUnit.Year -> "Year"
+private fun RecurrenceUnit.displayName(): StringResource = when (this) {
+    RecurrenceUnit.Day -> Res.string.recurrence_day
+    RecurrenceUnit.Week -> Res.string.recurrence_week
+    RecurrenceUnit.Month -> Res.string.recurrence_month
+    RecurrenceUnit.Year -> Res.string.recurrence_year
 }
 
 @Preview
@@ -781,7 +860,7 @@ private fun TodoFormBottomSheetPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoFormBottomSheet(
             editingItem = null,
-            onConfirm = { _, _, _, _, _, _ -> },
+            onConfirm = {},
             onDismiss = {},
             onMoreSettingsClick = {}
         )

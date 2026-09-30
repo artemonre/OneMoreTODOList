@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -109,6 +110,47 @@ class HandleDueTodoFiredTest {
         assertNull(fired?.dueDate)
         assertEquals(original.dueTime, fired?.dueTime)
         assertEquals(original.dueTimeMode, fired?.dueTimeMode)
+    }
+
+    @Test
+    fun `a snooze firing on a todo without a due time re-notifies and clears the snooze`() = runTest {
+        val dataSource = FakeTodoLocalDataSource(
+            initialTodos = listOf(todoWithoutDueTime(id = "1").copy(snoozedUntil = now), todoWithoutDueTime(id = "2"))
+        )
+        val scheduler = FakeDueTimeScheduler()
+
+        val fired = HandleDueTodoFired(dataSource, scheduler)("1")
+
+        assertEquals("1", fired?.id)
+        assertNull(fired?.snoozedUntil)
+        assertEquals(-1, fired?.sortOrder)
+        assertEquals(listOf("1"), scheduler.rescheduledIds)
+    }
+
+    @Test
+    fun `a snooze firing before the next Every occurrence leaves the recurrence schedule alone`() = runTest {
+        val recurrence = Recurrence(RecurrenceType.Every, 1, RecurrenceUnit.Week)
+        val nextOccurrence = now + 3.days
+        val todo = dueTodo(id = "1", recurrence = recurrence, dueInstant = nextOccurrence).copy(snoozedUntil = now)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todo))
+
+        val fired = HandleDueTodoFired(dataSource, NoOpDueTimeScheduler())("1")
+
+        assertNull(fired?.snoozedUntil)
+        assertEquals(todo.dueDate, fired?.dueDate)
+        assertEquals(todo.dueTime, fired?.dueTime)
+        assertEquals(todo.recurrenceAnchorInstant, fired?.recurrenceAnchorInstant)
+    }
+
+    @Test
+    fun `a due time firing before a later snooze keeps the snooze pending`() = runTest {
+        val todo = dueTodo(id = "1").copy(snoozedUntil = now + 3.days)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todo))
+
+        val fired = HandleDueTodoFired(dataSource, NoOpDueTimeScheduler())("1")
+
+        assertNull(fired?.dueDate)
+        assertEquals(now + 3.days, fired?.snoozedUntil)
     }
 
     private fun dueTodo(

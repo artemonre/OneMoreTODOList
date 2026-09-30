@@ -3,17 +3,16 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
-import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
-import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
+import com.artemonre.onemoretodolist.feature.todolist.domain.knownTags
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.topPriorityOrder
 import com.artemonre.onemoretodolist.feature.todolist.domain.topSortOrder
@@ -23,16 +22,21 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.snackbar_todo_completed
+import onemoretodolist.app.shared.generated.resources.snackbar_todo_deleted
 
 private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
 
@@ -69,7 +73,8 @@ class TodoListViewModel(
             completedCount = todos.count { it.status == TodoStatus.Done },
             doneTodayCount = todos.count { it.completionDate == today },
             doneThisWeekCount = todos.count { it.completionDate != null && it.completionDate >= startOfWeek },
-            doneThisMonthCount = todos.count { it.completionDate != null && it.completionDate >= startOfMonth }
+            doneThisMonthCount = todos.count { it.completionDate != null && it.completionDate >= startOfMonth },
+            knownTags = todos.knownTags()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), TodoListState())
 
@@ -80,6 +85,8 @@ class TodoListViewModel(
     // it exactly via upsertTodo - holds only the most recent one, matching the single Snackbar
     // that offers Undo for it.
     private var pendingUndoItem: TodoItem? = null
+
+    private val checklistMutex = Mutex()
 
     fun onAction(action: TodoListAction) {
         when (action) {
@@ -102,34 +109,27 @@ class TodoListViewModel(
                     _events.send(TodoListEvent.ShowAddTodoFullScreenDialog)
                 }
             }
-            is TodoListAction.OnConfirmAddTodo ->
-                addTodo(action.text, action.isPrioritized, action.recurrence, action.dueDate, action.dueTime, action.dueTimeMode)
+            is TodoListAction.OnConfirmAddTodo -> addTodo(action.draft)
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
-            is TodoListAction.OnConfirmEditTodo ->
-                editTodo(
-                    action.id,
-                    action.text,
-                    action.isPrioritized,
-                    action.recurrence,
-                    action.dueDate,
-                    action.dueTime,
-                    action.dueTimeMode
-                )
+            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.draft)
+            is TodoListAction.OnToggleChecklistItem -> toggleChecklistItem(action.todoId, action.itemId)
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
             is TodoListAction.OnUndoClick -> undo()
         }
     }
 
-    private fun addTodo(
-        text: String,
-        isPrioritized: Boolean,
-        recurrence: Recurrence?,
-        dueDate: LocalDate?,
-        dueTime: LocalTime?,
-        dueTimeMode: DueTimeMode?
-    ) {
+    private fun addTodo(draft: TodoDraft) {
         viewModelScope.launch {
-            addTodoUseCase(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode)
+            addTodoUseCase(
+                draft.text,
+                draft.isPrioritized,
+                draft.recurrence,
+                draft.dueDate,
+                draft.dueTime,
+                draft.dueTimeMode,
+                draft.checklist,
+                draft.tags
+            )
         }
     }
 
@@ -140,15 +140,10 @@ class TodoListViewModel(
         }
     }
 
-    private fun editTodo(
-        id: String,
-        text: String,
-        isPrioritized: Boolean,
-        recurrence: Recurrence?,
-        dueDate: LocalDate?,
-        dueTime: LocalTime?,
-        dueTimeMode: DueTimeMode?
-    ) {
+    private fun editTodo(id: String, draft: TodoDraft) {
+        val text = draft.text
+        val isPrioritized = draft.isPrioritized
+        val recurrence = draft.recurrence
         val currentTodos = todos.value
         val item = currentTodos.firstOrNull { it.id == id } ?: return
         // Only newly-prioritized items jump to the top of Manual sort too - an item that was
@@ -165,13 +160,31 @@ class TodoListViewModel(
             },
             recurrence = recurrence,
             recurrenceAnchorInstant = recurrenceAnchorInstant(item, recurrence),
-            dueDate = dueDate,
-            dueTime = dueTime,
-            dueTimeMode = dueTimeMode
+            dueDate = draft.dueDate,
+            dueTime = draft.dueTime,
+            dueTimeMode = draft.dueTimeMode,
+            checklist = draft.checklist,
+            tags = draft.tags
         )
         viewModelScope.launch {
             todoLocalDataSource.upsertTodo(updated)
             dueTimeScheduler.reschedule(updated)
+        }
+    }
+
+    // Ticking an item off is a lightweight change, not an edit - lastEditDate and the todo's own
+    // status stay as they are (finishing every item doesn't complete the todo). Reads the latest
+    // stored todo under a lock rather than todos.value: two quick taps would otherwise both start
+    // from the same stale checklist, and the second write would silently undo the first.
+    private fun toggleChecklistItem(todoId: String, itemId: String) {
+        viewModelScope.launch {
+            checklistMutex.withLock {
+                val item = todoLocalDataSource.observeTodos().first().firstOrNull { it.id == todoId } ?: return@withLock
+                val updated = item.copy(
+                    checklist = item.checklist.map { if (it.id == itemId) it.copy(isDone = !it.isDone) else it }
+                )
+                todoLocalDataSource.upsertTodo(updated)
+            }
         }
     }
 
@@ -205,7 +218,7 @@ class TodoListViewModel(
             todoLocalDataSource.deleteTodo(id)
             dueTimeScheduler.cancel(id)
             pendingUndoItem = item
-            _events.send(TodoListEvent.ShowUndoSnackbar("Todo deleted"))
+            _events.send(TodoListEvent.ShowUndoSnackbar(Res.string.snackbar_todo_deleted))
         }
     }
 
@@ -227,7 +240,7 @@ class TodoListViewModel(
             // a reversal.
             if (item.status == TodoStatus.Active) {
                 pendingUndoItem = item
-                _events.send(TodoListEvent.ShowUndoSnackbar("Todo completed"))
+                _events.send(TodoListEvent.ShowUndoSnackbar(Res.string.snackbar_todo_completed))
             }
         }
     }

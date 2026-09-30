@@ -25,7 +25,9 @@ class AddTodo(
         recurrence: Recurrence? = null,
         dueDate: LocalDate? = null,
         dueTime: LocalTime? = null,
-        dueTimeMode: DueTimeMode? = null
+        dueTimeMode: DueTimeMode? = null,
+        checklist: List<ChecklistItem> = emptyList(),
+        tags: List<TodoTag> = emptyList()
     ) {
         val currentTodos = dataSource.observeTodos().first()
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -42,7 +44,9 @@ class AddTodo(
             recurrenceAnchorInstant = Clock.System.now().takeIf { recurrence?.type == RecurrenceType.Every },
             dueDate = dueDate,
             dueTime = dueTime,
-            dueTimeMode = dueTimeMode
+            dueTimeMode = dueTimeMode,
+            checklist = checklist,
+            tags = tags
         )
         dataSource.upsertTodo(newItem)
         dueTimeScheduler.reschedule(newItem)

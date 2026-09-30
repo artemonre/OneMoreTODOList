@@ -21,7 +21,10 @@ fun TodoEntity.toTodoItem(): TodoItem = TodoItem(
     topSince = topSince,
     dueDate = dueDate,
     dueTime = dueTime,
-    dueTimeMode = dueTimeMode
+    dueTimeMode = dueTimeMode,
+    snoozedUntil = snoozedUntil,
+    checklist = checklist.toChecklist(),
+    tags = tags.toTags()
 )
 
 fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
@@ -40,5 +43,8 @@ fun TodoItem.toTodoEntity(): TodoEntity = TodoEntity(
     topSince = topSince,
     dueDate = dueDate,
     dueTime = dueTime,
-    dueTimeMode = dueTimeMode
+    dueTimeMode = dueTimeMode,
+    snoozedUntil = snoozedUntil,
+    checklist = checklist.toChecklistJson(),
+    tags = tags.toTagsJson()
 )

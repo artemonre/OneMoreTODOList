@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
@@ -27,7 +28,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -70,32 +70,44 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.artemonre.onemoretodolist.createPlainTextClipEntry
-import com.artemonre.onemoretodolist.rememberNativeShareLauncher
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
-import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalActionPlacement
+import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 import com.artemonre.onemoretodolist.core.presentation.ObserveAsEvents
 import com.artemonre.onemoretodolist.core.theme.domain.ActionPlacement
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.createPlainTextClipEntry
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
+import com.artemonre.onemoretodolist.rememberNativeShareLauncher
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.action_delete
+import onemoretodolist.app.shared.generated.resources.action_edit
+import onemoretodolist.app.shared.generated.resources.action_undo
 import onemoretodolist.app.shared.generated.resources.completed_summary_this_month
 import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
 import onemoretodolist.app.shared.generated.resources.mascot_staying
+import onemoretodolist.app.shared.generated.resources.snackbar_copied
+import onemoretodolist.app.shared.generated.resources.sort_default
+import onemoretodolist.app.shared.generated.resources.sort_label
+import onemoretodolist.app.shared.generated.resources.sort_manual
+import onemoretodolist.app.shared.generated.resources.sort_text
 import onemoretodolist.app.shared.generated.resources.todo_filter_active
 import onemoretodolist.app.shared.generated.resources.todo_filter_done
+import onemoretodolist.app.shared.generated.resources.todo_list_empty_active
 import onemoretodolist.app.shared.generated.resources.todo_list_empty_completed
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -140,8 +152,8 @@ fun TodoListRoot(
             is TodoListEvent.ShowUndoSnackbar -> {
                 coroutineScope.launch {
                     val result = snackbarHostState.showSnackbar(
-                        message = event.message,
-                        actionLabel = "Undo",
+                        message = getString(event.message),
+                        actionLabel = getString(Res.string.action_undo),
                         duration = SnackbarDuration.Short
                     )
                     if (result == SnackbarResult.ActionPerformed) {
@@ -161,8 +173,8 @@ fun TodoListRoot(
     if (showAddTodoSheet) {
         TodoFormBottomSheet(
             editingItem = null,
-            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode))
+            onConfirm = { draft ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft))
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
@@ -177,25 +189,25 @@ fun TodoListRoot(
     if (showAddTodoFullScreenDialog) {
         TodoFormFullScreenDialog(
             editingItem = null,
-            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode))
+            onConfirm = { draft ->
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft))
                 showAddTodoFullScreenDialog = false
             },
             onDismiss = { showAddTodoFullScreenDialog = false },
-            initialText = addTodoDraftText
+            initialText = addTodoDraftText,
+            knownTags = state.knownTags
         )
     }
 
     editingTodo?.let { item ->
         TodoFormFullScreenDialog(
             editingItem = item,
-            onConfirm = { text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode ->
-                viewModel.onAction(
-                    TodoListAction.OnConfirmEditTodo(item.id, text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode)
-                )
+            onConfirm = { draft ->
+                viewModel.onAction(TodoListAction.OnConfirmEditTodo(item.id, draft))
                 editingTodo = null
             },
-            onDismiss = { editingTodo = null }
+            onDismiss = { editingTodo = null },
+            knownTags = state.knownTags
         )
     }
 }
@@ -216,7 +228,9 @@ fun TodoListScreen(
         ActionPlacement.Start -> Alignment.BottomStart
         ActionPlacement.End -> Alignment.BottomEnd
     }
-    var detailItem by remember { mutableStateOf<TodoItemUi?>(null) }
+    // By id, not a snapshot, so the open dialog follows live changes (like ticking checklist items)
+    // and closes on its own if the todo leaves the current list.
+    var detailItemId by remember { mutableStateOf<String?>(null) }
     var shareItem by remember { mutableStateOf<TodoItemUi?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     val nativeShareLauncher = rememberNativeShareLauncher()
@@ -291,13 +305,13 @@ fun TodoListScreen(
                     if (state.filter == TodoListFilter.Active) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Sort",
+                                text = stringResource(Res.string.sort_label),
                                 style = MaterialTheme.typography.labelLarge
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Box {
                                 Button(onClick = { sortMenuExpanded = true }) {
-                                    Text(state.sortOption.displayName())
+                                    Text(stringResource(state.sortOption.displayName()))
                                 }
                                 DropdownMenu(
                                     expanded = sortMenuExpanded,
@@ -305,7 +319,7 @@ fun TodoListScreen(
                                 ) {
                                     TodoSortOption.entries.forEach { option ->
                                         DropdownMenuItem(
-                                            text = { Text(option.displayName()) },
+                                            text = { Text(stringResource(option.displayName())) },
                                             onClick = {
                                                 onAction(TodoListAction.OnSortOptionSelected(option))
                                                 sortMenuExpanded = false
@@ -349,7 +363,7 @@ fun TodoListScreen(
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                         onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
                         onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
-                        onItemClick = { detailItem = item },
+                        onItemClick = { detailItemId = item.id },
                         onShareSwipe = { shareItem = item }
                     )
                 }
@@ -361,7 +375,7 @@ fun TodoListScreen(
                         text = if (state.filter == TodoListFilter.Done) {
                             stringResource(Res.string.todo_list_empty_completed)
                         } else {
-                            "You completed all your tasks!\nAdd more whenever you need to — no rush."
+                            stringResource(Res.string.todo_list_empty_active)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -413,12 +427,13 @@ fun TodoListScreen(
         )
     }
 
-    detailItem?.let { item ->
+    detailItemId?.let { id -> state.items.firstOrNull { it.id == id } }?.let { item ->
         TodoDetailDialog(
             item = item,
-            onDismiss = { detailItem = null },
+            onDismiss = { detailItemId = null },
+            onToggleChecklistItem = { itemId -> onAction(TodoListAction.OnToggleChecklistItem(item.id, itemId)) },
             onCopied = {
-                coroutineScope.launch { snackbarHostState.showSnackbar("Copied to clipboard") }
+                coroutineScope.launch { snackbarHostState.showSnackbar(getString(Res.string.snackbar_copied)) }
             }
         )
     }
@@ -433,7 +448,7 @@ fun TodoListScreen(
                 } else {
                     coroutineScope.launch {
                         clipboard.setClipEntry(createPlainTextClipEntry(item.text))
-                        snackbarHostState.showSnackbar("Copied to clipboard")
+                        snackbarHostState.showSnackbar(getString(Res.string.snackbar_copied))
                     }
                 }
             },
@@ -442,10 +457,10 @@ fun TodoListScreen(
     }
 }
 
-private fun TodoSortOption.displayName(): String = when (this) {
-    TodoSortOption.Date -> "Default"
-    TodoSortOption.Manual -> "Manual"
-    TodoSortOption.Text -> "Text"
+private fun TodoSortOption.displayName(): StringResource = when (this) {
+    TodoSortOption.Date -> Res.string.sort_default
+    TodoSortOption.Manual -> Res.string.sort_manual
+    TodoSortOption.Text -> Res.string.sort_text
 }
 
 @Composable
@@ -556,7 +571,7 @@ private fun SwipeableTodoRow(
                 onClick = { onEditClick(); closeSwipe() },
                 modifier = Modifier.size(SWIPE_ACTION_WIDTH)
             ) {
-                Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit")
+                Icon(imageVector = Icons.Filled.Edit, contentDescription = stringResource(Res.string.action_edit))
             }
             IconButton(
                 onClick = { onDeleteClick() },
@@ -564,7 +579,7 @@ private fun SwipeableTodoRow(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(Res.string.action_delete),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -574,8 +589,11 @@ private fun SwipeableTodoRow(
             id = item.id,
             text = item.text,
             isDone = item.status == TodoStatus.Done || isCompleting,
-            formattedDate = item.formattedDate,
+            formattedDate = rememberShortDateFormat().format(item.creationDate),
             attention = item.attention,
+            tags = item.tags,
+            checklistDone = item.checklist.count { it.isDone },
+            checklistTotal = item.checklist.size,
             onToggleDone = {
                 if (item.status == TodoStatus.Active) {
                     isCompleting = true
@@ -603,8 +621,8 @@ private fun TodoListScreenPreview() {
         TodoListScreen(
             state = TodoListState(
                 items = listOf(
-                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "24 Aug 2026"),
-                    TodoItemUi(id = "2", text = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature", status = TodoStatus.Done, sortOrder = 1, formattedDate = "23 Aug 2026")
+                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, creationDate = LocalDate(2026, 8, 24)),
+                    TodoItemUi(id = "2", text = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature", status = TodoStatus.Done, sortOrder = 1, creationDate = LocalDate(2026, 8, 23))
                 )
             ),
             onAction = {}
@@ -619,8 +637,8 @@ private fun TodoListScreenManualSortPreview() {
         TodoListScreen(
             state = TodoListState(
                 items = listOf(
-                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, formattedDate = "24 Aug 2026"),
-                    TodoItemUi(id = "2", text = "Write project architecture document", status = TodoStatus.Active, sortOrder = 1, formattedDate = "23 Aug 2026")
+                    TodoItemUi(id = "1", text = "Buy groceries", status = TodoStatus.Active, sortOrder = 0, creationDate = LocalDate(2026, 8, 24)),
+                    TodoItemUi(id = "2", text = "Write project architecture document", status = TodoStatus.Active, sortOrder = 1, creationDate = LocalDate(2026, 8, 23))
                 ),
                 sortOption = TodoSortOption.Manual
             ),

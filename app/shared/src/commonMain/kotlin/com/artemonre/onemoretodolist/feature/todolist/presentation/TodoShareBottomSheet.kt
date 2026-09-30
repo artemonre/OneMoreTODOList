@@ -25,6 +25,11 @@ import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.share_coming_soon
+import onemoretodolist.app.shared.generated.resources.share_make_note
+import onemoretodolist.app.shared.generated.resources.share_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TodoShareBottomSheet(
@@ -55,7 +60,7 @@ fun TodoShareBottomSheet(
             HorizontalDivider()
             ShareSheetRow(
                 icon = Icons.Filled.Share,
-                label = "Share",
+                label = stringResource(Res.string.share_title),
                 onClick = {
                     onShareClick()
                     onDismiss()
@@ -63,8 +68,8 @@ fun TodoShareBottomSheet(
             )
             ShareSheetRow(
                 icon = Icons.Filled.Create,
-                label = "Make a note",
-                caption = "Coming soon",
+                label = stringResource(Res.string.share_make_note),
+                caption = stringResource(Res.string.share_coming_soon),
                 enabled = false,
                 onClick = {}
             )

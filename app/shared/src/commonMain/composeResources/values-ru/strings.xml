@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recurrence_every">Повторяется раз в %1$s</string>
+    <string name="recurrence_after_completion">Повторяется через %1$s после выполнения</string>
+
+    <plurals name="recurrence_unit_day">
+        <item quantity="one">%1$d день</item>
+        <item quantity="few">%1$d дня</item>
+        <item quantity="many">%1$d дней</item>
+        <item quantity="other">%1$d дня</item>
+    </plurals>
+    <plurals name="recurrence_unit_week">
+        <item quantity="one">%1$d неделю</item>
+        <item quantity="few">%1$d недели</item>
+        <item quantity="many">%1$d недель</item>
+        <item quantity="other">%1$d недели</item>
+    </plurals>
+    <plurals name="recurrence_unit_month">
+        <item quantity="one">%1$d месяц</item>
+        <item quantity="few">%1$d месяца</item>
+        <item quantity="many">%1$d месяцев</item>
+        <item quantity="other">%1$d месяца</item>
+    </plurals>
+    <plurals name="recurrence_unit_year">
+        <item quantity="one">%1$d год</item>
+        <item quantity="few">%1$d года</item>
+        <item quantity="many">%1$d лет</item>
+        <item quantity="other">%1$d года</item>
+    </plurals>
+
+    <string name="todo_filter_active">Активные (%1$d)</string>
+    <string name="todo_filter_done">Готово (%1$d)</string>
+    <string name="completed_summary_title">Выполнено</string>
+    <string name="completed_summary_today">Сегодня %1$d</string>
+    <string name="completed_summary_this_week">За неделю %1$d</string>
+    <string name="completed_summary_this_month">За месяц %1$d</string>
+    <string name="todo_list_empty_completed">Выполненных задач пока нет</string>
+
+    <string name="tags_title">Теги</string>
+    <string name="tag_add">Добавить тег</string>
+    <string name="tag_remove">Удалить тег %1$s</string>
+    <string name="tag_new_title">Новый тег</string>
+    <string name="tag_name">Название тега</string>
+    <string name="tag_color">Цвет</string>
+    <string name="tag_color_red">Красный</string>
+    <string name="tag_color_orange">Оранжевый</string>
+    <string name="tag_color_yellow">Жёлтый</string>
+    <string name="tag_color_green">Зелёный</string>
+    <string name="tag_color_teal">Бирюзовый</string>
+    <string name="tag_color_blue">Синий</string>
+    <string name="tag_color_purple">Фиолетовый</string>
+    <string name="tag_color_pink">Розовый</string>
+    <string name="checklist_title">Чек-лист</string>
+    <string name="checklist_item_placeholder">Пункт</string>
+    <string name="checklist_add_item">Добавить пункт</string>
+    <string name="checklist_remove_item">Удалить пункт</string>
+    <string name="checklist_progress">%1$d/%2$d</string>
+    <string name="checklist_progress_description">Выполнено пунктов: %1$d из %2$d</string>
+    <string name="form_add">Добавить</string>
+    <string name="form_cancel">Отмена</string>
+
+    <string name="tab_todo">Задачи</string>
+    <string name="tab_settings">Настройки</string>
+    <string name="fab_create_todo">Создать задачу</string>
+    <string name="fab_capture_note">Сфотографировать заметку</string>
+    <string name="fab_open_menu">Открыть меню</string>
+
+    <string name="todo_list_empty_active">Все задачи выполнены!\nДобавляй новые, когда понадобится, — без спешки.</string>
+    <string name="sort_label">Сортировка</string>
+    <string name="sort_default">По умолчанию</string>
+    <string name="sort_manual">Вручную</string>
+    <string name="sort_text">По тексту</string>
+    <string name="action_undo">Отменить</string>
+    <string name="action_edit">Изменить</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_close">Закрыть</string>
+    <string name="snackbar_copied">Скопировано в буфер обмена</string>
+    <string name="snackbar_todo_deleted">Задача удалена</string>
+    <string name="snackbar_todo_completed">Задача выполнена</string>
+    <string name="detail_attention_info">Инфо:\nС этой задачей ничего не делали уже %1$d дн. Возможно, её стоит изменить или заменить</string>
+    <string name="share_title">Поделиться</string>
+    <string name="share_make_note">Сделать заметку</string>
+    <string name="share_coming_soon">Скоро</string>
+    <string-array name="month_names_short">
+        <item>янв.</item>
+        <item>февр.</item>
+        <item>мар.</item>
+        <item>апр.</item>
+        <item>мая</item>
+        <item>июн.</item>
+        <item>июл.</item>
+        <item>авг.</item>
+        <item>сент.</item>
+        <item>окт.</item>
+        <item>нояб.</item>
+        <item>дек.</item>
+    </string-array>
+
+    <string name="form_quick_add">Быстрое добавление</string>
+    <string name="form_more_settings">Больше настроек</string>
+    <string name="form_title_add">Новая задача</string>
+    <string name="form_title_edit">Изменить задачу</string>
+    <string name="form_text_label">Текст задачи</string>
+    <string name="form_text_placeholder">например, Купить билеты</string>
+    <string name="form_clear_text">Очистить текст</string>
+    <string name="form_stop_listening">Остановить запись</string>
+    <string name="form_speak_text">Надиктовать задачу</string>
+    <string name="form_put_to_top">Поднять наверх</string>
+    <string name="form_due_time">Напоминание</string>
+    <string name="form_date">Дата</string>
+    <string name="form_select_date">Выбери дату</string>
+    <string name="form_pick_date">Выбрать дату</string>
+    <string name="form_time">Время</string>
+    <string name="form_select_time">Выбери время</string>
+    <string name="form_pick_time">Выбрать время</string>
+    <string name="form_exact_time">Точное время</string>
+    <string name="form_notifications_off">Уведомление не придёт: для приложения отключены уведомления.</string>
+    <string name="form_approximate_description">Уведомление придёт в течение 15 минут около указанного времени.</string>
+    <string name="form_exact_needs_permission">Нужно дополнительное разрешение, которое ты выдашь вручную.</string>
+    <string name="form_exact_description">Уведомление придёт точно в указанное время.</string>
+    <string name="form_allow_notifications">Разрешить уведомления</string>
+    <string name="form_grant_permission">Выдать разрешение</string>
+    <string name="form_ok">ОК</string>
+    <string name="form_repeat">Повторять</string>
+    <string name="form_every">Раз в</string>
+    <string name="form_only_after_completion">Только после выполнения</string>
+    <string name="form_decrease">Уменьшить</string>
+    <string name="form_increase">Увеличить</string>
+    <string name="form_discard">Отменить</string>
+    <string name="form_save">Сохранить</string>
+    <string name="form_create">Создать</string>
+    <string name="form_default_text">Задача добавлена в %1$s</string>
+    <string name="recurrence_day">День</string>
+    <string name="recurrence_week">Неделя</string>
+    <string name="recurrence_month">Месяц</string>
+    <string name="recurrence_year">Год</string>
+
+    <string name="settings_theme">Тема</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_palette">Палитра</string>
+    <string name="settings_palettes">Палитры</string>
+    <string name="settings_dynamic_color">Цвета обоев</string>
+    <string name="settings_dynamic_color_description">Цвета берутся из твоих обоев, а не из готовой палитры, и обновляются, когда ты меняешь обои.</string>
+    <string name="settings_font">Шрифт</string>
+    <string name="settings_font_default">Стандартный</string>
+    <string name="settings_font_serif">С засечками</string>
+    <string name="settings_font_mono">Моноширинный</string>
+    <string name="settings_ui_style">Стиль интерфейса</string>
+    <string name="settings_ui_style_material">Material</string>
+    <string name="settings_ui_style_paper">Бумага</string>
+    <string name="settings_todos">Задачи</string>
+    <string name="settings_archive_completed">Архивировать выполненные</string>
+    <string name="settings_archive_completed_description">Если выключено, выполненная в приложении задача сразу удаляется (её можно вернуть кнопкой «Отменить»). Флажок в виджете всегда архивирует задачу, чтобы случайное нажатие нельзя было потерять.</string>
+    <string name="settings_support">Поддержка</string>
+    <string name="settings_send_email">Написать письмо</string>
+    <string name="settings_privacy_policy">Политика конфиденциальности</string>
+    <string name="settings_update_available">Вышла новая версия</string>
+    <string name="settings_update">Обновить</string>
+    <string name="update_required_title">Доступно обязательное обновление</string>
+    <string name="update_required_body">Обнови приложение, чтобы продолжить им пользоваться.</string>
+    <string name="settings_app_version">Версия приложения: %1$s</string>
+
+    <string name="onboarding_todo_1">Первая задача</string>
+    <string name="onboarding_todo_2">Вторая задача. По умолчанию задачи отсортированы по дате, от старых к новым</string>
+    <string name="onboarding_todo_3">Третья задача. Если её поднять наверх («Поднять наверх»), она будет вверху списка</string>
+    <string name="onboarding_todo_4">Четвёртая задача. Смахни влево, чтобы изменить или удалить</string>
+    <string name="onboarding_todo_5">Пятая задача. Смахни вправо, чтобы поделиться</string>
+</resources>

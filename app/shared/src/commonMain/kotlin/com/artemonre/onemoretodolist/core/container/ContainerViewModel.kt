@@ -21,8 +21,8 @@ class ContainerViewModel(
 
     fun onAction(action: ContainerAction) {
         when (action) {
-            ContainerAction.OnStart -> viewModelScope.launch {
-                seedOnboardingTodos()
+            is ContainerAction.OnStart -> viewModelScope.launch {
+                seedOnboardingTodos(action.onboardingTexts)
                 applyDueRecurrences()
             }
             is ContainerAction.OnTabSelected -> _state.update { it.copy(selectedTabIndex = action.index) }

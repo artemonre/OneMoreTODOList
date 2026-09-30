@@ -28,6 +28,11 @@ import com.google.android.play.core.install.InstallException
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.ktx.requestAppUpdateInfo
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.settings_update
+import onemoretodolist.app.shared.generated.resources.update_required_body
+import onemoretodolist.app.shared.generated.resources.update_required_title
+import org.jetbrains.compose.resources.stringResource
 import org.koin.core.context.GlobalContext
 
 // Only the Immediate flow is implemented for now - Flexible (background download, resumable,
@@ -146,19 +151,19 @@ private fun MandatoryUpdateScreen(onUpdateClick: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "A required update is available",
+            text = stringResource(Res.string.update_required_title),
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Please update the app to keep using it.",
+            text = stringResource(Res.string.update_required_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp)
         )
         Button(onClick = onUpdateClick, modifier = Modifier.padding(top = 16.dp)) {
-            Text("Update")
+            Text(stringResource(Res.string.settings_update))
         }
     }
 }

@@ -9,6 +9,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.NoOpDueTimeSchedule
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.RearmDueTodoAlarms
 import com.artemonre.onemoretodolist.feature.todolist.domain.SeedOnboardingTodos
+import com.artemonre.onemoretodolist.feature.todolist.domain.SnoozeTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
@@ -30,6 +31,7 @@ val todoListModule = module {
     // Android, same override pattern androidTodoDataModule already uses for TodoPreferences.
     single<DueTimeScheduler> { NoOpDueTimeScheduler() }
     singleOf(::HandleDueTodoFired)
+    singleOf(::SnoozeTodo)
     singleOf(::RearmDueTodoAlarms)
     viewModelOf(::TodoListViewModel)
 }
