@@ -97,6 +97,7 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_this_wee
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
 import onemoretodolist.app.shared.generated.resources.mascot_staying
+import onemoretodolist.app.shared.generated.resources.mascot_staying_green
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_default
 import onemoretodolist.app.shared.generated.resources.sort_label
@@ -370,38 +371,53 @@ fun TodoListScreen(
             }
 
             if (state.items.isEmpty()) {
-                item {
-                    Text(
-                        text = if (state.filter == TodoListFilter.Done) {
-                            stringResource(Res.string.todo_list_empty_completed)
-                        } else {
-                            stringResource(Res.string.todo_list_empty_active)
-                        },
+                // The green mascot fronts the empty state (both Active and Done) in place of the
+                // blue one that sits among the todos otherwise.
+                item(key = "empty_state") {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 32.dp),
-                        textAlign = TextAlign.Center
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.mascot_staying_green),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(MASCOT_HEIGHT)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = if (state.filter == TodoListFilter.Done) {
+                                stringResource(Res.string.todo_list_empty_completed)
+                            } else {
+                                stringResource(Res.string.todo_list_empty_active)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             } else {
                 items(manualOrderItems.take(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
-            }
 
-            // Sits after the first MASCOT_AFTER_TODO_COUNT todos, or after all of them (or the
-            // empty-state message) when there are fewer. Not a ReorderableItem, so dragging a todo
-            // across it is a no-op - the reorder callback above looks items up by key and ignores
-            // anything outside manualOrderItems.
-            item(key = "mascot") {
-                Image(
-                    painter = painterResource(Res.drawable.mascot_staying),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(MASCOT_HEIGHT)
-                )
-            }
+                // Sits after the first MASCOT_AFTER_TODO_COUNT todos, or after all of them when
+                // there are fewer. Not a ReorderableItem, so dragging a todo across it is a no-op -
+                // the reorder callback above looks items up by key and ignores anything outside
+                // manualOrderItems.
+                item(key = "mascot") {
+                    Image(
+                        painter = painterResource(Res.drawable.mascot_staying),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(MASCOT_HEIGHT)
+                    )
+                }
 
-            items(manualOrderItems.drop(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
+                items(manualOrderItems.drop(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
+            }
         }
 
         androidx.compose.animation.AnimatedVisibility(
