@@ -1,3 +1,3 @@
 package com.artemonre.onemoretodolist.feature.todolist.domain
 
-enum class TodoSortOption { Date, Manual, Text, Archived }
+enum class TodoSortOption { Date, Manual, Text }

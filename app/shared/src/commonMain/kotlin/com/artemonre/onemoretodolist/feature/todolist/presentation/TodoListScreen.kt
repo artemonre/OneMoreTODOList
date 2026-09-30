@@ -45,6 +45,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -71,6 +72,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.createPlainTextClipEntry
 import com.artemonre.onemoretodolist.rememberNativeShareLauncher
+import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -85,8 +88,16 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.completed_summary_this_month
+import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
+import onemoretodolist.app.shared.generated.resources.completed_summary_title
+import onemoretodolist.app.shared.generated.resources.completed_summary_today
 import onemoretodolist.app.shared.generated.resources.mascot_staying
+import onemoretodolist.app.shared.generated.resources.todo_filter_active
+import onemoretodolist.app.shared.generated.resources.todo_filter_done
+import onemoretodolist.app.shared.generated.resources.todo_list_empty_completed
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -219,7 +230,7 @@ fun TodoListScreen(
     LaunchedEffect(state.items) { manualOrderItems = state.items }
 
     // from.index/to.index are positions in the whole LazyColumn, not in manualOrderItems - the
-    // "Sort" header and mascot items shift them. Look items up by key instead of trusting the
+    // summary card, filter/sort header and mascot items shift them. Look items up by key instead of trusting the
     // raw index.
     val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
         val fromIndex = manualOrderItems.indexOfFirst { it.id == from.key }
@@ -241,7 +252,18 @@ fun TodoListScreen(
                 .asPaddingValues(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item {
+            item(key = "completed_summary") {
+                CompletedSummaryCard(
+                    todayCount = state.doneTodayCount,
+                    thisWeekCount = state.doneThisWeekCount,
+                    thisMonthCount = state.doneThisMonthCount,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                )
+            }
+
+            item(key = "filter_and_sort") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -249,46 +271,53 @@ fun TodoListScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Todos ${
-                            if (state.sortOption == TodoSortOption.Archived) state.archivedCount else state.activeCount
-                        }",
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainer,
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .padding(8.dp)
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Sort",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box {
-                            Button(onClick = { sortMenuExpanded = true }) {
-                                Text(state.sortOption.displayName())
+                    val activeLabel = stringResource(Res.string.todo_filter_active, state.activeCount)
+                    val doneLabel = stringResource(Res.string.todo_filter_done, state.completedCount)
+                    AppChipGroup(
+                        options = TodoListFilter.entries,
+                        selectedOption = state.filter,
+                        onOptionSelected = { onAction(TodoListAction.OnFilterSelected(it)) },
+                        label = { filter ->
+                            when (filter) {
+                                TodoListFilter.Active -> activeLabel
+                                TodoListFilter.Done -> doneLabel
                             }
-                            DropdownMenu(
-                                expanded = sortMenuExpanded,
-                                onDismissRequest = { sortMenuExpanded = false }
-                            ) {
-                                TodoSortOption.entries.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(option.displayName()) },
-                                        onClick = {
-                                            onAction(TodoListAction.OnSortOptionSelected(option))
-                                            sortMenuExpanded = false
-                                        },
-                                        trailingIcon = if (option == state.sortOption) {
-                                            { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
-                                        } else {
-                                            null
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
+                        },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    // Done is always most-recently-completed first, so sorting only applies
+                    // to Active.
+                    if (state.filter == TodoListFilter.Active) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Sort",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box {
+                                Button(onClick = { sortMenuExpanded = true }) {
+                                    Text(state.sortOption.displayName())
+                                }
+                                DropdownMenu(
+                                    expanded = sortMenuExpanded,
+                                    onDismissRequest = { sortMenuExpanded = false }
+                                ) {
+                                    TodoSortOption.entries.forEach { option ->
+                                        DropdownMenuItem(
+                                            text = { Text(option.displayName()) },
+                                            onClick = {
+                                                onAction(TodoListAction.OnSortOptionSelected(option))
+                                                sortMenuExpanded = false
+                                            },
+                                            trailingIcon = if (option == state.sortOption) {
+                                                { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
+                                            } else {
+                                                null
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -303,7 +332,7 @@ fun TodoListScreen(
                         .animateItem()
                         .graphicsLayer { rotationZ = rotation }
                         .let { base ->
-                            if (state.sortOption == TodoSortOption.Manual) {
+                            if (state.filter == TodoListFilter.Active && state.sortOption == TodoSortOption.Manual) {
                                 base.longPressDraggableHandle(
                                     onDragStopped = {
                                         onAction(TodoListAction.OnReorder(manualOrderItems.map { it.id }))
@@ -329,8 +358,8 @@ fun TodoListScreen(
             if (state.items.isEmpty()) {
                 item {
                     Text(
-                        text = if (state.sortOption == TodoSortOption.Archived) {
-                            "No archived todos yet"
+                        text = if (state.filter == TodoListFilter.Done) {
+                            stringResource(Res.string.todo_list_empty_completed)
                         } else {
                             "You completed all your tasks!\nAdd more whenever you need to — no rush."
                         },
@@ -417,7 +446,43 @@ private fun TodoSortOption.displayName(): String = when (this) {
     TodoSortOption.Date -> "Default"
     TodoSortOption.Manual -> "Manual"
     TodoSortOption.Text -> "Text"
-    TodoSortOption.Archived -> "Archived"
+}
+
+@Composable
+private fun CompletedSummaryCard(
+    todayCount: Int,
+    thisWeekCount: Int,
+    thisMonthCount: Int,
+    modifier: Modifier = Modifier
+) {
+    // Same color as the bottom navigation bar, so the card reads as part of the app chrome
+    // rather than as another todo.
+    AppCard(modifier = modifier, containerColor = NavigationBarDefaults.containerColor) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = stringResource(Res.string.completed_summary_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(Res.string.completed_summary_today, todayCount),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = stringResource(Res.string.completed_summary_this_week, thisWeekCount),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = stringResource(Res.string.completed_summary_this_month, thisMonthCount),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
 }
 
 @Composable

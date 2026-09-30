@@ -20,6 +20,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.topSortOrder
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -47,18 +48,28 @@ class TodoListViewModel(
     private val todos = todoLocalDataSource.observeTodos()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), emptyList())
 
-    val state = combine(todos, todoPreferences.sortOption) { todos, sortOption ->
-        val statusFilter = if (sortOption == TodoSortOption.Archived) TodoStatus.Done else TodoStatus.Active
+    // Not persisted - the list always opens on Active, unlike sortOption.
+    private val filter = MutableStateFlow(TodoListFilter.Active)
+
+    val state = combine(todos, todoPreferences.sortOption, filter) { todos, sortOption, filter ->
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         // ISO week - Monday is day 1, so this is always this week's Monday, even on a Sunday.
         val startOfWeek = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
+        val startOfMonth = LocalDate(today.year, today.month, 1)
+        val items = when (filter) {
+            TodoListFilter.Active -> todos.filter { it.status == TodoStatus.Active }.sortedByOption(sortOption)
+            // Most recently completed first - sortOption only orders the active list.
+            TodoListFilter.Done -> todos.filter { it.status == TodoStatus.Done }.sortedByDescending { it.completionDate }
+        }
         TodoListState(
             sortOption = sortOption,
-            items = todos.filter { it.status == statusFilter }.sortedByOption(sortOption).map { it.toTodoItemUi() },
+            filter = filter,
+            items = items.map { it.toTodoItemUi() },
             activeCount = todos.count { it.status == TodoStatus.Active },
-            archivedCount = todos.count { it.status == TodoStatus.Done },
+            completedCount = todos.count { it.status == TodoStatus.Done },
             doneTodayCount = todos.count { it.completionDate == today },
-            doneThisWeekCount = todos.count { it.completionDate != null && it.completionDate >= startOfWeek }
+            doneThisWeekCount = todos.count { it.completionDate != null && it.completionDate >= startOfWeek },
+            doneThisMonthCount = todos.count { it.completionDate != null && it.completionDate >= startOfMonth }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), TodoListState())
 
@@ -79,6 +90,7 @@ class TodoListViewModel(
                 // otherwise recompute who's "top" under the newly selected order.
                 updateTopSince()
             }
+            is TodoListAction.OnFilterSelected -> filter.value = action.filter
             is TodoListAction.OnReorder -> reorder(action.orderedIds)
             is TodoListAction.OnAddTodoClick -> {
                 viewModelScope.launch {

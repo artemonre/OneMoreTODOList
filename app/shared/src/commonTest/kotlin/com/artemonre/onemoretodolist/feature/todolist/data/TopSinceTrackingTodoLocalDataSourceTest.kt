@@ -66,19 +66,6 @@ class TopSinceTrackingTodoLocalDataSourceTest {
     }
 
     @Test
-    fun `Archived preference falls back to Date for top tracking`() = runTest {
-        val fake = FakeTodoLocalDataSource()
-        val tracked = TopSinceTrackingTodoLocalDataSource(fake, FakeTodoPreferences(initialSortOption = TodoSortOption.Archived))
-
-        tracked.upsertTodo(todoItem(id = "1", creationDate = LocalDate(2026, 1, 2)))
-        tracked.upsertTodo(todoItem(id = "2", creationDate = LocalDate(2026, 1, 1)))
-
-        val todos = fake.observeTodos().first()
-        assertNull(todos.first { it.id == "1" }.topSince)
-        assertNotNull(todos.first { it.id == "2" }.topSince)
-    }
-
-    @Test
     fun `completing the top todo clears its topSince and promotes the next one`() = runTest {
         val fake = FakeTodoLocalDataSource()
         val tracked = TopSinceTrackingTodoLocalDataSource(fake, FakeTodoPreferences())

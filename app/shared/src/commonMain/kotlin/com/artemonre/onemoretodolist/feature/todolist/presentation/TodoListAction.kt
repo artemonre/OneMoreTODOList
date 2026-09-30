@@ -9,6 +9,7 @@ import kotlinx.datetime.LocalTime
 sealed interface TodoListAction {
     data class OnToggleDone(val id: String) : TodoListAction
     data class OnSortOptionSelected(val option: TodoSortOption) : TodoListAction
+    data class OnFilterSelected(val filter: TodoListFilter) : TodoListAction
     data class OnReorder(val orderedIds: List<String>) : TodoListAction
     data object OnAddTodoClick : TodoListAction
     data object OnAddTodoFullScreenClick : TodoListAction

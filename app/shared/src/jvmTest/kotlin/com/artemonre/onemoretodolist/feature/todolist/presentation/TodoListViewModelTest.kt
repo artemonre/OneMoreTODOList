@@ -104,7 +104,7 @@ class TodoListViewModelTest {
     }
 
     @Test
-    fun `OnToggleDone archives the item out of the default view and into Archived`() = runTest(testDispatcher) {
+    fun `OnToggleDone moves the item out of Active and into Done`() = runTest(testDispatcher) {
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
         val viewModel = todoListViewModel(dataSource)
         backgroundScope.launch { viewModel.state.collect {} }
@@ -115,7 +115,7 @@ class TodoListViewModelTest {
 
         assertEquals(emptyList(), viewModel.state.value.items.map { it.id })
 
-        viewModel.onAction(TodoListAction.OnSortOptionSelected(TodoSortOption.Archived))
+        viewModel.onAction(TodoListAction.OnFilterSelected(TodoListFilter.Done))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(listOf("1"), viewModel.state.value.items.map { it.id })

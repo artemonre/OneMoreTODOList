@@ -24,4 +24,13 @@
         <item quantity="one">%1$d year</item>
         <item quantity="other">%1$d years</item>
     </plurals>
+
+    <!-- Todo list header: the filter chips and the Completed todos summary card. -->
+    <string name="todo_filter_active">Active (%1$d)</string>
+    <string name="todo_filter_done">Done (%1$d)</string>
+    <string name="completed_summary_title">Completed todos</string>
+    <string name="completed_summary_today">Today %1$d</string>
+    <string name="completed_summary_this_week">This week %1$d</string>
+    <string name="completed_summary_this_month">This month %1$d</string>
+    <string name="todo_list_empty_completed">No completed todos yet</string>
 </resources>
