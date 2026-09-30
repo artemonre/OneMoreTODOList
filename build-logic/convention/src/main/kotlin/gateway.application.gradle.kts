@@ -53,7 +53,7 @@ android {
     }
 
     androidResources {
-        localeFilters += listOf("ru")
+        localeFilters += listOf("ru", "sr")
     }
 
     packaging {

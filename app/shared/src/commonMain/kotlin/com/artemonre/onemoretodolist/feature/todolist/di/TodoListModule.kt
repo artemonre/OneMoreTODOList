@@ -4,6 +4,7 @@ import com.artemonre.onemoretodolist.feature.todolist.data.SettingsTodoPreferenc
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
+import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.HandleDueTodoFired
 import com.artemonre.onemoretodolist.feature.todolist.domain.NoOpDueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
@@ -32,6 +33,7 @@ val todoListModule = module {
     single<DueTimeScheduler> { NoOpDueTimeScheduler() }
     singleOf(::HandleDueTodoFired)
     singleOf(::SnoozeTodo)
+    singleOf(::EditTodo)
     singleOf(::RearmDueTodoAlarms)
     viewModelOf(::TodoListViewModel)
 }

@@ -12,4 +12,5 @@
     <string name="due_notification_action_done">Готово</string>
     <string name="due_notification_action_snooze_hour">+1 час</string>
     <string name="due_notification_action_snooze_tomorrow">Завтра</string>
+    <string name="app_function_display_description">Позволяет ассистентам просматривать, добавлять, изменять, выполнять и удалять твои задачи</string>
 </resources>

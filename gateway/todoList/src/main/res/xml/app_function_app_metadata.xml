@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Describes this app's AppFunctions as a whole to agents: description is read by the agent's
+     model (English, instruction-style), displayDescription is shown to the user. -->
+<AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
+    appfn:description="Manages the user's personal todo list with the same capabilities as the app: reading todos, adding them, editing them (text, pin to top, reminder, repeat rule, checklist, tags), marking them done or reopening them, and deleting them.
+Operational patterns:
+  - Call 'getTodoList' first to resolve a todo the user mentions by text to its ID before calling 'editTodo', 'changeTodoDoneStatus' or 'deleteTodo'.
+  - 'editTodo' only changes the parameters that are passed; use 'clearReminder' / 'clearRecurrence' to remove those. Checklist and tags are replaced as a whole list.
+  - Dates and times are the user's local wall-clock time in ISO-8601 without a zone, e.g. 2026-10-03T09:30.
+  - A repeating todo that is marked done becomes active again on its own when its next occurrence is due.
+Constraints:
+  - Todo text cannot be empty.
+  - Reminders must be in the future, and only active (not completed) todos can have one.
+  - Deleting can't be undone: always confirm with the user before calling 'deleteTodo'."
+    appfn:displayDescription="@string/app_function_display_description" />
