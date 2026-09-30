@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
+import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.NoOpDueTimeScheduler
@@ -184,6 +185,7 @@ class TodoListViewModelTest {
     ) = TodoListViewModel(
         dataSource,
         AddTodo(dataSource, NoOpDueTimeScheduler()),
+        EditTodo(dataSource, NoOpDueTimeScheduler()),
         ToggleTodoDone(dataSource, todoPreferences, NoOpDueTimeScheduler()),
         todoPreferences,
         UpdateTopSince(dataSource, todoPreferences),

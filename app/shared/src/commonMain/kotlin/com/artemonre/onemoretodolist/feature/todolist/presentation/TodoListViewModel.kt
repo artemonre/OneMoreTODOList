@@ -4,8 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
-import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
-import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
+import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
@@ -14,10 +13,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import com.artemonre.onemoretodolist.feature.todolist.domain.knownTags
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
-import com.artemonre.onemoretodolist.feature.todolist.domain.topPriorityOrder
-import com.artemonre.onemoretodolist.feature.todolist.domain.topSortOrder
 import kotlin.time.Clock
-import kotlin.time.Instant
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,6 +39,7 @@ private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
 class TodoListViewModel(
     private val todoLocalDataSource: TodoLocalDataSource,
     private val addTodoUseCase: AddTodo,
+    private val editTodoUseCase: EditTodo,
     private val toggleTodoDoneUseCase: ToggleTodoDone,
     private val todoPreferences: TodoPreferences,
     private val updateTopSince: UpdateTopSince,
@@ -141,34 +138,18 @@ class TodoListViewModel(
     }
 
     private fun editTodo(id: String, draft: TodoDraft) {
-        val text = draft.text
-        val isPrioritized = draft.isPrioritized
-        val recurrence = draft.recurrence
-        val currentTodos = todos.value
-        val item = currentTodos.firstOrNull { it.id == id } ?: return
-        // Only newly-prioritized items jump to the top of Manual sort too - an item that was
-        // already prioritized keeps whatever position the user (re)ordered it to.
-        val becomingPrioritized = isPrioritized && item.priorityOrder == null
-        val updated = item.copy(
-            text = text.ifBlank { item.text },
-            lastEditDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
-            sortOrder = if (becomingPrioritized) topSortOrder(currentTodos) else item.sortOrder,
-            priorityOrder = if (isPrioritized) {
-                item.priorityOrder ?: topPriorityOrder(currentTodos)
-            } else {
-                null
-            },
-            recurrence = recurrence,
-            recurrenceAnchorInstant = recurrenceAnchorInstant(item, recurrence),
-            dueDate = draft.dueDate,
-            dueTime = draft.dueTime,
-            dueTimeMode = draft.dueTimeMode,
-            checklist = draft.checklist,
-            tags = draft.tags
-        )
         viewModelScope.launch {
-            todoLocalDataSource.upsertTodo(updated)
-            dueTimeScheduler.reschedule(updated)
+            editTodoUseCase(
+                id,
+                draft.text,
+                draft.isPrioritized,
+                draft.recurrence,
+                draft.dueDate,
+                draft.dueTime,
+                draft.dueTimeMode,
+                draft.checklist,
+                draft.tags
+            )
         }
     }
 
@@ -186,18 +167,6 @@ class TodoListViewModel(
                 todoLocalDataSource.upsertTodo(updated)
             }
         }
-    }
-
-    // Every keeps its existing anchor as long as the rule itself is unchanged (same type/interval/
-    // unit) - only a genuinely new or changed rule restarts the countdown from now. AfterCompletion
-    // always keeps whatever anchor it already had (null if never completed) regardless of edits -
-    // its anchor is tied to when it was actually completed, not to the rule, so a changed interval
-    // should still count from that same completion instant, not restart it.
-    private fun recurrenceAnchorInstant(item: TodoItem, newRecurrence: Recurrence?): Instant? {
-        if (newRecurrence?.type != RecurrenceType.Every) {
-            return item.recurrenceAnchorInstant.takeIf { newRecurrence?.type == RecurrenceType.AfterCompletion }
-        }
-        return item.recurrenceAnchorInstant.takeIf { item.recurrence == newRecurrence } ?: Clock.System.now()
     }
 
     private fun reorder(orderedIds: List<String>) {

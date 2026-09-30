@@ -28,7 +28,7 @@ class AddTodo(
         dueTimeMode: DueTimeMode? = null,
         checklist: List<ChecklistItem> = emptyList(),
         tags: List<TodoTag> = emptyList()
-    ) {
+    ): TodoItem {
         val currentTodos = dataSource.observeTodos().first()
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val newItem = TodoItem(
@@ -50,6 +50,7 @@ class AddTodo(
         )
         dataSource.upsertTodo(newItem)
         dueTimeScheduler.reschedule(newItem)
+        return newItem
     }
 
     private fun defaultText(): String {

@@ -13,4 +13,5 @@
     <string name="due_notification_action_done">Gotovo</string>
     <string name="due_notification_action_snooze_hour">+1 sat</string>
     <string name="due_notification_action_snooze_tomorrow">Sutra</string>
+    <string name="app_function_display_description">Omogućava asistentima da pregledaju, dodaju, menjaju, završavaju i brišu tvoje zadatke</string>
 </resources>

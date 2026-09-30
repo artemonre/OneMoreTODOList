@@ -3,6 +3,7 @@ import com.github.triplet.gradle.androidpublisher.ResolutionStrategy
 
 plugins {
     id("gateway.application")
+    alias(libs.plugins.ksp)
     alias(libs.plugins.sentryAndroidGradle)
     alias(libs.plugins.gradlePlayPublisher)
 }
@@ -16,6 +17,11 @@ android {
         debug {
             resValue("string", "app_name", "OneMoreTODOList-dev")
         }
+    }
+    // Local JVM unit tests (src/test) cover plain Kotlin logic only - anything that reaches into
+    // the Android framework stubs gets a default value instead of a "not mocked" crash.
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
 }
 
@@ -78,6 +84,16 @@ dependencies {
     implementation(libs.androidx.glance.material3)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    implementation(libs.androidx.appfunctions)
+    ksp(libs.androidx.appfunctions.compiler)
+    testImplementation(libs.kotlin.testJunit)
     debugImplementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.glance.appwidget.preview)
+}
+
+// AppFunctions (on-device agent access, see appfunctions/BaseTodoAppFunctionService.kt): the
+// compiler generates the concrete service plus the XML that describes every function to the OS.
+// Aggregation is on for this module since it's the app that ships the service.
+ksp {
+    arg("appfunctions:aggregateAppFunctions", "true")
 }
