@@ -95,6 +95,16 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.play.appUpdate.ktx)
+            // Photo -> todos: CameraX viewfinder/capture plus the bundled (offline, no Play
+            // Services download) ML Kit Latin text recognition model.
+            implementation(libs.androidx.camera.core)
+            implementation(libs.androidx.camera.camera2)
+            implementation(libs.androidx.camera.lifecycle)
+            implementation(libs.androidx.camera.compose)
+            implementation(libs.mlkit.textRecognition)
+            // ML Kit has no Cyrillic model on Android - Tesseract covers Russian/Serbian Cyrillic,
+            // with its models bundled under androidMain/assets/tessdata.
+            implementation(libs.tesseract4android)
         }
         commonMain.dependencies {
             api(project(":core"))

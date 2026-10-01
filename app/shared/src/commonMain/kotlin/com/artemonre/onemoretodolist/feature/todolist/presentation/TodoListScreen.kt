@@ -80,10 +80,14 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 import com.artemonre.onemoretodolist.core.presentation.ObserveAsEvents
 import com.artemonre.onemoretodolist.core.theme.domain.ActionPlacement
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.PhotoTextCaptureDialog
 import com.artemonre.onemoretodolist.createPlainTextClipEntry
+import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.rememberNativeShareLauncher
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -127,6 +131,7 @@ private const val MASCOT_AFTER_TODO_COUNT = 5
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
 
+@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun TodoListRoot(
     viewModel: TodoListViewModel = koinViewModel()
@@ -139,6 +144,11 @@ fun TodoListRoot(
     // cleared whenever the full-screen dialog is opened directly, so that path never inherits a
     // stale draft left over from an earlier "More settings" hop.
     var addTodoDraftText by remember { mutableStateOf("") }
+    // Same idea for the checklist - only ever non-empty when a scanned photo is continued as one
+    // todo from ScannedTextReviewDialog.
+    var addTodoDraftChecklist by remember { mutableStateOf(emptyList<ChecklistItem>()) }
+    var showPhotoCapture by remember { mutableStateOf(false) }
+    var scannedLines by remember { mutableStateOf<List<String>?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -147,9 +157,17 @@ fun TodoListRoot(
             TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
             TodoListEvent.ShowAddTodoFullScreenDialog -> {
                 addTodoDraftText = ""
+                addTodoDraftChecklist = emptyList()
                 showAddTodoFullScreenDialog = true
             }
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
+            TodoListEvent.ShowPhotoCapture -> showPhotoCapture = true
+            is TodoListEvent.ShowScannedTextReview -> scannedLines = event.lines
+            is TodoListEvent.ShowSnackbar -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(message = getString(event.message), duration = SnackbarDuration.Short)
+                }
+            }
             is TodoListEvent.ShowUndoSnackbar -> {
                 coroutineScope.launch {
                     val result = snackbarHostState.showSnackbar(
@@ -182,6 +200,7 @@ fun TodoListRoot(
             onMoreSettingsClick = { draftText ->
                 showAddTodoSheet = false
                 addTodoDraftText = draftText
+                addTodoDraftChecklist = emptyList()
                 showAddTodoFullScreenDialog = true
             }
         )
@@ -196,7 +215,39 @@ fun TodoListRoot(
             },
             onDismiss = { showAddTodoFullScreenDialog = false },
             initialText = addTodoDraftText,
+            initialChecklist = addTodoDraftChecklist,
             knownTags = state.knownTags
+        )
+    }
+
+    if (showPhotoCapture) {
+        PhotoTextCaptureDialog(
+            onTextRecognized = { lines ->
+                showPhotoCapture = false
+                viewModel.onAction(TodoListAction.OnTextRecognized(lines))
+            },
+            onDismiss = { showPhotoCapture = false }
+        )
+    }
+
+    scannedLines?.let { lines ->
+        ScannedTextReviewDialog(
+            lines = lines,
+            onConfirmSeparate = { confirmedLines ->
+                viewModel.onAction(TodoListAction.OnConfirmAddScannedTodos(confirmedLines))
+                scannedLines = null
+            },
+            onContinueAsSingle = { text, checklist ->
+                scannedLines = null
+                addTodoDraftText = text
+                addTodoDraftChecklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
+                showAddTodoFullScreenDialog = true
+            },
+            // Back/Discard steps back to the camera for another shot rather than leaving the flow.
+            onDismiss = {
+                scannedLines = null
+                showPhotoCapture = true
+            }
         )
     }
 

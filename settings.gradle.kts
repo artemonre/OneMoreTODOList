@@ -25,6 +25,11 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // Tesseract4Android (on-device Cyrillic OCR) is only published on JitPack - scoped to its
+        // own group so JitPack can never serve anything else.
+        maven("https://jitpack.io") {
+            content { includeGroup("cz.adaptech.tesseract4android") }
+        }
     }
 }
 

@@ -11,6 +11,7 @@ androidx-lifecycle = "2.11.0-beta01"
 androidx-testExt = "1.3.0"
 androidx-work = "2.11.2"
 appfunctions = "1.0.0-alpha12"
+camerax = "1.6.2"
 composeMultiplatform = "1.11.1"
 glance = "1.2.0"
 gradlePlayPublisher = "4.1.1"
@@ -25,6 +26,7 @@ ksp = "2.3.11"
 ktor = "3.5.1"
 logback = "1.6.1"
 material3 = "1.11.0-alpha07"
+mlkitTextRecognition = "16.0.1"
 materialIconsCore = "1.7.3"
 multiplatformSettings = "1.3.0"
 navigation3 = "1.1.0-alpha01"
@@ -36,6 +38,7 @@ sentry = "8.56.0"
 sentryAndroidGradlePlugin = "6.22.0"
 sentryKmp = "0.27.0"
 sqlite = "2.7.0"
+tesseract4android = "4.9.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -89,6 +92,12 @@ androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version
 androidx-appfunctions = { module = "androidx.appfunctions:appfunctions", version.ref = "appfunctions" }
 androidx-appfunctions-compiler = { module = "androidx.appfunctions:appfunctions-compiler", version.ref = "appfunctions" }
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+androidx-camera-compose = { module = "androidx.camera:camera-compose", version.ref = "camerax" }
+tesseract4android = { module = "cz.adaptech.tesseract4android:tesseract4android", version.ref = "tesseract4android" }
+mlkit-textRecognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitTextRecognition" }
 play-appUpdate-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
 posthog-kmp = { module = "com.posthog:posthog-kmp", version.ref = "posthogKmp" }
 sentry-java = { module = "io.sentry:sentry", version.ref = "sentry" }

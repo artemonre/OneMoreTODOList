@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.artemonre.onemoretodolist.core.container.NavigationTab
+import com.artemonre.onemoretodolist.isPhotoTextCaptureSupported
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFabMenu
 import com.artemonre.onemoretodolist.core.designsystem.components.FabMenuItem
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
@@ -49,12 +50,13 @@ private fun TodoListFab(viewModel: TodoListViewModel = koinViewModel()) {
                 icon = addIcon,
                 onClick = { viewModel.onAction(TodoListAction.OnAddTodoFullScreenClick) }
             ),
-            // Common, not screen-specific - no action wired up yet.
+            // Photo -> todos: on-device text recognition, then a review step. Disabled where the
+            // platform has no recognizer (everything but Android for now).
             FabMenuItem(
                 label = stringResource(Res.string.fab_capture_note),
                 icon = Icons.Filled.PhotoCamera,
-                enabled = false,
-                onClick = {}
+                enabled = isPhotoTextCaptureSupported,
+                onClick = { viewModel.onAction(TodoListAction.OnCapturePhotoClick) }
             )
         )
     )

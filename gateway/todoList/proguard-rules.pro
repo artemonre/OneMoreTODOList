@@ -58,3 +58,7 @@
 -keep class * extends androidx.glance.appwidget.action.ActionCallback {
     public <init>();
 }
+# Tesseract4Android (photo -> todos, Cyrillic) ships no consumer rules of its own, yet its native
+# code looks up TessBaseAPI's fields (the native handle) and callback methods by name over JNI -
+# renamed or stripped by R8, recognition would crash with a NoSuchFieldError/NoSuchMethodError.
+-keep class com.googlecode.tesseract.android.** { *; }

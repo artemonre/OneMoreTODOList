@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Photo -> todos. Not required: without a camera the gallery picker still works. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
     <!-- Special app access, not a runtime prompt - canScheduleExactAlarms()/
          ACTION_REQUEST_SCHEDULE_EXACT_ALARM only apply from Android 12 (API 31) onward. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />

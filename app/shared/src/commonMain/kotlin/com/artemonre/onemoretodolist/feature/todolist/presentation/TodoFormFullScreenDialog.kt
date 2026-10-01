@@ -25,6 +25,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.isDueTimeUiSupported
 
@@ -57,15 +58,45 @@ fun TodoFormFullScreenDialog(
     onConfirm: (TodoDraft) -> Unit,
     onDismiss: () -> Unit,
     // Only used when editingItem == null - seeds the field from a draft carried over from
-    // TodoFormBottomSheet's "More settings" button.
+    // TodoFormBottomSheet's "More settings" button, or from a scanned photo.
     initialText: String = "",
+    initialChecklist: List<ChecklistItem> = emptyList(),
     knownTags: List<TodoTag> = emptyList()
 ) {
-    // A Dialog has no built-in enter/exit transition on any target here - animate the content in
-    // and out ourselves (rather than relying on platform window animations, which differ per
-    // target). Dismissing only sets targetState to false; the LaunchedEffect below waits for the
-    // slide-down to actually finish before tearing down the Dialog window via the real onDismiss -
-    // otherwise it would just vanish instantly mid-animation.
+    FullScreenFormDialog(onDismiss = onDismiss) { requestDismiss ->
+        TodoFormBody(
+            editingItem = editingItem,
+            onConfirm = onConfirm,
+            onDismiss = requestDismiss,
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .verticalScroll(rememberScrollState()),
+            fieldMaxLines = Int.MAX_VALUE,
+            showDueTime = isDueTimeUiSupported,
+            showRecurrence = true,
+            showTags = true,
+            showChecklist = true,
+            knownTags = knownTags,
+            requireText = true,
+            initialText = initialText,
+            initialChecklist = initialChecklist
+        )
+    }
+}
+
+// The full-size Dialog shell shared by every full-screen form (TodoFormFullScreenDialog,
+// ScannedTextReviewDialog). A Dialog has no built-in enter/exit transition on any target here -
+// animate the content in and out ourselves (rather than relying on platform window animations,
+// which differ per target). Dismissing only sets targetState to false; the LaunchedEffect below
+// waits for the slide-down to actually finish before tearing down the Dialog window via the real
+// onDismiss - otherwise it would just vanish instantly mid-animation. content gets that animated
+// dismiss as its parameter, to use for its own Cancel/Discard buttons.
+@Composable
+internal fun FullScreenFormDialog(
+    onDismiss: () -> Unit,
+    content: @Composable (requestDismiss: () -> Unit) -> Unit
+) {
     val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
     val requestDismiss: () -> Unit = { visibleState.targetState = false }
 
@@ -88,23 +119,7 @@ fun TodoFormFullScreenDialog(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.surface
             ) {
-                TodoFormBody(
-                    editingItem = editingItem,
-                    onConfirm = onConfirm,
-                    onDismiss = requestDismiss,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .windowInsetsPadding(WindowInsets.safeDrawing)
-                        .verticalScroll(rememberScrollState()),
-                    fieldMaxLines = Int.MAX_VALUE,
-                    showDueTime = isDueTimeUiSupported,
-                    showRecurrence = true,
-                    showTags = true,
-                    showChecklist = true,
-                    knownTags = knownTags,
-                    requireText = true,
-                    initialText = initialText
-                )
+                content(requestDismiss)
             }
         }
     }

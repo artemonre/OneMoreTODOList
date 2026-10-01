@@ -164,4 +164,27 @@
     <string name="onboarding_todo_3">Treći zadatak. Ako je stavljen na vrh („Stavi na vrh“), ide na vrh liste</string>
     <string name="onboarding_todo_4">Četvrti zadatak. Prevuci ulevo da ga izmeniš ili obrišeš</string>
     <string name="onboarding_todo_5">Peti zadatak. Prevuci udesno da ga podeliš</string>
+
+    <string name="photo_capture_take_photo">Fotografiši</string>
+    <string name="photo_capture_pick_from_gallery">Izaberi iz galerije</string>
+    <string name="photo_capture_close">Zatvori</string>
+    <string name="photo_capture_script_latin">Tekst na latinici</string>
+    <string name="photo_capture_script_cyrillic">Tekst na ćirilici</string>
+    <string name="photo_capture_camera_permission_needed">Dozvoli pristup kameri da bi fotografisao, ili izaberi sliku iz galerije.</string>
+    <string name="snackbar_no_text_found">Na fotografiji nije pronađen tekst</string>
+    <string name="scan_review_title">Prepoznati tekst</string>
+    <string name="scan_review_mode_separate">Odvojeni zadaci</string>
+    <string name="scan_review_mode_single">Jedan zadatak</string>
+    <string name="scan_review_todo_text">Zadatak</string>
+    <string name="scan_review_line_placeholder">Red</string>
+    <string name="scan_review_add_line">Dodaj red</string>
+    <string name="scan_review_merge_line">Spoji sa redom iznad</string>
+    <string name="scan_review_remove_line">Ukloni red</string>
+    <string name="scan_review_back">Nazad</string>
+    <string name="scan_review_continue">Nastavi</string>
+    <plurals name="scan_review_add_todos">
+        <item quantity="one">Dodaj %1$d zadatak</item>
+        <item quantity="few">Dodaj %1$d zadatka</item>
+        <item quantity="other">Dodaj %1$d zadataka</item>
+    </plurals>
 </resources>

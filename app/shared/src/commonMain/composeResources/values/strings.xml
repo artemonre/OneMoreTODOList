@@ -173,4 +173,29 @@
     <string name="onboarding_todo_3">Third todo item. If prioritized (Put to top) it goes to the top of the list</string>
     <string name="onboarding_todo_4">Fourth todo item. Swipe left to edit or delete</string>
     <string name="onboarding_todo_5">Fifth todo item. Swipe right to share</string>
+
+    <string name="photo_capture_take_photo">Take photo</string>
+    <string name="photo_capture_pick_from_gallery">Pick from gallery</string>
+    <string name="photo_capture_close">Close</string>
+    <!-- The scripts' own letters - deliberately the same in every language. -->
+    <string name="photo_capture_script_latin_label">ABC</string>
+    <string name="photo_capture_script_cyrillic_label">АБВ</string>
+    <string name="photo_capture_script_latin">Latin text</string>
+    <string name="photo_capture_script_cyrillic">Cyrillic text</string>
+    <string name="photo_capture_camera_permission_needed">Allow camera access to take a photo, or pick one from the gallery.</string>
+    <string name="snackbar_no_text_found">No text found in the photo</string>
+    <string name="scan_review_title">Scanned text</string>
+    <string name="scan_review_mode_separate">Separate todos</string>
+    <string name="scan_review_mode_single">One todo</string>
+    <string name="scan_review_todo_text">Todo</string>
+    <string name="scan_review_line_placeholder">Line</string>
+    <string name="scan_review_add_line">Add line</string>
+    <string name="scan_review_merge_line">Merge with line above</string>
+    <string name="scan_review_remove_line">Remove line</string>
+    <string name="scan_review_back">Back</string>
+    <string name="scan_review_continue">Continue</string>
+    <plurals name="scan_review_add_todos">
+        <item quantity="one">Add %1$d todo</item>
+        <item quantity="other">Add %1$d todos</item>
+    </plurals>
 </resources>

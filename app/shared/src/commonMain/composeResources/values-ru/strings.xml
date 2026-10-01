@@ -167,4 +167,28 @@
     <string name="onboarding_todo_3">Третья задача. Если её поднять наверх («Поднять наверх»), она будет вверху списка</string>
     <string name="onboarding_todo_4">Четвёртая задача. Смахни влево, чтобы изменить или удалить</string>
     <string name="onboarding_todo_5">Пятая задача. Смахни вправо, чтобы поделиться</string>
+
+    <string name="photo_capture_take_photo">Сделать фото</string>
+    <string name="photo_capture_pick_from_gallery">Выбрать из галереи</string>
+    <string name="photo_capture_close">Закрыть</string>
+    <string name="photo_capture_script_latin">Текст на латинице</string>
+    <string name="photo_capture_script_cyrillic">Текст на кириллице</string>
+    <string name="photo_capture_camera_permission_needed">Разрешите доступ к камере, чтобы сделать фото, или выберите снимок из галереи.</string>
+    <string name="snackbar_no_text_found">На фото не найден текст</string>
+    <string name="scan_review_title">Распознанный текст</string>
+    <string name="scan_review_mode_separate">Отдельные задачи</string>
+    <string name="scan_review_mode_single">Одна задача</string>
+    <string name="scan_review_todo_text">Задача</string>
+    <string name="scan_review_line_placeholder">Строка</string>
+    <string name="scan_review_add_line">Добавить строку</string>
+    <string name="scan_review_merge_line">Объединить со строкой выше</string>
+    <string name="scan_review_remove_line">Удалить строку</string>
+    <string name="scan_review_back">Назад</string>
+    <string name="scan_review_continue">Продолжить</string>
+    <plurals name="scan_review_add_todos">
+        <item quantity="one">Добавить %1$d задачу</item>
+        <item quantity="few">Добавить %1$d задачи</item>
+        <item quantity="many">Добавить %1$d задач</item>
+        <item quantity="other">Добавить %1$d задачи</item>
+    </plurals>
 </resources>

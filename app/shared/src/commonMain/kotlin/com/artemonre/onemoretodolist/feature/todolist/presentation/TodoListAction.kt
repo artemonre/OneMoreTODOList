@@ -15,4 +15,7 @@ sealed interface TodoListAction {
     data class OnToggleChecklistItem(val todoId: String, val itemId: String) : TodoListAction
     data class OnDeleteTodo(val id: String) : TodoListAction
     data object OnUndoClick : TodoListAction
+    data object OnCapturePhotoClick : TodoListAction
+    data class OnTextRecognized(val lines: List<String>) : TodoListAction
+    data class OnConfirmAddScannedTodos(val lines: List<String>) : TodoListAction
 }

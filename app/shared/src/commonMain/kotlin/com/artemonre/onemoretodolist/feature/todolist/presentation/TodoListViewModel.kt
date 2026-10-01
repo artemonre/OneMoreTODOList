@@ -31,6 +31,7 @@ import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.snackbar_no_text_found
 import onemoretodolist.app.shared.generated.resources.snackbar_todo_completed
 import onemoretodolist.app.shared.generated.resources.snackbar_todo_deleted
 
@@ -112,6 +113,19 @@ class TodoListViewModel(
             is TodoListAction.OnToggleChecklistItem -> toggleChecklistItem(action.todoId, action.itemId)
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
             is TodoListAction.OnUndoClick -> undo()
+            is TodoListAction.OnCapturePhotoClick -> viewModelScope.launch {
+                _events.send(TodoListEvent.ShowPhotoCapture)
+            }
+            is TodoListAction.OnTextRecognized -> viewModelScope.launch {
+                _events.send(
+                    if (action.lines.isEmpty()) {
+                        TodoListEvent.ShowSnackbar(Res.string.snackbar_no_text_found)
+                    } else {
+                        TodoListEvent.ShowScannedTextReview(action.lines)
+                    }
+                )
+            }
+            is TodoListAction.OnConfirmAddScannedTodos -> addScannedTodos(action.lines)
         }
     }
 
@@ -127,6 +141,14 @@ class TodoListViewModel(
                 draft.checklist,
                 draft.tags
             )
+        }
+    }
+
+    // One plain todo per line, in the order they were read - sequential (not parallel) so each one
+    // lands after the previous in Manual sort, see AddTodo's sortOrder.
+    private fun addScannedTodos(lines: List<String>) {
+        viewModelScope.launch {
+            lines.forEach { line -> addTodoUseCase(text = line, isPrioritized = false) }
         }
     }
 

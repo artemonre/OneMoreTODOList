@@ -26,6 +26,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.snackbar_no_text_found
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodoListViewModelTest {
@@ -177,6 +179,40 @@ class TodoListViewModelTest {
         assertEquals(checklist, persisted.checklist)
         assertEquals(tags, persisted.tags)
         assertEquals(tags, viewModel.state.value.knownTags)
+    }
+
+    @Test
+    fun `OnConfirmAddScannedTodos adds one todo per line after the existing ones, in order`() = runTest(testDispatcher) {
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem(id = "1", sortOrder = 0)))
+        val viewModel = todoListViewModel(dataSource)
+        backgroundScope.launch { viewModel.state.collect {} }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(TodoListAction.OnConfirmAddScannedTodos(listOf("Milk", "Bread", "Eggs")))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val persisted = dataSource.observeTodos().first().sortedBy { it.sortOrder }
+        assertEquals(listOf("Todo 1", "Milk", "Bread", "Eggs"), persisted.map { it.text })
+        assertEquals(listOf(null, null, null, null), persisted.map { it.priorityOrder })
+    }
+
+    @Test
+    fun `OnTextRecognized opens the review for lines and shows a snackbar for no text`() = runTest(testDispatcher) {
+        val viewModel = todoListViewModel(FakeTodoLocalDataSource(initialTodos = emptyList()))
+        val events = mutableListOf<TodoListEvent>()
+        backgroundScope.launch { viewModel.events.collect { events += it } }
+
+        viewModel.onAction(TodoListAction.OnTextRecognized(listOf("Milk")))
+        viewModel.onAction(TodoListAction.OnTextRecognized(emptyList()))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                TodoListEvent.ShowScannedTextReview(listOf("Milk")),
+                TodoListEvent.ShowSnackbar(Res.string.snackbar_no_text_found)
+            ),
+            events
+        )
     }
 
     private fun todoListViewModel(
