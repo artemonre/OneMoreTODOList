@@ -167,4 +167,43 @@
     <string name="onboarding_todo_3">Третья задача. Если её поднять наверх («Поднять наверх»), она будет вверху списка</string>
     <string name="onboarding_todo_4">Четвёртая задача. Смахни влево, чтобы изменить или удалить</string>
     <string name="onboarding_todo_5">Пятая задача. Смахни вправо, чтобы поделиться</string>
+
+    <string name="settings_backup">Резервная копия</string>
+    <string name="settings_backup_description">Сохраните задачи в файл, чтобы не потерять их или перенести на другое устройство.</string>
+    <string name="backup_export">Экспорт</string>
+    <string name="backup_import">Импорт</string>
+    <string name="backup_export_dialog_title">Сохранить резервную копию</string>
+    <string name="backup_import_dialog_title">Открыть резервную копию</string>
+    <string name="backup_exported">Резервная копия сохранена</string>
+    <string name="backup_export_failed">Не удалось сохранить файл резервной копии</string>
+    <string name="backup_file_unreadable">Не удалось прочитать файл</string>
+    <string name="backup_import_mode_title">Импорт задач</string>
+    <string name="backup_import_mode_message">«Объединить» оставит самую свежую версию каждой задачи и добавит недостающие. «Заменить» сделает копию всем вашим списком — задачи, которых в ней нет, будут удалены.</string>
+    <string name="backup_import_merge">Объединить</string>
+    <string name="backup_import_replace">Заменить</string>
+    <string name="backup_import_nothing_new">Нечего импортировать — список уже актуален</string>
+    <string name="backup_import_invalid">Это не файл резервной копии, или он повреждён</string>
+    <string name="backup_import_newer_format">Эта копия создана более новой версией приложения. Обновите приложение, чтобы импортировать её.</string>
+    <string name="backup_import_storage_error">Не удалось сохранить импортированные задачи</string>
+    <plurals name="backup_imported">
+        <item quantity="one">Импортирована %1$d задача</item>
+        <item quantity="few">Импортировано %1$d задачи</item>
+        <item quantity="many">Импортировано %1$d задач</item>
+        <item quantity="other">Импортировано %1$d задачи</item>
+    </plurals>
+
+    <string name="drive_title">Google Диск</string>
+    <string name="drive_description">Резервная копия хранится в скрытой папке на вашем Google Диске. Её видит только это приложение, другие ваши файлы оно не трогает.</string>
+    <string name="drive_backup_now">Сохранить</string>
+    <string name="drive_restore">Восстановить</string>
+    <string name="drive_auto_backup">Сохранять копию автоматически каждый день</string>
+    <string name="drive_last_backup">Последняя копия: %1$s</string>
+    <string name="drive_needs_reconnect">Для ежедневной копии снова нужен доступ к Google Диску. Нажмите «Сохранить», чтобы подключиться.</string>
+    <string name="drive_disconnect">Отключить Google Диск</string>
+    <string name="drive_backed_up">Копия сохранена на Google Диске</string>
+    <string name="drive_no_backup_found">В этом аккаунте Google ещё нет резервной копии</string>
+    <string name="drive_access_denied">Доступ к Google Диску не предоставлен</string>
+    <string name="drive_not_configured">Резервное копирование на Google Диск недоступно в этой версии приложения</string>
+    <string name="drive_no_internet">Нет подключения к интернету</string>
+    <string name="drive_backup_failed">Что-то пошло не так с Google Диском. Попробуйте позже.</string>
 </resources>

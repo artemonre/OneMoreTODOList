@@ -8,12 +8,23 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TodoDao {
-    @Query("SELECT * FROM todo_items")
+    @Query("SELECT * FROM todo_items WHERE deletedAt IS NULL")
     fun observeAll(): Flow<List<TodoEntity>>
+
+    @Query("SELECT * FROM todo_items")
+    suspend fun getAllIncludingDeleted(): List<TodoEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: TodoEntity)
 
-    @Query("DELETE FROM todo_items WHERE id = :id")
-    suspend fun delete(id: String)
+    // One statement for the whole list, so Room runs it in a single transaction.
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(entities: List<TodoEntity>)
+
+    // Instants are stored as epoch millis, see TodoDateConverters.
+    @Query("UPDATE todo_items SET deletedAt = :nowMillis, updatedAt = :nowMillis WHERE id = :id")
+    suspend fun markDeleted(id: String, nowMillis: Long)
+
+    @Query("DELETE FROM todo_items WHERE deletedAt IS NOT NULL AND deletedAt < :cutoffMillis")
+    suspend fun purgeDeletedBefore(cutoffMillis: Long)
 }

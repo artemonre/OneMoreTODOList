@@ -17,6 +17,16 @@ class RenameTodoTitleToText : AutoMigrationSpec
 @DeleteColumn(tableName = "todo_items", columnName = "recurrenceAnchorDate")
 class DropRecurrenceAnchorDate : AutoMigrationSpec
 
+// updatedAt arrives as 0 (1970) on every existing row - the column default an AutoMigration needs
+// to add a NOT NULL column. Backfill it from lastEditDate (stored as epoch days) instead, so "the
+// newest copy wins" comparisons against other copies (import, Drive restore, sync) start from a
+// sensible day-precision value rather than every existing todo looking ancient.
+class BackfillUpdatedAt : AutoMigrationSpec {
+    override suspend fun onPostMigrate(connection: SQLiteConnection) {
+        connection.execSQL("UPDATE `todo_items` SET `updatedAt` = `lastEditDate` * 86400000")
+    }
+}
+
 // Splits the single `date` column into `creationDate` and `lastEditDate`. This can't be an
 // AutoMigration (@RenameColumn only handles a 1:1 rename) since it also introduces a genuinely
 // new NOT NULL column that needs a per-row value, not a single fixed default - existing rows get

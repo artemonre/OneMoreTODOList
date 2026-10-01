@@ -38,13 +38,18 @@ import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.isDynamicColorSupported
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
+import com.artemonre.onemoretodolist.core.presentation.ObserveAsEvents
 import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
 import com.artemonre.onemoretodolist.core.theme.domain.FontOption
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
+import com.artemonre.onemoretodolist.feature.backup.presentation.DriveBackupController
 import com.artemonre.onemoretodolist.rememberAppUpdateLauncher
+import com.artemonre.onemoretodolist.rememberBackupFileExporter
+import com.artemonre.onemoretodolist.rememberBackupFileImporter
+import com.artemonre.onemoretodolist.rememberDriveBackup
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.settings_app_version
 import onemoretodolist.app.shared.generated.resources.settings_archive_completed
@@ -88,13 +93,33 @@ fun SettingsRoot(
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    SettingsScreen(state = state, onAction = viewModel::onAction)
+    val saveBackupFile = rememberBackupFileExporter(
+        onFinished = { saved -> viewModel.onAction(SettingsAction.OnExportFinished(saved)) }
+    )
+    val pickBackupFile = rememberBackupFileImporter(
+        onJsonRead = { json -> viewModel.onAction(SettingsAction.OnImportFileRead(json)) }
+    )
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            is SettingsEvent.SaveBackupFile -> saveBackupFile?.invoke(event.suggestedName, event.json)
+            SettingsEvent.PickBackupFile -> pickBackupFile?.invoke()
+        }
+    }
+    SettingsScreen(
+        state = state,
+        onAction = viewModel::onAction,
+        fileBackupAvailable = saveBackupFile != null && pickBackupFile != null,
+        driveBackup = rememberDriveBackup()
+    )
 }
 
 @Composable
 fun SettingsScreen(
     state: SettingsState,
-    onAction: (SettingsAction) -> Unit
+    onAction: (SettingsAction) -> Unit,
+    fileBackupAvailable: Boolean = true,
+    // Null where Google Drive backup isn't available (anywhere but Android) - and in previews.
+    driveBackup: DriveBackupController? = null
 ) {
     val startAppUpdate = rememberAppUpdateLauncher()
     Column(
@@ -238,6 +263,12 @@ fun SettingsScreen(
                 )
             }
         }
+        SettingsBackupCard(
+            state = state,
+            onAction = onAction,
+            fileBackupAvailable = fileBackupAvailable,
+            extraContent = { driveBackup?.let { DriveBackupSection(it) } }
+        )
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and below (API 30-) Auto Backup - same rules as data_extraction_rules.xml, see the
+     comments there. Keep the two in sync. -->
+<full-backup-content>
+    <include domain="database" path="todo_items.db" />
+    <include domain="sharedpref" path="." />
+    <exclude domain="sharedpref" path="due_time_notification_permission.xml" />
+</full-backup-content>

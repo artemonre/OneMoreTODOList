@@ -7,6 +7,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
+import com.artemonre.onemoretodolist.feature.todolist.domain.PurgeDeletedTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.RearmDueTodoAlarms
 import java.util.concurrent.TimeUnit
 import org.koin.core.component.KoinComponent
@@ -43,10 +44,12 @@ class PeriodicTodoMaintenanceWorker(
     private val applyDueRecurrences: ApplyDueRecurrences by inject()
     private val widgetRefresher: WidgetRefresher by inject()
     private val rearmDueTodoAlarms: RearmDueTodoAlarms by inject()
+    private val purgeDeletedTodos: PurgeDeletedTodos by inject()
 
     override suspend fun doWork(): Result {
         applyDueRecurrences()
         rearmDueTodoAlarms()
+        purgeDeletedTodos()
         widgetRefresher.refresh()
         return Result.success()
     }
