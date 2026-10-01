@@ -15,20 +15,37 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
+import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.feature.backup.domain.BackupError
 import com.artemonre.onemoretodolist.feature.backup.domain.ImportMode
+import com.artemonre.onemoretodolist.feature.backup.presentation.DriveBackupController
+import com.artemonre.onemoretodolist.feature.backup.presentation.FileAutoBackupController
+import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
 import onemoretodolist.app.shared.generated.resources.Res
-import onemoretodolist.app.shared.generated.resources.backup_export
+import onemoretodolist.app.shared.generated.resources.backup_auto_daily
 import onemoretodolist.app.shared.generated.resources.backup_export_failed
 import onemoretodolist.app.shared.generated.resources.backup_exported
+import onemoretodolist.app.shared.generated.resources.backup_file_auto_needs_new_file
 import onemoretodolist.app.shared.generated.resources.backup_file_unreadable
-import onemoretodolist.app.shared.generated.resources.backup_import
 import onemoretodolist.app.shared.generated.resources.backup_import_invalid
 import onemoretodolist.app.shared.generated.resources.backup_import_merge
 import onemoretodolist.app.shared.generated.resources.backup_import_mode_message
@@ -38,78 +55,70 @@ import onemoretodolist.app.shared.generated.resources.backup_import_nothing_new
 import onemoretodolist.app.shared.generated.resources.backup_import_replace
 import onemoretodolist.app.shared.generated.resources.backup_import_storage_error
 import onemoretodolist.app.shared.generated.resources.backup_imported
+import onemoretodolist.app.shared.generated.resources.backup_last_backup
+import onemoretodolist.app.shared.generated.resources.backup_now
+import onemoretodolist.app.shared.generated.resources.backup_restore
+import onemoretodolist.app.shared.generated.resources.backup_tab_file
+import onemoretodolist.app.shared.generated.resources.drive_title
 import onemoretodolist.app.shared.generated.resources.form_cancel
 import onemoretodolist.app.shared.generated.resources.settings_backup
 import onemoretodolist.app.shared.generated.resources.settings_backup_description
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-// Export/import to a file. fileBackupAvailable is false where the platform has no file dialog
-// (see rememberBackupFileExporter) - the buttons are hidden then. extraContent is for
-// platform-only backup options that belong in the same card (Google Drive on Android).
+// UI-only: which backup option the card shows. Not persisted - the card always opens on File.
+private enum class BackupTab { File, GoogleDrive }
+
+private val lastBackupFormat = LocalDateTime.Format {
+    date(LocalDate.Formats.ISO)
+    char(' ')
+    hour()
+    char(':')
+    minute()
+}
+
+// The two backup options as tabs: a file (every platform) and Google Drive (Android only - the
+// tabs disappear where driveBackup is null). fileBackupAvailable is false where the platform has
+// no file dialog (see rememberBackupFileExporter); fileAutoBackup is null where daily automatic
+// file backup isn't possible (see rememberFileAutoBackup).
 @Composable
 internal fun SettingsBackupCard(
     state: SettingsState,
     onAction: (SettingsAction) -> Unit,
     fileBackupAvailable: Boolean,
-    modifier: Modifier = Modifier,
-    extraContent: @Composable () -> Unit = {}
+    driveBackup: DriveBackupController?,
+    fileAutoBackup: FileAutoBackupController?,
+    modifier: Modifier = Modifier
 ) {
+    var selectedTab by rememberSaveable { mutableStateOf(BackupTab.File) }
     AppCard(modifier = modifier.fillMaxWidth()) {
         Column {
             Text(
                 text = stringResource(Res.string.settings_backup),
                 style = MaterialTheme.typography.titleMedium
             )
-            Text(
-                text = stringResource(Res.string.settings_backup_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            if (fileBackupAvailable) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { onAction(SettingsAction.OnExportClick) },
-                        enabled = !state.isBackupBusy,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(imageVector = Icons.Filled.FileUpload, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(Res.string.backup_export))
-                    }
-                    OutlinedButton(
-                        onClick = { onAction(SettingsAction.OnImportClick) },
-                        enabled = !state.isBackupBusy,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(imageVector = Icons.Filled.FileDownload, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(Res.string.backup_import))
-                    }
-                }
-            }
-            if (state.isBackupBusy) {
-                LinearProgressIndicator(
+            if (driveBackup != null) {
+                AppSegmentedControl(
+                    options = BackupTab.entries,
+                    selectedOption = selectedTab,
+                    onOptionSelected = { selectedTab = it },
+                    label = resourceLabels(BackupTab.entries) { it.displayName() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp)
                 )
             }
-            state.backupMessage?.let { message ->
-                Text(
-                    text = message.text(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (message.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
+            if (driveBackup != null && selectedTab == BackupTab.GoogleDrive) {
+                DriveBackupTab(controller = driveBackup)
+            } else {
+                FileBackupTab(
+                    state = state,
+                    onAction = onAction,
+                    fileBackupAvailable = fileBackupAvailable,
+                    fileAutoBackup = fileAutoBackup
                 )
             }
-            extraContent()
         }
     }
 
@@ -119,6 +128,128 @@ internal fun SettingsBackupCard(
             onDismiss = { onAction(SettingsAction.OnImportCancel) }
         )
     }
+}
+
+@Composable
+private fun FileBackupTab(
+    state: SettingsState,
+    onAction: (SettingsAction) -> Unit,
+    fileBackupAvailable: Boolean,
+    fileAutoBackup: FileAutoBackupController?
+) {
+    val autoState = fileAutoBackup?.state?.value
+    val isBusy = state.isBackupBusy || autoState?.isBusy == true
+    BackupTabDescription(Res.string.settings_backup_description)
+    if (fileBackupAvailable) {
+        BackupButtons(
+            backupIcon = Icons.Filled.FileUpload,
+            restoreIcon = Icons.Filled.FileDownload,
+            onBackup = { onAction(SettingsAction.OnExportClick) },
+            onRestore = { onAction(SettingsAction.OnImportClick) },
+            enabled = !isBusy
+        )
+    }
+    if (fileAutoBackup != null && autoState != null) {
+        AutoBackupSwitch(
+            checked = autoState.isEnabled,
+            onCheckedChange = fileAutoBackup::setEnabled,
+            enabled = !isBusy,
+            lastBackupAt = autoState.lastBackupAt
+        )
+        if (autoState.needsNewFile) BackupStatusText(stringResource(Res.string.backup_file_auto_needs_new_file), isError = true)
+        if (autoState.failed) BackupStatusText(stringResource(Res.string.backup_export_failed), isError = true)
+    }
+    BackupBusyIndicator(isBusy)
+    state.backupMessage?.let { message -> BackupStatusText(message.text(), message.isError) }
+}
+
+// --- Pieces shared by both tabs ---
+
+@Composable
+internal fun BackupTabDescription(text: StringResource) {
+    Text(
+        text = stringResource(text),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 12.dp)
+    )
+}
+
+@Composable
+internal fun BackupButtons(
+    backupIcon: ImageVector,
+    restoreIcon: ImageVector,
+    onBackup: () -> Unit,
+    onRestore: () -> Unit,
+    enabled: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedButton(onClick = onBackup, enabled = enabled, modifier = Modifier.weight(1f)) {
+            Icon(imageVector = backupIcon, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(Res.string.backup_now))
+        }
+        OutlinedButton(onClick = onRestore, enabled = enabled, modifier = Modifier.weight(1f)) {
+            Icon(imageVector = restoreIcon, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(Res.string.backup_restore))
+        }
+    }
+}
+
+@Composable
+internal fun AutoBackupSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean,
+    lastBackupAt: Instant?
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(Res.string.backup_auto_daily),
+            modifier = Modifier.weight(1f)
+        )
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+    }
+    lastBackupAt?.let {
+        Text(
+            text = stringResource(Res.string.backup_last_backup, lastBackupFormat.format(it.toLocalDateTime(TimeZone.currentSystemDefault()))),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
+}
+
+@Composable
+internal fun BackupBusyIndicator(isBusy: Boolean) {
+    if (isBusy) {
+        LinearProgressIndicator(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+        )
+    }
+}
+
+@Composable
+internal fun BackupStatusText(text: String, isError: Boolean) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp)
+    )
 }
 
 // Shared by file import and Google Drive restore - both ask the same question.
@@ -149,6 +280,25 @@ internal fun ImportModeDialog(
     )
 }
 
+// "Imported N todos" - shared by file import and Drive restore.
+@Composable
+internal fun importedText(count: Int): String = if (count == 0) {
+    stringResource(Res.string.backup_import_nothing_new)
+} else {
+    pluralStringResource(Res.plurals.backup_imported, count, count)
+}
+
+internal fun BackupError.message(): StringResource = when (this) {
+    BackupError.INVALID_FILE -> Res.string.backup_import_invalid
+    BackupError.NEWER_FORMAT -> Res.string.backup_import_newer_format
+    BackupError.STORAGE -> Res.string.backup_import_storage_error
+}
+
+private fun BackupTab.displayName(): StringResource = when (this) {
+    BackupTab.File -> Res.string.backup_tab_file
+    BackupTab.GoogleDrive -> Res.string.drive_title
+}
+
 private val BackupMessage.isError: Boolean
     get() = when (this) {
         BackupMessage.Exported, is BackupMessage.Imported -> false
@@ -159,17 +309,7 @@ private val BackupMessage.isError: Boolean
 private fun BackupMessage.text(): String = when (this) {
     BackupMessage.Exported -> stringResource(Res.string.backup_exported)
     BackupMessage.ExportFailed -> stringResource(Res.string.backup_export_failed)
-    is BackupMessage.Imported -> if (count == 0) {
-        stringResource(Res.string.backup_import_nothing_new)
-    } else {
-        pluralStringResource(Res.plurals.backup_imported, count, count)
-    }
+    is BackupMessage.Imported -> importedText(count)
     is BackupMessage.ImportFailed -> stringResource(error.message())
     BackupMessage.FileUnreadable -> stringResource(Res.string.backup_file_unreadable)
-}
-
-private fun BackupError.message() = when (this) {
-    BackupError.INVALID_FILE -> Res.string.backup_import_invalid
-    BackupError.NEWER_FORMAT -> Res.string.backup_import_newer_format
-    BackupError.STORAGE -> Res.string.backup_import_storage_error
 }

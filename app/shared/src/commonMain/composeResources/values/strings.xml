@@ -176,8 +176,8 @@
 
     <string name="settings_backup">Backup</string>
     <string name="settings_backup_description">Save your todos to a file to keep them safe or move them to another device.</string>
-    <string name="backup_export">Export</string>
-    <string name="backup_import">Import</string>
+    <string name="backup_tab_file">File</string>
+    <string name="backup_file_auto_needs_new_file">Can't write to the backup file any more — it may have been moved or deleted. Turn the daily backup off and on again to choose a new file.</string>
     <string name="backup_export_dialog_title">Save backup</string>
     <string name="backup_import_dialog_title">Open backup</string>
     <string name="backup_exported">Backup saved</string>
@@ -198,10 +198,10 @@
 
     <string name="drive_title">Google Drive</string>
     <string name="drive_description">Back up to a hidden folder in your own Google Drive. Only this app can see it, and it doesn't touch your other files.</string>
-    <string name="drive_backup_now">Back up</string>
-    <string name="drive_restore">Restore</string>
-    <string name="drive_auto_backup">Back up automatically every day</string>
-    <string name="drive_last_backup">Last backup: %1$s</string>
+    <string name="backup_now">Back up</string>
+    <string name="backup_restore">Restore</string>
+    <string name="backup_auto_daily">Back up automatically every day</string>
+    <string name="backup_last_backup">Last backup: %1$s</string>
     <string name="drive_needs_reconnect">The daily backup needs access to Google Drive again. Tap Back up to reconnect.</string>
     <string name="drive_disconnect">Disconnect Google Drive</string>
     <string name="drive_backed_up">Backed up to Google Drive</string>

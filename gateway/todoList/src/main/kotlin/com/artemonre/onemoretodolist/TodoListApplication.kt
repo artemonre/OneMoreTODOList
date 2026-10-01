@@ -6,6 +6,8 @@ import com.artemonre.onemoretodolist.analytics.initPostHog
 import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
 import com.artemonre.onemoretodolist.feature.backup.drive.di.androidDriveBackupModule
 import com.artemonre.onemoretodolist.feature.backup.drive.di.ensureDriveAutoBackupScheduled
+import com.artemonre.onemoretodolist.feature.backup.file.di.androidFileAutoBackupModule
+import com.artemonre.onemoretodolist.feature.backup.file.di.ensureFileAutoBackupScheduled
 import com.artemonre.onemoretodolist.feature.todolist.di.androidDueTimeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
 import com.artemonre.onemoretodolist.feature.todolist.work.WidgetRefresher
@@ -59,6 +61,7 @@ class TodoListApplication : Application() {
                         },
                         androidDueTimeModule(this@TodoListApplication),
                         androidDriveBackupModule(this@TodoListApplication),
+                        androidFileAutoBackupModule(this@TodoListApplication),
                         module {
                             // Lets PeriodicTodoMaintenanceWorker repaint the widget without
                             // app:shared depending on Glance - WorkManager (not Koin) constructs
@@ -75,6 +78,7 @@ class TodoListApplication : Application() {
         }
         schedulePeriodicTodoMaintenance(this@TodoListApplication)
         ensureDriveAutoBackupScheduled()
+        ensureFileAutoBackupScheduled()
 
         // The hooks above only refresh the widget lazily, after a todo/theme write - so a process
         // restart with no write yet (e.g. right after an app update) would otherwise leave every

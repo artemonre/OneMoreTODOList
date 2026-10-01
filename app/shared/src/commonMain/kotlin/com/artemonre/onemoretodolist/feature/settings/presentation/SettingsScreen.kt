@@ -46,10 +46,12 @@ import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 import com.artemonre.onemoretodolist.feature.backup.presentation.DriveBackupController
+import com.artemonre.onemoretodolist.feature.backup.presentation.FileAutoBackupController
 import com.artemonre.onemoretodolist.rememberAppUpdateLauncher
 import com.artemonre.onemoretodolist.rememberBackupFileExporter
 import com.artemonre.onemoretodolist.rememberBackupFileImporter
 import com.artemonre.onemoretodolist.rememberDriveBackup
+import com.artemonre.onemoretodolist.rememberFileAutoBackup
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.settings_app_version
 import onemoretodolist.app.shared.generated.resources.settings_archive_completed
@@ -109,7 +111,8 @@ fun SettingsRoot(
         state = state,
         onAction = viewModel::onAction,
         fileBackupAvailable = saveBackupFile != null && pickBackupFile != null,
-        driveBackup = rememberDriveBackup()
+        driveBackup = rememberDriveBackup(),
+        fileAutoBackup = rememberFileAutoBackup()
     )
 }
 
@@ -119,7 +122,9 @@ fun SettingsScreen(
     onAction: (SettingsAction) -> Unit,
     fileBackupAvailable: Boolean = true,
     // Null where Google Drive backup isn't available (anywhere but Android) - and in previews.
-    driveBackup: DriveBackupController? = null
+    driveBackup: DriveBackupController? = null,
+    // Null where daily automatic file backup isn't available (anywhere but Android) - and in previews.
+    fileAutoBackup: FileAutoBackupController? = null
 ) {
     val startAppUpdate = rememberAppUpdateLauncher()
     Column(
@@ -267,7 +272,8 @@ fun SettingsScreen(
             state = state,
             onAction = onAction,
             fileBackupAvailable = fileBackupAvailable,
-            extraContent = { driveBackup?.let { DriveBackupSection(it) } }
+            driveBackup = driveBackup,
+            fileAutoBackup = fileAutoBackup
         )
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {

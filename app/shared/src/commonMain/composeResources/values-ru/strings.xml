@@ -170,8 +170,8 @@
 
     <string name="settings_backup">Резервная копия</string>
     <string name="settings_backup_description">Сохраните задачи в файл, чтобы не потерять их или перенести на другое устройство.</string>
-    <string name="backup_export">Экспорт</string>
-    <string name="backup_import">Импорт</string>
+    <string name="backup_tab_file">Файл</string>
+    <string name="backup_file_auto_needs_new_file">Не удаётся записать файл резервной копии — возможно, он перемещён или удалён. Выключите и снова включите ежедневную копию, чтобы выбрать новый файл.</string>
     <string name="backup_export_dialog_title">Сохранить резервную копию</string>
     <string name="backup_import_dialog_title">Открыть резервную копию</string>
     <string name="backup_exported">Резервная копия сохранена</string>
@@ -194,10 +194,10 @@
 
     <string name="drive_title">Google Диск</string>
     <string name="drive_description">Резервная копия хранится в скрытой папке на вашем Google Диске. Её видит только это приложение, другие ваши файлы оно не трогает.</string>
-    <string name="drive_backup_now">Сохранить</string>
-    <string name="drive_restore">Восстановить</string>
-    <string name="drive_auto_backup">Сохранять копию автоматически каждый день</string>
-    <string name="drive_last_backup">Последняя копия: %1$s</string>
+    <string name="backup_now">Сохранить</string>
+    <string name="backup_restore">Восстановить</string>
+    <string name="backup_auto_daily">Сохранять копию автоматически каждый день</string>
+    <string name="backup_last_backup">Последняя копия: %1$s</string>
     <string name="drive_needs_reconnect">Для ежедневной копии снова нужен доступ к Google Диску. Нажмите «Сохранить», чтобы подключиться.</string>
     <string name="drive_disconnect">Отключить Google Диск</string>
     <string name="drive_backed_up">Копия сохранена на Google Диске</string>
