@@ -17,6 +17,7 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListAction
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListRoot
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListViewModel
+import kotlinx.serialization.modules.subclass
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.fab_capture_note
 import onemoretodolist.app.shared.generated.resources.fab_create_todo
@@ -65,5 +66,6 @@ fun todoListTab(): NavigationTab = NavigationTab(
     icon = Icons.AutoMirrored.Filled.List,
     startDestination = TodoListRoute.List,
     entries = { todoListEntries() },
+    registerRoutes = { subclass(TodoListRoute.List::class) },
     fab = { TodoListFab() }
 )

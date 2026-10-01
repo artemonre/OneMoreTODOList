@@ -11,7 +11,7 @@ import kotlin.coroutines.CoroutineContext
 
 @Database(
     entities = [TodoEntity::class],
-    version = 9,
+    version = 10,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class),
         AutoMigration(from = 3, to = 4),
@@ -30,7 +30,10 @@ import kotlin.coroutines.CoroutineContext
         AutoMigration(from = 7, to = 8),
         // Adds snoozedUntil (nullable - no snooze) plus the checklist and tags JSON columns, which
         // default to "[]" so existing rows read back as having no checklist items and no tags.
-        AutoMigration(from = 8, to = 9)
+        AutoMigration(from = 8, to = 9),
+        // Sync prep: adds updatedAt (NOT NULL, backfilled from lastEditDate - see
+        // BackfillUpdatedAt) and the nullable deletedAt tombstone column.
+        AutoMigration(from = 9, to = 10, spec = BackfillUpdatedAt::class)
     ]
 )
 @ColumnTypeConverters(TodoDateConverters::class)

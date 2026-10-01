@@ -1,11 +1,12 @@
 package com.artemonre.onemoretodolist.core.container.di
 
 import com.artemonre.onemoretodolist.core.container.ContainerViewModel
+import com.artemonre.onemoretodolist.core.domain.AppStartTask
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val containerModule = module {
     viewModel { params ->
-        ContainerViewModel(contentTabs = params.get(), seedOnboardingTodos = get(), applyDueRecurrences = get())
+        ContainerViewModel(tabs = params.get(), startTasks = getAll<AppStartTask>())
     }
 }

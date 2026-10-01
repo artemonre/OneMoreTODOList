@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (API 31) Auto Backup and device-to-device transfer. Same rules as backup_rules.xml,
+     which covers Android 11 and below - keep the two in sync.
+
+     Included on purpose: the todo database and the shared preferences (settings and theme, written
+     by multiplatform-settings). Excluded: the "notification permission already asked" flag - it
+     describes this device's permission state, so a new device should ask again.
+
+     Due-time alarms aren't files and never restore - WorkManager's own database lives in
+     no_backup, so a restored install enqueues PeriodicTodoMaintenanceWorker fresh, and its
+     immediate first run re-arms every alarm via RearmDueTodoAlarms. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="todo_items.db" />
+        <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="due_time_notification_permission.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="todo_items.db" />
+        <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="due_time_notification_permission.xml" />
+    </device-transfer>
+</data-extraction-rules>

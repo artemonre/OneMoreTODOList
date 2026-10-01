@@ -5,6 +5,7 @@ import com.artemonre.onemoretodolist.core.domain.EmptyResult
 import com.artemonre.onemoretodolist.core.domain.Result
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -31,4 +32,16 @@ class NotifyingTodoLocalDataSource(
         if (result is Result.Success) onDataChanged()
         return result
     }
+
+    override suspend fun getAllIncludingDeleted(): List<TodoItem> = delegate.getAllIncludingDeleted()
+
+    override suspend fun upsertVerbatim(todos: List<TodoItem>): EmptyResult<DataError.Local> {
+        val result = delegate.upsertVerbatim(todos)
+        if (result is Result.Success) onDataChanged()
+        return result
+    }
+
+    // Only ever removes tombstones, which nothing displays - no refresh needed.
+    override suspend fun purgeDeletedBefore(cutoff: Instant): EmptyResult<DataError.Local> =
+        delegate.purgeDeletedBefore(cutoff)
 }

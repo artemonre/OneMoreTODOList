@@ -56,7 +56,17 @@ data class TodoItem(
     // HandleDueTodoFired clears it once it fires, and ToggleTodoDone clears it on completion.
     val snoozedUntil: Instant? = null,
     val checklist: List<ChecklistItem> = emptyList(),
-    val tags: List<TodoTag> = emptyList()
+    val tags: List<TodoTag> = emptyList(),
+    // When any synced field last changed - the "newest copy wins" key for import, Drive restore and
+    // cloud sync (see MergeTodos). Never set by hand: TimestampingTodoLocalDataSource stamps it on
+    // every write, so the epoch default only ever shows on an item that hasn't been written yet.
+    // topSince is deliberately not "synced" - it's this device's own bookkeeping - so a write that
+    // only moves topSince keeps the old stamp.
+    val updatedAt: Instant = Instant.fromEpochMilliseconds(0),
+    // Soft-delete tombstone: a deleted todo stays stored (hidden from observeTodos) for a while so a
+    // deletion can travel to other copies (sync, merge-import) instead of the todo coming back from
+    // them. Purged after a retention period, see PurgeDeletedTodos.
+    val deletedAt: Instant? = null
 )
 
 fun TodoItem.dueInstant(zone: TimeZone = TimeZone.currentSystemDefault()): Instant? {

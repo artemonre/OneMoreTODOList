@@ -29,6 +29,7 @@ materialIconsCore = "1.7.3"
 multiplatformSettings = "1.3.0"
 navigation3 = "1.1.0-alpha01"
 playAppUpdate = "2.1.0"
+playServicesAuth = "22.0.0"
 reorderable = "3.1.0"
 posthogKmp = "0.5.1"
 room3 = "3.0.1"
@@ -66,6 +67,14 @@ ktor-serverCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor
 ktor-serverNetty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-serverStatusPages = { module = "io.ktor:ktor-server-status-pages-jvm", version.ref = "ktor" }
 ktor-serverTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
+ktor-clientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-clientContentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serializationKotlinxJson = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-clientOkhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-clientDarwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-clientJava = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
+ktor-clientJs = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
+ktor-clientMock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 wrappers-browser = { module = "org.jetbrains.kotlin-wrappers:kotlin-browser", version.ref = "kotlin-wrappers" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -89,6 +98,7 @@ androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version
 androidx-appfunctions = { module = "androidx.appfunctions:appfunctions", version.ref = "appfunctions" }
 androidx-appfunctions-compiler = { module = "androidx.appfunctions:appfunctions-compiler", version.ref = "appfunctions" }
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+play-servicesAuth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 play-appUpdate-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
 posthog-kmp = { module = "com.posthog:posthog-kmp", version.ref = "posthogKmp" }
 sentry-java = { module = "io.sentry:sentry", version.ref = "sentry" }

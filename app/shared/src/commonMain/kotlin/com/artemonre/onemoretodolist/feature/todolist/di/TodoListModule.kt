@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.di
 
+import com.artemonre.onemoretodolist.core.domain.AppStartTask
 import com.artemonre.onemoretodolist.feature.todolist.data.SettingsTodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
@@ -8,16 +9,21 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.HandleDueTodoFired
 import com.artemonre.onemoretodolist.feature.todolist.domain.NoOpDueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
+import com.artemonre.onemoretodolist.feature.todolist.domain.OnboardingTexts
+import com.artemonre.onemoretodolist.feature.todolist.domain.PurgeDeletedTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.RearmDueTodoAlarms
 import com.artemonre.onemoretodolist.feature.todolist.domain.SeedOnboardingTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.SnoozeTodo
-import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoListStartTask
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
+import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
+import com.artemonre.onemoretodolist.feature.todolist.presentation.ResourceOnboardingTexts
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListViewModel
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val todoListModule = module {
@@ -35,5 +41,10 @@ val todoListModule = module {
     singleOf(::SnoozeTodo)
     singleOf(::EditTodo)
     singleOf(::RearmDueTodoAlarms)
+    single { PurgeDeletedTodos(get()) }
+    single<OnboardingTexts> { ResourceOnboardingTexts() }
+    // bind (not single<AppStartTask>) so every feature's task is its own definition - the container
+    // collects them all with getAll<AppStartTask>().
+    single { TodoListStartTask(get(), get(), get(), get()) } bind AppStartTask::class
     viewModelOf(::TodoListViewModel)
 }

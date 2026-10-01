@@ -164,4 +164,42 @@
     <string name="onboarding_todo_3">Treći zadatak. Ako je stavljen na vrh („Stavi na vrh“), ide na vrh liste</string>
     <string name="onboarding_todo_4">Četvrti zadatak. Prevuci ulevo da ga izmeniš ili obrišeš</string>
     <string name="onboarding_todo_5">Peti zadatak. Prevuci udesno da ga podeliš</string>
+
+    <string name="settings_backup">Rezervna kopija</string>
+    <string name="settings_backup_description">Sačuvaj zadatke u fajl da ih ne izgubiš ili da ih preneseš na drugi uređaj.</string>
+    <string name="backup_tab_file">Fajl</string>
+    <string name="backup_file_auto_needs_new_file">Fajl rezervne kopije više ne može da se upiše — možda je premešten ili obrisan. Isključi i ponovo uključi dnevnu kopiju da izabereš novi fajl.</string>
+    <string name="backup_export_dialog_title">Sačuvaj rezervnu kopiju</string>
+    <string name="backup_import_dialog_title">Otvori rezervnu kopiju</string>
+    <string name="backup_exported">Rezervna kopija je sačuvana</string>
+    <string name="backup_export_failed">Nije uspelo čuvanje fajla rezervne kopije</string>
+    <string name="backup_file_unreadable">Nije uspelo čitanje fajla</string>
+    <string name="backup_import_mode_title">Uvoz zadataka</string>
+    <string name="backup_import_mode_message">„Spoji“ zadržava najnoviju verziju svakog zadatka i dodaje one koje nemaš. „Zameni“ pravi od kopije ceo tvoj spisak — zadaci kojih u njoj nema biće obrisani.</string>
+    <string name="backup_import_merge">Spoji</string>
+    <string name="backup_import_replace">Zameni</string>
+    <string name="backup_import_nothing_new">Nema ničeg novog za uvoz — spisak je već ažuran</string>
+    <string name="backup_import_invalid">Ovo nije fajl rezervne kopije ili je oštećen</string>
+    <string name="backup_import_newer_format">Ovu kopiju je napravila novija verzija aplikacije. Ažuriraj aplikaciju da bi je uvezao.</string>
+    <string name="backup_import_storage_error">Nije uspelo čuvanje uvezenih zadataka</string>
+    <plurals name="backup_imported">
+        <item quantity="one">Uvezen je %1$d zadatak</item>
+        <item quantity="few">Uvezena su %1$d zadatka</item>
+        <item quantity="other">Uvezeno je %1$d zadataka</item>
+    </plurals>
+
+    <string name="drive_title">Google Disk</string>
+    <string name="drive_description">Rezervna kopija se čuva u skrivenom folderu na tvom Google Disku. Vidi je samo ova aplikacija i ne dira tvoje ostale fajlove.</string>
+    <string name="backup_now">Sačuvaj</string>
+    <string name="backup_restore">Vrati</string>
+    <string name="backup_auto_daily">Automatski čuvaj kopiju svaki dan</string>
+    <string name="backup_last_backup">Poslednja kopija: %1$s</string>
+    <string name="drive_needs_reconnect">Dnevnoj kopiji ponovo treba pristup Google Disku. Dodirni „Sačuvaj“ da se ponovo povežeš.</string>
+    <string name="drive_disconnect">Prekini vezu sa Google Diskom</string>
+    <string name="drive_backed_up">Kopija je sačuvana na Google Disku</string>
+    <string name="drive_no_backup_found">Na ovom Google nalogu još nema rezervne kopije</string>
+    <string name="drive_access_denied">Pristup Google Disku nije odobren</string>
+    <string name="drive_not_configured">Rezervna kopija na Google Disku nije dostupna u ovoj verziji aplikacije</string>
+    <string name="drive_no_internet">Nema internet veze</string>
+    <string name="drive_backup_failed">Nešto nije u redu sa Google Diskom. Pokušaj ponovo kasnije.</string>
 </resources>
