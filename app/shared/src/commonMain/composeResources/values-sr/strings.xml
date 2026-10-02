@@ -63,10 +63,9 @@
     <string name="fab_open_menu">Otvori meni</string>
 
     <string name="todo_list_empty_active">Svi zadaci su završeni!\nDodaj nove kad god zatreba — bez žurbe.</string>
-    <string name="sort_label">Sortiranje</string>
-    <string name="sort_default">Podrazumevano</string>
+    <string name="sort_date">Po datumu</string>
     <string name="sort_manual">Ručno</string>
-    <string name="sort_text">Po tekstu</string>
+    <string name="sort_text">Po abecedi</string>
     <string name="action_undo">Opozovi</string>
     <string name="action_edit">Izmeni</string>
     <string name="action_delete">Obriši</string>

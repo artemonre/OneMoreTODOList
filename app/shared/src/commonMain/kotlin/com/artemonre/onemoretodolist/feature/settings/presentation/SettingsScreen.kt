@@ -29,12 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.isDynamicColorSupported
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
@@ -132,8 +132,8 @@ fun SettingsScreen(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(AppSpacing.l),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.l)
     ) {
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column {
@@ -148,7 +148,7 @@ fun SettingsScreen(
                     label = resourceLabels(ThemeMode.entries) { it.displayName() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp)
+                        .padding(top = AppSpacing.m)
                 )
             }
         }
@@ -179,8 +179,8 @@ fun SettingsScreen(
                 }
                 if (!dynamicColorSupported || !state.useDynamicColor) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(top = 12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.m),
+                        modifier = Modifier.padding(top = AppSpacing.m)
                     ) {
                         val isDarkTheme = when (state.themeMode) {
                             ThemeMode.System -> isSystemInDarkTheme()
@@ -201,7 +201,7 @@ fun SettingsScreen(
                         text = stringResource(Res.string.settings_dynamic_color_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 12.dp)
+                        modifier = Modifier.padding(top = AppSpacing.m)
                     )
                 }
             }
@@ -217,7 +217,7 @@ fun SettingsScreen(
                     selectedOption = state.font,
                     onOptionSelected = { onAction(SettingsAction.OnFontSelected(it)) },
                     label = resourceLabels(FontOption.entries) { it.displayName() },
-                    modifier = Modifier.padding(top = 12.dp)
+                    modifier = Modifier.padding(top = AppSpacing.m)
                 )
             }
         }
@@ -235,7 +235,7 @@ fun SettingsScreen(
                     selectedOption = state.uiStyle,
                     onOptionSelected = { onAction(SettingsAction.OnUiStyleSelected(it)) },
                     label = resourceLabels(UiStyleOption.entries) { it.displayName() },
-                    modifier = Modifier.padding(top = 12.dp)
+                    modifier = Modifier.padding(top = AppSpacing.m)
                 )
             }
         }
@@ -248,7 +248,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp),
+                        .padding(top = AppSpacing.m),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -264,7 +264,7 @@ fun SettingsScreen(
                     text = stringResource(Res.string.settings_archive_completed_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = AppSpacing.xs)
                 )
             }
         }
@@ -286,8 +286,8 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { uriHandler.openUri(SUPPORT_EMAIL_URI) }
-                        .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        .padding(top = AppSpacing.m),
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.m),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Filled.Email, contentDescription = null)
@@ -297,8 +297,8 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { uriHandler.openUri(PRIVACY_POLICY_URL) }
-                        .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        .padding(top = AppSpacing.m),
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.m),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Filled.PrivacyTip, contentDescription = null)

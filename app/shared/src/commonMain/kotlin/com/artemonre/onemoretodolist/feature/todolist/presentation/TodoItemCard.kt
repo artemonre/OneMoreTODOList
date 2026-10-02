@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCard
 import com.artemonre.onemoretodolist.core.designsystem.components.cloudTexture
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
@@ -88,7 +88,7 @@ private fun TodoItemCardPreview() {
             onClick = {},
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = AppSpacing.s)
         )
     }
 }
@@ -107,7 +107,7 @@ private fun TodoItemCardAttentionPreview() {
             attention = TopTodoAttention.Error,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = AppSpacing.s)
         )
     }
 }

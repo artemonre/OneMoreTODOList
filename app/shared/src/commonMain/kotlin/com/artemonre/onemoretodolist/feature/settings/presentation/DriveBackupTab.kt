@@ -8,7 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.feature.backup.presentation.DriveBackupController
 import com.artemonre.onemoretodolist.feature.backup.presentation.DriveBackupMessage
 import onemoretodolist.app.shared.generated.resources.Res
@@ -48,7 +48,7 @@ internal fun DriveBackupTab(controller: DriveBackupController) {
         TextButton(
             onClick = controller::disconnect,
             enabled = !state.isBusy,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = AppSpacing.xs)
         ) {
             Text(stringResource(Res.string.drive_disconnect))
         }

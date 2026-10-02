@@ -11,13 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
-
-// Matches CardDefaults.elevatedShape's corner radius (Material3's default "medium" shape) so
-// content never sits visually clipped by the rounded corners.
-private val CARD_CONTENT_PADDING = 12.dp
 
 /**
  * A stock Material3 [ElevatedCard] - default shape/elevation/colors from
@@ -41,7 +37,7 @@ fun ListItemCard(
             CardDefaults.elevatedCardColors()
         }
     ) {
-        Box(modifier = Modifier.padding(CARD_CONTENT_PADDING)) {
+        Box(modifier = Modifier.padding(AppSpacing.s)) {
             content()
         }
     }

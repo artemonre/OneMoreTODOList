@@ -67,10 +67,9 @@
 
     <!-- Todo list -->
     <string name="todo_list_empty_active">You completed all your tasks!\nAdd more whenever you need to — no rush.</string>
-    <string name="sort_label">Sort</string>
-    <string name="sort_default">Default</string>
+    <string name="sort_date">By date</string>
     <string name="sort_manual">Manual</string>
-    <string name="sort_text">Text</string>
+    <string name="sort_text">Alphabetical</string>
     <string name="action_undo">Undo</string>
     <string name="action_edit">Edit</string>
     <string name="action_delete">Delete</string>

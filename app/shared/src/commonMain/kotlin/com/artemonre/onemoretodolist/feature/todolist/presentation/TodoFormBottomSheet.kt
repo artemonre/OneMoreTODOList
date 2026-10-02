@@ -16,8 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -33,11 +37,9 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
@@ -47,10 +49,12 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -63,7 +67,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -72,6 +75,9 @@ import androidx.compose.ui.window.Dialog
 import com.artemonre.onemoretodolist.SpeechRecognitionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedTextField
+import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialSegmentedButton
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
@@ -85,6 +91,7 @@ import com.artemonre.onemoretodolist.rememberExactAlarmPermissionState
 import com.artemonre.onemoretodolist.rememberSpeechToText
 import kotlin.time.Clock
 import kotlin.time.Instant
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -169,7 +176,7 @@ fun TodoFormBottomSheet(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = AppSpacing.l),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -195,7 +202,7 @@ fun TodoFormBottomSheet(
             // marking it as an add/edit form.
             showTitle = false,
             fieldMaxLines = Int.MAX_VALUE,
-            actionsTopSpacing = 8.dp,
+            actionsTopSpacing = AppSpacing.s,
             awaitAutoFocusReady = { snapshotFlow { isSheetExpanded }.first { it } }
         )
     }
@@ -242,12 +249,16 @@ fun TodoFormBody(
     onTextChange: (String) -> Unit = {},
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
-    // TextFieldValue (not a plain String) so pre-filled text - editing an existing todo, or a
-    // draft carried over from the quick-add sheet - starts with the cursor at the end instead of
-    // Compose's default of the start, which is what you'd want to keep typing from.
-    var text by remember {
-        val prefilled = editingItem?.text ?: initialText
-        mutableStateOf(TextFieldValue(text = prefilled, selection = TextRange(prefilled.length)))
+    // Pre-filled text - editing an existing todo, or a draft carried over from the quick-add sheet -
+    // starts with the cursor at the end instead of the start, which is what you'd want to keep
+    // typing from.
+    val textState = (editingItem?.text ?: initialText).let { prefilled ->
+        rememberTextFieldState(initialText = prefilled, initialSelection = TextRange(prefilled.length))
+    }
+    // Every change after the prefill - typing, clearing, speech - reaches onTextChange.
+    val currentOnTextChange by rememberUpdatedState(onTextChange)
+    LaunchedEffect(textState) {
+        snapshotFlow { textState.text.toString() }.drop(1).collect { currentOnTextChange(it) }
     }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
     var tags by remember { mutableStateOf(editingItem?.tags.orEmpty()) }
@@ -295,7 +306,7 @@ fun TodoFormBody(
     // user's intent on save - block it the same way a missing exact-alarm permission is blocked.
     val dueTimeIncomplete = dueTimeEnabled && (dueDate == null || dueTime == null)
     val dueTimeExactPermissionMissing = dueTimeEnabled && exactTimeEnabled && exactAlarmPermission?.isGranted == false
-    val canSubmit = (text.text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeExactPermissionMissing
+    val canSubmit = (textState.text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeExactPermissionMissing
     val openedAt = remember {
         dueTimeFormat.format(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time)
     }
@@ -305,7 +316,7 @@ fun TodoFormBody(
     val submit = {
         onConfirm(
             TodoDraft(
-                text = text.text.trim().ifEmpty { defaultText },
+                text = textState.text.trim().toString().ifEmpty { defaultText },
                 isPrioritized = isPrioritized,
                 recurrence = recurrence,
                 dueDate = dueDate,
@@ -321,7 +332,7 @@ fun TodoFormBody(
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val speechController = rememberSpeechToText(
-        onResult = { text = TextFieldValue(text = it, selection = TextRange(it.length)); onTextChange(it) }
+        onResult = { textState.setTextAndPlaceCursorAtEnd(it) }
     )
 
     LaunchedEffect(Unit) {
@@ -336,35 +347,31 @@ fun TodoFormBody(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 16.dp)
+            .padding(horizontal = AppSpacing.l)
+            .padding(bottom = AppSpacing.l)
     ) {
         if (showTitle) {
             Text(
                 text = stringResource(if (editingItem != null) Res.string.form_title_edit else Res.string.form_title_add),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = AppSpacing.s)
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(AppSpacing.l))
         }
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it; onTextChange(it.text) },
+        MaterialOutlinedTextField(
+            state = textState,
             label = { Text(stringResource(Res.string.form_text_label)) },
             placeholder = { Text(stringResource(Res.string.form_text_placeholder)) },
-            singleLine = false,
-            minLines = fieldMinLines,
-            maxLines = fieldMaxLines,
+            lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = fieldMinLines, maxHeightInLines = fieldMaxLines),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 imeAction = ImeAction.Done
             ),
-            keyboardActions = KeyboardActions(
-                onDone = { if (canSubmit) submit() }
-            ),
-            trailingIcon = if (text.text.isNotEmpty()) {
+            onKeyboardAction = { if (canSubmit) submit() },
+            compact = true,
+            trailingIcon = if (textState.text.isNotEmpty()) {
                 {
-                    IconButton(onClick = { text = TextFieldValue(""); onTextChange("") }) {
+                    IconButton(onClick = { textState.clearText() }) {
                         Icon(imageVector = Icons.Filled.Close, contentDescription = stringResource(Res.string.form_clear_text))
                     }
                 }
@@ -388,7 +395,7 @@ fun TodoFormBody(
                 .focusRequester(textFocusRequester)
         )
         if (showTags) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(AppSpacing.m))
             TodoFormTagsSection(
                 tags = tags,
                 knownTags = knownTags,
@@ -403,25 +410,25 @@ fun TodoFormBody(
                     onValueChange = { isPrioritized = it },
                     role = Role.Checkbox
                 )
-                .padding(vertical = 8.dp),
+                .padding(vertical = AppSpacing.s),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppCheckToggle(
                 checked = isPrioritized,
                 onCheckedChange = null
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(AppSpacing.m))
             Text(stringResource(Res.string.form_put_to_top))
         }
         if (showChecklist) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(AppSpacing.xs))
             TodoFormChecklistSection(
                 items = checklist,
                 onItemsChange = { checklist = it }
             )
         }
         if (showDueTime) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(AppSpacing.xs))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -435,28 +442,28 @@ fun TodoFormBody(
                         },
                         role = Role.Checkbox
                     )
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = AppSpacing.s),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AppCheckToggle(
                     checked = dueTimeEnabled,
                     onCheckedChange = null
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(AppSpacing.m))
                 Text(stringResource(Res.string.form_due_time))
             }
         }
         if (showDueTime && dueTimeEnabled) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(AppSpacing.s))
             // Mirrors the Recurrence section's bordered card below - same convention for a
             // checkbox-toggled block of detailed settings.
             OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(12.dp)
+                    modifier = Modifier.padding(AppSpacing.m)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.s)
                     ) {
                         ReadOnlyPickerField(
                             value = dueDate?.let { shortDateFormat.format(it) }.orEmpty(),
@@ -487,14 +494,14 @@ fun TodoFormBody(
                                 onValueChange = { exactTimeEnabled = it },
                                 role = Role.Checkbox
                             )
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = AppSpacing.s),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AppCheckToggle(
                             checked = exactTimeEnabled,
                             onCheckedChange = null
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(AppSpacing.m))
                         Text(stringResource(Res.string.form_exact_time))
                     }
                     // Notifications being off blocks delivery entirely regardless of exact/
@@ -517,7 +524,7 @@ fun TodoFormBody(
                                 color = MaterialTheme.colorScheme.background,
                                 shape = MaterialTheme.shapes.small
                             )
-                            .padding(horizontal = 8.dp, vertical = 8.dp)
+                            .padding(horizontal = AppSpacing.s, vertical = AppSpacing.s)
                     )
                     if (notificationPermission?.isGranted == false) {
                         TextButton(onClick = { notificationPermission.request(allowSettingsRedirect = true) }) {
@@ -584,11 +591,11 @@ fun TodoFormBody(
                     color = MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(AppSpacing.xl),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         TimePicker(state = timePickerState)
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(AppSpacing.s))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
@@ -596,7 +603,7 @@ fun TodoFormBody(
                             TextButton(onClick = { showDueTimePicker = false }) {
                                 Text(stringResource(Res.string.form_cancel))
                             }
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(AppSpacing.s))
                             TextButton(onClick = {
                                 dueTime = LocalTime(timePickerState.hour, timePickerState.minute)
                                 showDueTimePicker = false
@@ -609,7 +616,7 @@ fun TodoFormBody(
             }
         }
         if (showRecurrence) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(AppSpacing.xs))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -618,37 +625,37 @@ fun TodoFormBody(
                         onValueChange = { repeatEnabled = it },
                         role = Role.Checkbox
                     )
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = AppSpacing.s),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AppCheckToggle(
                     checked = repeatEnabled,
                     onCheckedChange = null
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(AppSpacing.m))
                 Text(stringResource(Res.string.form_repeat))
             }
         }
         if (showRecurrence && repeatEnabled) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(AppSpacing.s))
             // A real bordered section for just the recurrence controls - not the Repeat checkbox
             // above, which toggles the section rather than belonging inside it.
             OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(12.dp)
+                    modifier = Modifier.padding(AppSpacing.m)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(stringResource(Res.string.form_every))
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(AppSpacing.s))
                         IntervalCounter(
                             value = recurrenceInterval,
                             onValueChange = { recurrenceInterval = it }
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(AppSpacing.s))
                     RecurrenceSegmentedRow(
                         options = RecurrenceUnit.entries,
                         selected = recurrenceUnit,
@@ -673,14 +680,14 @@ fun TodoFormBody(
                                 },
                                 role = Role.Checkbox
                             )
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = AppSpacing.s),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AppCheckToggle(
                             checked = recurrenceType == RecurrenceType.AfterCompletion,
                             onCheckedChange = null
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(AppSpacing.m))
                         Text(stringResource(Res.string.form_only_after_completion))
                     }
                     recurrence?.let { current ->
@@ -693,7 +700,7 @@ fun TodoFormBody(
                                     color = MaterialTheme.colorScheme.background,
                                     shape = MaterialTheme.shapes.small
                                 )
-                                .padding(horizontal = 8.dp, vertical = 8.dp)
+                                .padding(horizontal = AppSpacing.s, vertical = AppSpacing.s)
                         )
                     }
                 }
@@ -707,7 +714,7 @@ fun TodoFormBody(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.form_discard))
             }
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(AppSpacing.s))
             Button(
                 onClick = submit,
                 enabled = canSubmit
@@ -783,15 +790,28 @@ private fun ReadOnlyPickerField(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            placeholder = { Text(placeholder) },
-            trailingIcon = { Icon(imageVector = icon, contentDescription = iconContentDescription) },
-            modifier = Modifier.fillMaxWidth()
-        )
+        // The whole field is one click target (the overlay below), so the trailing icon doesn't
+        // need its own 48dp touch area - dropping it lets the icon's padding shrink with the field's.
+        // The icon is then pinned to the field's edge, so it carries its own end padding; the gap
+        // on its start side already comes from the field's end padding.
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+            MaterialOutlinedTextField(
+                state = remember(value) { TextFieldState(value) },
+                readOnly = true,
+                label = { Text(label) },
+                placeholder = { Text(placeholder) },
+                trailingIcon = {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = iconContentDescription,
+                        modifier = Modifier.padding(end = AppSpacing.s)
+                    )
+                },
+                lineLimits = TextFieldLineLimits.SingleLine,
+                compact = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -837,10 +857,11 @@ private fun <T> RecurrenceSegmentedRow(
 ) {
     SingleChoiceSegmentedButtonRow(modifier = modifier) {
         options.forEachIndexed { index, option ->
-            SegmentedButton(
+            MaterialSegmentedButton(
                 selected = option == selected,
                 onClick = { onSelected(option) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                index = index,
+                count = options.size,
                 label = { Text(label(option)) }
             )
         }
