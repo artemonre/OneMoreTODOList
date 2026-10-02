@@ -493,7 +493,12 @@ private fun CompletedSummaryCard(
     // Same color as the bottom navigation bar, so the card reads as part of the app chrome
     // rather than as another todo.
     AppCard(modifier = modifier, containerColor = ShortNavigationBarDefaults.containerColor) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        // Extra padding on top of the card's own 8dp - 12dp total, same as the settings sections.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AppSpacing.xs)
+        ) {
             Text(
                 text = stringResource(Res.string.completed_summary_title),
                 style = MaterialTheme.typography.titleMedium

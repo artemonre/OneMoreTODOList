@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.settings.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -68,8 +69,12 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-// UI-only: which backup option the card shows. Not persisted - the card always opens on File.
-private enum class BackupTab { File, GoogleDrive }
+// Two buttons share one row, so the stock 24dp side padding leaves little room for the label.
+private val BACKUP_BUTTON_CONTENT_PADDING = PaddingValues(AppSpacing.s)
+
+// UI-only: which backup option the card shows, in tab order. Not persisted - the card always opens
+// on Google Drive where it's available, File everywhere else.
+private enum class BackupTab { GoogleDrive, File }
 
 private val lastBackupFormat = LocalDateTime.Format {
     date(LocalDate.Formats.ISO)
@@ -79,8 +84,8 @@ private val lastBackupFormat = LocalDateTime.Format {
     minute()
 }
 
-// The two backup options as tabs: a file (every platform) and Google Drive (Android only - the
-// tabs disappear where driveBackup is null). fileBackupAvailable is false where the platform has
+// The two backup options as tabs: Google Drive (Android only - the tabs disappear where driveBackup
+// is null) and a file (every platform). fileBackupAvailable is false where the platform has
 // no file dialog (see rememberBackupFileExporter); fileAutoBackup is null where daily automatic
 // file backup isn't possible (see rememberFileAutoBackup).
 @Composable
@@ -92,9 +97,11 @@ internal fun SettingsBackupCard(
     fileAutoBackup: FileAutoBackupController?,
     modifier: Modifier = Modifier
 ) {
-    var selectedTab by rememberSaveable { mutableStateOf(BackupTab.File) }
+    var selectedTab by rememberSaveable {
+        mutableStateOf(if (driveBackup != null) BackupTab.GoogleDrive else BackupTab.File)
+    }
     AppCard(modifier = modifier.fillMaxWidth()) {
-        Column {
+        Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
             Text(
                 text = stringResource(Res.string.settings_backup),
                 style = MaterialTheme.typography.titleMedium
@@ -190,12 +197,22 @@ internal fun BackupButtons(
             .padding(top = AppSpacing.m),
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.m)
     ) {
-        OutlinedButton(onClick = onBackup, enabled = enabled, modifier = Modifier.weight(1f)) {
+        OutlinedButton(
+            onClick = onBackup,
+            enabled = enabled,
+            contentPadding = BACKUP_BUTTON_CONTENT_PADDING,
+            modifier = Modifier.weight(1f)
+        ) {
             Icon(imageVector = backupIcon, contentDescription = null)
             Spacer(Modifier.width(ButtonDefaults.IconSpacing))
             Text(stringResource(Res.string.backup_now))
         }
-        OutlinedButton(onClick = onRestore, enabled = enabled, modifier = Modifier.weight(1f)) {
+        OutlinedButton(
+            onClick = onRestore,
+            enabled = enabled,
+            contentPadding = BACKUP_BUTTON_CONTENT_PADDING,
+            modifier = Modifier.weight(1f)
+        ) {
             Icon(imageVector = restoreIcon, contentDescription = null)
             Spacer(Modifier.width(ButtonDefaults.IconSpacing))
             Text(stringResource(Res.string.backup_restore))

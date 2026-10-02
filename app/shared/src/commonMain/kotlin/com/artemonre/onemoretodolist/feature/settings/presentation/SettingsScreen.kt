@@ -86,6 +86,10 @@ private const val PRIVACY_POLICY_URL = "https://artemonre.github.io/OneMoreTODOL
 
 private val AVAILABLE_PALETTES = listOf(ColorPaletteOption.Default, ColorPaletteOption.Slate)
 
+// Extra inner padding for settings sections on top of the card's own 8dp - together one spacing
+// step up (12dp), since these hold several rows of controls. Shared with SettingsBackupCard.
+internal val SETTINGS_CARD_CONTENT_PADDING = AppSpacing.xs
+
 // UI-only grouping for the Palette card's tabs - the persisted state is just ThemeConfig's
 // useDynamicColor flag; this enum exists only to drive AppSegmentedControl.
 private enum class PaletteSourceTab { Palettes, DynamicColor }
@@ -136,7 +140,7 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(AppSpacing.l)
     ) {
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_theme),
                     style = MaterialTheme.typography.titleMedium
@@ -153,7 +157,7 @@ fun SettingsScreen(
             }
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 // Dynamic color only exists on Android 12+ - everywhere else this card looks just
                 // like before (a plain "Palette" title, swatches always shown).
                 val dynamicColorSupported = isDynamicColorSupported()
@@ -207,7 +211,7 @@ fun SettingsScreen(
             }
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_font),
                     style = MaterialTheme.typography.titleMedium
@@ -222,7 +226,7 @@ fun SettingsScreen(
             }
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_ui_style),
                     style = MaterialTheme.typography.titleMedium
@@ -240,7 +244,7 @@ fun SettingsScreen(
             }
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_todos),
                     style = MaterialTheme.typography.titleMedium
@@ -276,7 +280,7 @@ fun SettingsScreen(
             fileAutoBackup = fileAutoBackup
         )
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_support),
                     style = MaterialTheme.typography.titleMedium
@@ -309,7 +313,9 @@ fun SettingsScreen(
         if (state.updateAvailable) {
             AppCard(modifier = Modifier.fillMaxWidth()) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(SETTINGS_CARD_CONTENT_PADDING),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {

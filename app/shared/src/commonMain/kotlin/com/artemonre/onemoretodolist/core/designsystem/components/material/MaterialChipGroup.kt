@@ -56,15 +56,16 @@ fun <T> MaterialChipGroup(
     }
     if (singleLine) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.s),
             modifier = modifier.horizontalScroll(rememberScrollState())
         ) {
             chips()
         }
     } else {
+        // No extra gap between wrapped rows - each chip's 48dp touch target already leaves 8dp
+        // above and below its 32dp body.
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.s),
             modifier = modifier
         ) {
             chips()
