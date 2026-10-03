@@ -9,7 +9,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 /**
  * Renders a single-choice chip group for the current [LocalUiStyle], falling back to the plain
  * Material3 chips for any style without its own implementation. [singleLine] keeps every chip on
- * one horizontally scrolling line instead of wrapping.
+ * one horizontally scrolling line instead of wrapping; [compact] makes the chips smaller.
  */
 @Composable
 fun <T> AppChipGroup(
@@ -18,11 +18,12 @@ fun <T> AppChipGroup(
     onOptionSelected: (T) -> Unit,
     label: (T) -> String,
     modifier: Modifier = Modifier,
-    singleLine: Boolean = false
+    singleLine: Boolean = false,
+    compact: Boolean = false
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine)
+        UiStyleOption.Material -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine, compact)
         // No Paper chips yet - fall back to Material.
-        UiStyleOption.Paper -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine)
+        UiStyleOption.Paper -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine, compact)
     }
 }

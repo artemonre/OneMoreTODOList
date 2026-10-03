@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.core.designsystem.components.material
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ButtonGroup
@@ -15,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 
@@ -54,6 +56,7 @@ fun <T> MaterialSegmentedControl(
                             else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                         },
                         interactionSource = interactionSource,
+                        contentPadding = PaddingValues(AppSpacing.s),
                         // No Modifier.animateWidth() here - per the M3 guidelines, growing the
                         // pressed button and compressing its neighbors on press is a *standard*
                         // button group behavior. A connected group (this one, replacing the old

@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -24,12 +25,12 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -44,8 +45,9 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarDefaults
+import androidx.compose.material3.ShortNavigationBarDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -74,6 +76,7 @@ import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalActionPlacement
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
@@ -99,8 +102,7 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_today
 import onemoretodolist.app.shared.generated.resources.mascot_staying
 import onemoretodolist.app.shared.generated.resources.mascot_staying_green
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
-import onemoretodolist.app.shared.generated.resources.sort_default
-import onemoretodolist.app.shared.generated.resources.sort_label
+import onemoretodolist.app.shared.generated.resources.sort_date
 import onemoretodolist.app.shared.generated.resources.sort_manual
 import onemoretodolist.app.shared.generated.resources.sort_text
 import onemoretodolist.app.shared.generated.resources.todo_filter_active
@@ -123,6 +125,8 @@ private val SWIPE_ACTION_WIDTH = 56.dp
 // room, so the last list item never ends up hidden behind it after a full scroll.
 private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
 private val MASCOT_HEIGHT = 160.dp
+// Half of ButtonDefaults.ContentPadding (24dp/8dp), snapped to the spacing scale.
+private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.xs)
 private const val MASCOT_AFTER_TODO_COUNT = 5
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
@@ -263,9 +267,9 @@ fun TodoListScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = WindowInsets.safeDrawing
                 .only(WindowInsetsSides.Top)
-                .add(WindowInsets(top = 8.dp, bottom = LIST_BOTTOM_CONTENT_PADDING))
+                .add(WindowInsets(top = AppSpacing.s, bottom = LIST_BOTTOM_CONTENT_PADDING))
                 .asPaddingValues(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.s)
         ) {
             item(key = "completed_summary") {
                 CompletedSummaryCard(
@@ -274,7 +278,7 @@ fun TodoListScreen(
                     thisMonthCount = state.doneThisMonthCount,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
+                        .padding(horizontal = AppSpacing.s)
                 )
             }
 
@@ -282,7 +286,10 @@ fun TodoListScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
+                        // Pinned to the sort button's tap-target height, so the row doesn't change
+                        // size when the button disappears on the Done filter.
+                        .heightIn(min = LocalMinimumInteractiveComponentSize.current)
+                        .padding(horizontal = AppSpacing.s),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -299,40 +306,37 @@ fun TodoListScreen(
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
+                        compact = true
                     )
                     // Done is always most-recently-completed first, so sorting only applies
                     // to Active.
                     if (state.filter == TodoListFilter.Active) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(Res.string.sort_label),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Box {
-                                Button(onClick = { sortMenuExpanded = true }) {
-                                    Text(stringResource(state.sortOption.displayName()))
-                                }
-                                DropdownMenu(
-                                    expanded = sortMenuExpanded,
-                                    onDismissRequest = { sortMenuExpanded = false }
-                                ) {
-                                    TodoSortOption.entries.forEach { option ->
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(option.displayName())) },
-                                            onClick = {
-                                                onAction(TodoListAction.OnSortOptionSelected(option))
-                                                sortMenuExpanded = false
-                                            },
-                                            trailingIcon = if (option == state.sortOption) {
-                                                { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
-                                            } else {
-                                                null
-                                            },
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
+                        Box {
+                            Button(
+                                onClick = { sortMenuExpanded = true },
+                                contentPadding = SORT_BUTTON_CONTENT_PADDING
+                            ) {
+                                Text(stringResource(state.sortOption.displayName()))
+                            }
+                            DropdownMenu(
+                                expanded = sortMenuExpanded,
+                                onDismissRequest = { sortMenuExpanded = false }
+                            ) {
+                                TodoSortOption.entries.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(option.displayName())) },
+                                        onClick = {
+                                            onAction(TodoListAction.OnSortOptionSelected(option))
+                                            sortMenuExpanded = false
+                                        },
+                                        trailingIcon = if (option == state.sortOption) {
+                                            { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
+                                        } else {
+                                            null
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
                                 }
                             }
                         }
@@ -387,7 +391,7 @@ fun TodoListScreen(
                                 .fillMaxWidth()
                                 .height(MASCOT_HEIGHT)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(AppSpacing.l))
                         Text(
                             text = if (state.filter == TodoListFilter.Done) {
                                 stringResource(Res.string.todo_list_empty_completed)
@@ -424,7 +428,7 @@ fun TodoListScreen(
             visible = showScrollToTop,
             modifier = Modifier.align(actionAlignment)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .padding(16.dp),
+                .padding(AppSpacing.l),
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
@@ -439,7 +443,7 @@ fun TodoListScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .padding(16.dp)
+                .padding(AppSpacing.l)
         )
     }
 
@@ -474,7 +478,7 @@ fun TodoListScreen(
 }
 
 private fun TodoSortOption.displayName(): StringResource = when (this) {
-    TodoSortOption.Date -> Res.string.sort_default
+    TodoSortOption.Date -> Res.string.sort_date
     TodoSortOption.Manual -> Res.string.sort_manual
     TodoSortOption.Text -> Res.string.sort_text
 }
@@ -488,13 +492,18 @@ private fun CompletedSummaryCard(
 ) {
     // Same color as the bottom navigation bar, so the card reads as part of the app chrome
     // rather than as another todo.
-    AppCard(modifier = modifier, containerColor = NavigationBarDefaults.containerColor) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+    AppCard(modifier = modifier, containerColor = ShortNavigationBarDefaults.containerColor) {
+        // Extra padding on top of the card's own 8dp - 12dp total, same as the settings sections.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AppSpacing.xs)
+        ) {
             Text(
                 text = stringResource(Res.string.completed_summary_title),
                 style = MaterialTheme.typography.titleMedium
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.s))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -578,7 +587,7 @@ private fun SwipeableTodoRow(
         Row(
             modifier = Modifier
                 .matchParentSize()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = AppSpacing.s)
                 .background(MaterialTheme.colorScheme.surfaceVariant, appListItemCardShape()),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
@@ -619,7 +628,7 @@ private fun SwipeableTodoRow(
             },
             onClick = onItemClick,
             modifier = Modifier
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = AppSpacing.s)
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }
                 .anchoredDraggable(
                     state = swipeState,

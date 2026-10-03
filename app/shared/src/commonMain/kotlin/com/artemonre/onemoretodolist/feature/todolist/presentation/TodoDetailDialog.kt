@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,6 +36,8 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.createPlainTextClipEntry
@@ -93,8 +95,11 @@ fun TodoDetailDialog(
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
 
-    AlertDialog(
+    MaterialAlertDialog(
         onDismissRequest = onDismiss,
+        // Tighter than stock below the text: half the bottom padding, two-thirds of the text-to-buttons gap.
+        contentPadding = PaddingValues(start = AppSpacing.xl, top = AppSpacing.xl, end = AppSpacing.xl, bottom = AppSpacing.m),
+        buttonsTopSpacing = AppSpacing.l,
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.action_close))
@@ -104,9 +109,9 @@ fun TodoDetailDialog(
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 if (item.tags.isNotEmpty()) {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs),
+                        verticalArrangement = Arrangement.spacedBy(AppSpacing.xs),
+                        modifier = Modifier.padding(bottom = AppSpacing.m)
                     ) {
                         item.tags.forEach { TodoTagChip(it) }
                     }
@@ -124,7 +129,7 @@ fun TodoDetailDialog(
                 // The one place checklist items get ticked off outside the edit form - each row is a
                 // single toggleable target, checkbox and text together.
                 if (item.checklist.isNotEmpty()) {
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(AppSpacing.m))
                     item.checklist.forEach { entry ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -135,10 +140,10 @@ fun TodoDetailDialog(
                                     onValueChange = { onToggleChecklistItem(entry.id) },
                                     role = Role.Checkbox
                                 )
-                                .padding(vertical = 4.dp)
+                                .padding(vertical = AppSpacing.xs)
                         ) {
                             AppCheckToggle(checked = entry.isDone, onCheckedChange = null)
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(AppSpacing.s))
                             Text(
                                 text = entry.text,
                                 textDecoration = if (entry.isDone) TextDecoration.LineThrough else null,

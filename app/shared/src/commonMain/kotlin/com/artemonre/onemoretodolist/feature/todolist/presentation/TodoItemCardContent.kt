@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TagColor
@@ -69,18 +70,17 @@ fun TodoItemCardContent(
     val dateStyle = MaterialTheme.typography.labelSmall
     val textRowHeight = with(density) { textStyle.lineHeight.toDp() * 2 }
     val dateHeight = with(density) { dateStyle.lineHeight.toDp() }
-    val dateSpacing = 4.dp
+    val dateSpacing = AppSpacing.xs
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (tags.isNotEmpty()) {
             // One line only - tags that don't fit are simply cut off here; the detail dialog and the
             // edit form show all of them.
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs),
                 maxLines = 1,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 4.dp)
             ) {
                 tags.forEach { TodoTagChip(it) }
             }
@@ -111,7 +111,7 @@ fun TodoItemCardContent(
                         style = textStyle,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 8.dp)
+                        modifier = Modifier
                     )
                     if (strikeProgress > 0f) {
                         Text(
@@ -121,7 +121,6 @@ fun TodoItemCardContent(
                             overflow = TextOverflow.Ellipsis,
                             textDecoration = TextDecoration.LineThrough,
                             modifier = Modifier
-                                .padding(start = 8.dp)
                                 .drawWithContent {
                                     clipRect(right = size.width * strikeProgress) {
                                         this@drawWithContent.drawContent()
@@ -135,7 +134,7 @@ fun TodoItemCardContent(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .offset(x = 8.dp, y = 8.dp)
+                    .offset(x = AppSpacing.xs, y = AppSpacing.xs)
             ) {
                 if (checklistTotal > 0) {
                     val progressDescription = stringResource(Res.string.checklist_progress_description, checklistDone, checklistTotal)
@@ -149,14 +148,14 @@ fun TodoItemCardContent(
                             tint = MaterialTheme.colorScheme.outline,
                             modifier = Modifier.size(CHECKLIST_ICON_SIZE)
                         )
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(AppSpacing.xs))
                         Text(
                             text = stringResource(Res.string.checklist_progress, checklistDone, checklistTotal),
                             style = dateStyle,
                             color = MaterialTheme.colorScheme.outline
                         )
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(AppSpacing.s))
                 }
                 Text(
                     text = formattedDate,

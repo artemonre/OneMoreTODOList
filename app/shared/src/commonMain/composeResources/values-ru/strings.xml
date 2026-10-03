@@ -66,10 +66,9 @@
     <string name="fab_open_menu">Открыть меню</string>
 
     <string name="todo_list_empty_active">Все задачи выполнены!\nДобавляй новые, когда понадобится, — без спешки.</string>
-    <string name="sort_label">Сортировка</string>
-    <string name="sort_default">По умолчанию</string>
+    <string name="sort_date">По дате</string>
     <string name="sort_manual">Вручную</string>
-    <string name="sort_text">По тексту</string>
+    <string name="sort_text">По алфавиту</string>
     <string name="action_undo">Отменить</string>
     <string name="action_edit">Изменить</string>
     <string name="action_delete">Удалить</string>
