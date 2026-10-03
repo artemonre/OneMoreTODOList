@@ -29,27 +29,66 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.artemonre.onemoretodolist.rememberAppUpdateLauncher
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.isDynamicColorSupported
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
+import com.artemonre.onemoretodolist.core.presentation.ObserveAsEvents
+import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
 import com.artemonre.onemoretodolist.core.theme.domain.FontOption
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
+import com.artemonre.onemoretodolist.feature.backup.presentation.DriveBackupController
+import com.artemonre.onemoretodolist.feature.backup.presentation.FileAutoBackupController
+import com.artemonre.onemoretodolist.rememberAppUpdateLauncher
+import com.artemonre.onemoretodolist.rememberBackupFileExporter
+import com.artemonre.onemoretodolist.rememberBackupFileImporter
+import com.artemonre.onemoretodolist.rememberDriveBackup
+import com.artemonre.onemoretodolist.rememberFileAutoBackup
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.settings_app_version
+import onemoretodolist.app.shared.generated.resources.settings_archive_completed
+import onemoretodolist.app.shared.generated.resources.settings_archive_completed_description
+import onemoretodolist.app.shared.generated.resources.settings_dynamic_color
+import onemoretodolist.app.shared.generated.resources.settings_dynamic_color_description
+import onemoretodolist.app.shared.generated.resources.settings_font
+import onemoretodolist.app.shared.generated.resources.settings_font_default
+import onemoretodolist.app.shared.generated.resources.settings_font_mono
+import onemoretodolist.app.shared.generated.resources.settings_font_serif
+import onemoretodolist.app.shared.generated.resources.settings_palette
+import onemoretodolist.app.shared.generated.resources.settings_palettes
+import onemoretodolist.app.shared.generated.resources.settings_privacy_policy
+import onemoretodolist.app.shared.generated.resources.settings_send_email
+import onemoretodolist.app.shared.generated.resources.settings_support
+import onemoretodolist.app.shared.generated.resources.settings_theme
+import onemoretodolist.app.shared.generated.resources.settings_theme_dark
+import onemoretodolist.app.shared.generated.resources.settings_theme_light
+import onemoretodolist.app.shared.generated.resources.settings_theme_system
+import onemoretodolist.app.shared.generated.resources.settings_todos
+import onemoretodolist.app.shared.generated.resources.settings_ui_style
+import onemoretodolist.app.shared.generated.resources.settings_ui_style_material
+import onemoretodolist.app.shared.generated.resources.settings_ui_style_paper
+import onemoretodolist.app.shared.generated.resources.settings_update
+import onemoretodolist.app.shared.generated.resources.settings_update_available
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val SUPPORT_EMAIL_URI = "mailto:artemonsupport@gmail.com"
 private const val PRIVACY_POLICY_URL = "https://artemonre.github.io/OneMoreTODOList/privacy-policy"
 
 private val AVAILABLE_PALETTES = listOf(ColorPaletteOption.Default, ColorPaletteOption.Slate)
+
+// Extra inner padding for settings sections on top of the card's own 8dp - together one spacing
+// step up (12dp), since these hold several rows of controls. Shared with SettingsBackupCard.
+internal val SETTINGS_CARD_CONTENT_PADDING = AppSpacing.xs
 
 // UI-only grouping for the Palette card's tabs - the persisted state is just ThemeConfig's
 // useDynamicColor flag; this enum exists only to drive AppSegmentedControl.
@@ -60,13 +99,36 @@ fun SettingsRoot(
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    SettingsScreen(state = state, onAction = viewModel::onAction)
+    val saveBackupFile = rememberBackupFileExporter(
+        onFinished = { saved -> viewModel.onAction(SettingsAction.OnExportFinished(saved)) }
+    )
+    val pickBackupFile = rememberBackupFileImporter(
+        onJsonRead = { json -> viewModel.onAction(SettingsAction.OnImportFileRead(json)) }
+    )
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            is SettingsEvent.SaveBackupFile -> saveBackupFile?.invoke(event.suggestedName, event.json)
+            SettingsEvent.PickBackupFile -> pickBackupFile?.invoke()
+        }
+    }
+    SettingsScreen(
+        state = state,
+        onAction = viewModel::onAction,
+        fileBackupAvailable = saveBackupFile != null && pickBackupFile != null,
+        driveBackup = rememberDriveBackup(),
+        fileAutoBackup = rememberFileAutoBackup()
+    )
 }
 
 @Composable
 fun SettingsScreen(
     state: SettingsState,
-    onAction: (SettingsAction) -> Unit
+    onAction: (SettingsAction) -> Unit,
+    fileBackupAvailable: Boolean = true,
+    // Null where Google Drive backup isn't available (anywhere but Android) - and in previews.
+    driveBackup: DriveBackupController? = null,
+    // Null where daily automatic file backup isn't available (anywhere but Android) - and in previews.
+    fileAutoBackup: FileAutoBackupController? = null
 ) {
     val startAppUpdate = rememberAppUpdateLauncher()
     Column(
@@ -74,28 +136,28 @@ fun SettingsScreen(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(AppSpacing.l),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.l)
     ) {
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
-                    text = "Theme",
+                    text = stringResource(Res.string.settings_theme),
                     style = MaterialTheme.typography.titleMedium
                 )
                 AppSegmentedControl(
                     options = ThemeMode.entries,
                     selectedOption = state.themeMode,
                     onOptionSelected = { onAction(SettingsAction.OnThemeModeSelected(it)) },
-                    label = { it.displayName() },
+                    label = resourceLabels(ThemeMode.entries) { it.displayName() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp)
+                        .padding(top = AppSpacing.m)
                 )
             }
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 // Dynamic color only exists on Android 12+ - everywhere else this card looks just
                 // like before (a plain "Palette" title, swatches always shown).
                 val dynamicColorSupported = isDynamicColorSupported()
@@ -110,19 +172,19 @@ fun SettingsScreen(
                         onOptionSelected = {
                             onAction(SettingsAction.OnUseDynamicColorChanged(it == PaletteSourceTab.DynamicColor))
                         },
-                        label = { it.displayName() },
+                        label = resourceLabels(PaletteSourceTab.entries) { it.displayName() },
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
                     Text(
-                        text = "Palette",
+                        text = stringResource(Res.string.settings_palette),
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
                 if (!dynamicColorSupported || !state.useDynamicColor) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(top = 12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.m),
+                        modifier = Modifier.padding(top = AppSpacing.m)
                     ) {
                         val isDarkTheme = when (state.themeMode) {
                             ThemeMode.System -> isSystemInDarkTheme()
@@ -140,34 +202,33 @@ fun SettingsScreen(
                     }
                 } else {
                     Text(
-                        text = "Colors are pulled from your wallpaper instead of a fixed palette, " +
-                            "and update automatically if you change it.",
+                        text = stringResource(Res.string.settings_dynamic_color_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 12.dp)
+                        modifier = Modifier.padding(top = AppSpacing.m)
                     )
                 }
             }
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
-                    text = "Font",
+                    text = stringResource(Res.string.settings_font),
                     style = MaterialTheme.typography.titleMedium
                 )
                 AppChipGroup(
                     options = FontOption.entries,
                     selectedOption = state.font,
                     onOptionSelected = { onAction(SettingsAction.OnFontSelected(it)) },
-                    label = { it.displayName() },
-                    modifier = Modifier.padding(top = 12.dp)
+                    label = resourceLabels(FontOption.entries) { it.displayName() },
+                    modifier = Modifier.padding(top = AppSpacing.m)
                 )
             }
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
-                    text = "UI Style",
+                    text = stringResource(Res.string.settings_ui_style),
                     style = MaterialTheme.typography.titleMedium
                 )
                 AppChipGroup(
@@ -177,25 +238,25 @@ fun SettingsScreen(
                     options = UiStyleOption.entries.filter { it != UiStyleOption.Paper },
                     selectedOption = state.uiStyle,
                     onOptionSelected = { onAction(SettingsAction.OnUiStyleSelected(it)) },
-                    label = { it.displayName() },
-                    modifier = Modifier.padding(top = 12.dp)
+                    label = resourceLabels(UiStyleOption.entries) { it.displayName() },
+                    modifier = Modifier.padding(top = AppSpacing.m)
                 )
             }
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
-                    text = "Todos",
+                    text = stringResource(Res.string.settings_todos),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp),
+                        .padding(top = AppSpacing.m),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Archive completed todos",
+                        text = stringResource(Res.string.settings_archive_completed),
                         modifier = Modifier.weight(1f)
                     )
                     Switch(
@@ -204,19 +265,24 @@ fun SettingsScreen(
                     )
                 }
                 Text(
-                    text = "When off, completing a todo in the app deletes it immediately (Undo is " +
-                        "offered via a snackbar). The widget's checkbox always archives instead, to " +
-                        "avoid an unrecoverable mis-tap.",
+                    text = stringResource(Res.string.settings_archive_completed_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = AppSpacing.xs)
                 )
             }
         }
+        SettingsBackupCard(
+            state = state,
+            onAction = onAction,
+            fileBackupAvailable = fileBackupAvailable,
+            driveBackup = driveBackup,
+            fileAutoBackup = fileAutoBackup
+        )
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
-                    text = "Support",
+                    text = stringResource(Res.string.settings_support),
                     style = MaterialTheme.typography.titleMedium
                 )
                 val uriHandler = LocalUriHandler.current
@@ -224,35 +290,37 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { uriHandler.openUri(SUPPORT_EMAIL_URI) }
-                        .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        .padding(top = AppSpacing.m),
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.m),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Filled.Email, contentDescription = null)
-                    Text("Send an email")
+                    Text(stringResource(Res.string.settings_send_email))
                 }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { uriHandler.openUri(PRIVACY_POLICY_URL) }
-                        .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        .padding(top = AppSpacing.m),
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.m),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Filled.PrivacyTip, contentDescription = null)
-                    Text("Privacy policy")
+                    Text(stringResource(Res.string.settings_privacy_policy))
                 }
             }
         }
         if (state.updateAvailable) {
             AppCard(modifier = Modifier.fillMaxWidth()) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(SETTINGS_CARD_CONTENT_PADDING),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "New version has come",
+                        text = stringResource(Res.string.settings_update_available),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Button(
@@ -261,39 +329,39 @@ fun SettingsScreen(
                             startAppUpdate?.invoke()
                         }
                     ) {
-                        Text("Update")
+                        Text(stringResource(Res.string.settings_update))
                     }
                 }
             }
         }
         Text(
-            text = "App version: ${state.appVersion}",
+            text = stringResource(Res.string.settings_app_version, state.appVersion),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
-private fun ThemeMode.displayName(): String = when (this) {
-    ThemeMode.System -> "System"
-    ThemeMode.Light -> "Light"
-    ThemeMode.Dark -> "Dark"
+private fun ThemeMode.displayName(): StringResource = when (this) {
+    ThemeMode.System -> Res.string.settings_theme_system
+    ThemeMode.Light -> Res.string.settings_theme_light
+    ThemeMode.Dark -> Res.string.settings_theme_dark
 }
 
-private fun PaletteSourceTab.displayName(): String = when (this) {
-    PaletteSourceTab.Palettes -> "Palettes"
-    PaletteSourceTab.DynamicColor -> "Dynamic color"
+private fun PaletteSourceTab.displayName(): StringResource = when (this) {
+    PaletteSourceTab.Palettes -> Res.string.settings_palettes
+    PaletteSourceTab.DynamicColor -> Res.string.settings_dynamic_color
 }
 
-private fun FontOption.displayName(): String = when (this) {
-    FontOption.Default -> "Default"
-    FontOption.Serif -> "Serif"
-    FontOption.Monospace -> "Mono"
+private fun FontOption.displayName(): StringResource = when (this) {
+    FontOption.Default -> Res.string.settings_font_default
+    FontOption.Serif -> Res.string.settings_font_serif
+    FontOption.Monospace -> Res.string.settings_font_mono
 }
 
-private fun UiStyleOption.displayName(): String = when (this) {
-    UiStyleOption.Material -> "Material"
-    UiStyleOption.Paper -> "Paper"
+private fun UiStyleOption.displayName(): StringResource = when (this) {
+    UiStyleOption.Material -> Res.string.settings_ui_style_material
+    UiStyleOption.Paper -> Res.string.settings_ui_style_paper
 }
 
 @Preview

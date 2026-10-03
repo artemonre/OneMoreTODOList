@@ -14,7 +14,6 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
-import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.presentation.toTodoItemUi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -69,11 +68,7 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
         // recomposition of an already-running session rather than a fresh provideGlance call, so
         // a one-shot snapshot here would silently miss the change until the session had happened
         // to already tear down (~45s idle) - which is why the old code updated inconsistently.
-        //
-        // Archived isn't an ordering of the active list at all (it's the Done-only view) - same
-        // fallback UpdateTopSince uses, so the widget's order and its notion of "top" always agree.
         val activeTodos = todoPreferences.sortOption
-            .map { it.takeUnless { option -> option == TodoSortOption.Archived } ?: TodoSortOption.Date }
             .flatMapLatest { sortOption -> observeActiveTodos(sortOption) }
             .map { todos -> todos.map { it.toTodoItemUi() } }
         val themeConfig = themeRepository.themeConfig

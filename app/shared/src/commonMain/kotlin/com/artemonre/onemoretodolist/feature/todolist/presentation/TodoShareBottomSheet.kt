@@ -23,8 +23,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.share_coming_soon
+import onemoretodolist.app.shared.generated.resources.share_make_note
+import onemoretodolist.app.shared.generated.resources.share_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TodoShareBottomSheet(
@@ -41,7 +47,7 @@ fun TodoShareBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = AppSpacing.l)
         ) {
             Text(
                 text = itemText,
@@ -50,12 +56,12 @@ fun TodoShareBottomSheet(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 24.dp, top = 20.dp, end = 24.dp, bottom = 12.dp)
+                    .padding(start = AppSpacing.xl, top = 20.dp, end = AppSpacing.xl, bottom = AppSpacing.m)
             )
             HorizontalDivider()
             ShareSheetRow(
                 icon = Icons.Filled.Share,
-                label = "Share",
+                label = stringResource(Res.string.share_title),
                 onClick = {
                     onShareClick()
                     onDismiss()
@@ -63,8 +69,8 @@ fun TodoShareBottomSheet(
             )
             ShareSheetRow(
                 icon = Icons.Filled.Create,
-                label = "Make a note",
-                caption = "Coming soon",
+                label = stringResource(Res.string.share_make_note),
+                caption = stringResource(Res.string.share_coming_soon),
                 enabled = false,
                 onClick = {}
             )
@@ -90,11 +96,11 @@ private fun ShareSheetRow(
         modifier = modifier
             .fillMaxWidth()
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = AppSpacing.l, vertical = AppSpacing.m),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(imageVector = icon, contentDescription = null, tint = contentColor)
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(AppSpacing.l))
         Column {
             Text(text = label, color = contentColor, style = MaterialTheme.typography.bodyLarge)
             if (caption != null) {

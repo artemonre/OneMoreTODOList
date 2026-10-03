@@ -11,7 +11,7 @@ import kotlin.coroutines.CoroutineContext
 
 @Database(
     entities = [TodoEntity::class],
-    version = 8,
+    version = 10,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class),
         AutoMigration(from = 3, to = 4),
@@ -27,7 +27,13 @@ import kotlin.coroutines.CoroutineContext
         // Adds the (nullable) dueDate/dueTime/dueTimeMode columns - existing rows get NULL (no due
         // time). Wall-clock local values, not a resolved instant, so "10am" keeps meaning 10am
         // local even if the timezone changes before it fires - see TodoItem.dueInstant.
-        AutoMigration(from = 7, to = 8)
+        AutoMigration(from = 7, to = 8),
+        // Adds snoozedUntil (nullable - no snooze) plus the checklist and tags JSON columns, which
+        // default to "[]" so existing rows read back as having no checklist items and no tags.
+        AutoMigration(from = 8, to = 9),
+        // Sync prep: adds updatedAt (NOT NULL, backfilled from lastEditDate - see
+        // BackfillUpdatedAt) and the nullable deletedAt tombstone column.
+        AutoMigration(from = 9, to = 10, spec = BackfillUpdatedAt::class)
     ]
 )
 @ColumnTypeConverters(TodoDateConverters::class)

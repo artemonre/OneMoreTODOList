@@ -3,41 +3,43 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
-import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
-import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
-import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
+import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
-import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
+import com.artemonre.onemoretodolist.feature.todolist.domain.knownTags
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
-import com.artemonre.onemoretodolist.feature.todolist.domain.topPriorityOrder
-import com.artemonre.onemoretodolist.feature.todolist.domain.topSortOrder
 import kotlin.time.Clock
-import kotlin.time.Instant
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.snackbar_todo_completed
+import onemoretodolist.app.shared.generated.resources.snackbar_todo_deleted
 
 private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
 
 class TodoListViewModel(
     private val todoLocalDataSource: TodoLocalDataSource,
     private val addTodoUseCase: AddTodo,
+    private val editTodoUseCase: EditTodo,
     private val toggleTodoDoneUseCase: ToggleTodoDone,
     private val todoPreferences: TodoPreferences,
     private val updateTopSince: UpdateTopSince,
@@ -47,18 +49,29 @@ class TodoListViewModel(
     private val todos = todoLocalDataSource.observeTodos()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), emptyList())
 
-    val state = combine(todos, todoPreferences.sortOption) { todos, sortOption ->
-        val statusFilter = if (sortOption == TodoSortOption.Archived) TodoStatus.Done else TodoStatus.Active
+    // Not persisted - the list always opens on Active, unlike sortOption.
+    private val filter = MutableStateFlow(TodoListFilter.Active)
+
+    val state = combine(todos, todoPreferences.sortOption, filter) { todos, sortOption, filter ->
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         // ISO week - Monday is day 1, so this is always this week's Monday, even on a Sunday.
         val startOfWeek = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
+        val startOfMonth = LocalDate(today.year, today.month, 1)
+        val items = when (filter) {
+            TodoListFilter.Active -> todos.filter { it.status == TodoStatus.Active }.sortedByOption(sortOption)
+            // Most recently completed first - sortOption only orders the active list.
+            TodoListFilter.Done -> todos.filter { it.status == TodoStatus.Done }.sortedByDescending { it.completionDate }
+        }
         TodoListState(
             sortOption = sortOption,
-            items = todos.filter { it.status == statusFilter }.sortedByOption(sortOption).map { it.toTodoItemUi() },
+            filter = filter,
+            items = items.map { it.toTodoItemUi() },
             activeCount = todos.count { it.status == TodoStatus.Active },
-            archivedCount = todos.count { it.status == TodoStatus.Done },
+            completedCount = todos.count { it.status == TodoStatus.Done },
             doneTodayCount = todos.count { it.completionDate == today },
-            doneThisWeekCount = todos.count { it.completionDate != null && it.completionDate >= startOfWeek }
+            doneThisWeekCount = todos.count { it.completionDate != null && it.completionDate >= startOfWeek },
+            doneThisMonthCount = todos.count { it.completionDate != null && it.completionDate >= startOfMonth },
+            knownTags = todos.knownTags()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), TodoListState())
 
@@ -70,6 +83,8 @@ class TodoListViewModel(
     // that offers Undo for it.
     private var pendingUndoItem: TodoItem? = null
 
+    private val checklistMutex = Mutex()
+
     fun onAction(action: TodoListAction) {
         when (action) {
             is TodoListAction.OnToggleDone -> toggleDone(action.id)
@@ -79,6 +94,7 @@ class TodoListViewModel(
                 // otherwise recompute who's "top" under the newly selected order.
                 updateTopSince()
             }
+            is TodoListAction.OnFilterSelected -> filter.value = action.filter
             is TodoListAction.OnReorder -> reorder(action.orderedIds)
             is TodoListAction.OnAddTodoClick -> {
                 viewModelScope.launch {
@@ -90,34 +106,27 @@ class TodoListViewModel(
                     _events.send(TodoListEvent.ShowAddTodoFullScreenDialog)
                 }
             }
-            is TodoListAction.OnConfirmAddTodo ->
-                addTodo(action.text, action.isPrioritized, action.recurrence, action.dueDate, action.dueTime, action.dueTimeMode)
+            is TodoListAction.OnConfirmAddTodo -> addTodo(action.draft)
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
-            is TodoListAction.OnConfirmEditTodo ->
-                editTodo(
-                    action.id,
-                    action.text,
-                    action.isPrioritized,
-                    action.recurrence,
-                    action.dueDate,
-                    action.dueTime,
-                    action.dueTimeMode
-                )
+            is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.draft)
+            is TodoListAction.OnToggleChecklistItem -> toggleChecklistItem(action.todoId, action.itemId)
             is TodoListAction.OnDeleteTodo -> deleteTodo(action.id)
             is TodoListAction.OnUndoClick -> undo()
         }
     }
 
-    private fun addTodo(
-        text: String,
-        isPrioritized: Boolean,
-        recurrence: Recurrence?,
-        dueDate: LocalDate?,
-        dueTime: LocalTime?,
-        dueTimeMode: DueTimeMode?
-    ) {
+    private fun addTodo(draft: TodoDraft) {
         viewModelScope.launch {
-            addTodoUseCase(text, isPrioritized, recurrence, dueDate, dueTime, dueTimeMode)
+            addTodoUseCase(
+                draft.text,
+                draft.isPrioritized,
+                draft.recurrence,
+                draft.dueDate,
+                draft.dueTime,
+                draft.dueTimeMode,
+                draft.checklist,
+                draft.tags
+            )
         }
     }
 
@@ -128,51 +137,36 @@ class TodoListViewModel(
         }
     }
 
-    private fun editTodo(
-        id: String,
-        text: String,
-        isPrioritized: Boolean,
-        recurrence: Recurrence?,
-        dueDate: LocalDate?,
-        dueTime: LocalTime?,
-        dueTimeMode: DueTimeMode?
-    ) {
-        val currentTodos = todos.value
-        val item = currentTodos.firstOrNull { it.id == id } ?: return
-        // Only newly-prioritized items jump to the top of Manual sort too - an item that was
-        // already prioritized keeps whatever position the user (re)ordered it to.
-        val becomingPrioritized = isPrioritized && item.priorityOrder == null
-        val updated = item.copy(
-            text = text.ifBlank { item.text },
-            lastEditDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
-            sortOrder = if (becomingPrioritized) topSortOrder(currentTodos) else item.sortOrder,
-            priorityOrder = if (isPrioritized) {
-                item.priorityOrder ?: topPriorityOrder(currentTodos)
-            } else {
-                null
-            },
-            recurrence = recurrence,
-            recurrenceAnchorInstant = recurrenceAnchorInstant(item, recurrence),
-            dueDate = dueDate,
-            dueTime = dueTime,
-            dueTimeMode = dueTimeMode
-        )
+    private fun editTodo(id: String, draft: TodoDraft) {
         viewModelScope.launch {
-            todoLocalDataSource.upsertTodo(updated)
-            dueTimeScheduler.reschedule(updated)
+            editTodoUseCase(
+                id,
+                draft.text,
+                draft.isPrioritized,
+                draft.recurrence,
+                draft.dueDate,
+                draft.dueTime,
+                draft.dueTimeMode,
+                draft.checklist,
+                draft.tags
+            )
         }
     }
 
-    // Every keeps its existing anchor as long as the rule itself is unchanged (same type/interval/
-    // unit) - only a genuinely new or changed rule restarts the countdown from now. AfterCompletion
-    // always keeps whatever anchor it already had (null if never completed) regardless of edits -
-    // its anchor is tied to when it was actually completed, not to the rule, so a changed interval
-    // should still count from that same completion instant, not restart it.
-    private fun recurrenceAnchorInstant(item: TodoItem, newRecurrence: Recurrence?): Instant? {
-        if (newRecurrence?.type != RecurrenceType.Every) {
-            return item.recurrenceAnchorInstant.takeIf { newRecurrence?.type == RecurrenceType.AfterCompletion }
+    // Ticking an item off is a lightweight change, not an edit - lastEditDate and the todo's own
+    // status stay as they are (finishing every item doesn't complete the todo). Reads the latest
+    // stored todo under a lock rather than todos.value: two quick taps would otherwise both start
+    // from the same stale checklist, and the second write would silently undo the first.
+    private fun toggleChecklistItem(todoId: String, itemId: String) {
+        viewModelScope.launch {
+            checklistMutex.withLock {
+                val item = todoLocalDataSource.observeTodos().first().firstOrNull { it.id == todoId } ?: return@withLock
+                val updated = item.copy(
+                    checklist = item.checklist.map { if (it.id == itemId) it.copy(isDone = !it.isDone) else it }
+                )
+                todoLocalDataSource.upsertTodo(updated)
+            }
         }
-        return item.recurrenceAnchorInstant.takeIf { item.recurrence == newRecurrence } ?: Clock.System.now()
     }
 
     private fun reorder(orderedIds: List<String>) {
@@ -193,7 +187,7 @@ class TodoListViewModel(
             todoLocalDataSource.deleteTodo(id)
             dueTimeScheduler.cancel(id)
             pendingUndoItem = item
-            _events.send(TodoListEvent.ShowUndoSnackbar("Todo deleted"))
+            _events.send(TodoListEvent.ShowUndoSnackbar(Res.string.snackbar_todo_deleted))
         }
     }
 
@@ -215,7 +209,7 @@ class TodoListViewModel(
             // a reversal.
             if (item.status == TodoStatus.Active) {
                 pendingUndoItem = item
-                _events.send(TodoListEvent.ShowUndoSnackbar("Todo completed"))
+                _events.send(TodoListEvent.ShowUndoSnackbar(Res.string.snackbar_todo_completed))
             }
         }
     }

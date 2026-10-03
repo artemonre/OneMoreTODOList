@@ -17,6 +17,12 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListAction
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListRoot
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListViewModel
+import kotlinx.serialization.modules.subclass
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.fab_capture_note
+import onemoretodolist.app.shared.generated.resources.fab_create_todo
+import onemoretodolist.app.shared.generated.resources.tab_todo
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 fun EntryProviderScope<NavKey>.todoListEntries() {
@@ -40,13 +46,13 @@ private fun TodoListFab(viewModel: TodoListViewModel = koinViewModel()) {
             // before), this menu entry opens the full-screen add flow - a more detailed creation
             // flow may replace it there later.
             FabMenuItem(
-                label = "Create a todo",
+                label = stringResource(Res.string.fab_create_todo),
                 icon = addIcon,
                 onClick = { viewModel.onAction(TodoListAction.OnAddTodoFullScreenClick) }
             ),
             // Common, not screen-specific - no action wired up yet.
             FabMenuItem(
-                label = "Capture a note",
+                label = stringResource(Res.string.fab_capture_note),
                 icon = Icons.Filled.PhotoCamera,
                 enabled = false,
                 onClick = {}
@@ -56,9 +62,10 @@ private fun TodoListFab(viewModel: TodoListViewModel = koinViewModel()) {
 }
 
 fun todoListTab(): NavigationTab = NavigationTab(
-    label = "Todo",
+    label = Res.string.tab_todo,
     icon = Icons.AutoMirrored.Filled.List,
     startDestination = TodoListRoute.List,
     entries = { todoListEntries() },
+    registerRoutes = { subclass(TodoListRoute.List::class) },
     fab = { TodoListFab() }
 )

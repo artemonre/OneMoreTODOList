@@ -40,13 +40,16 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFlipVisibility
 import com.artemonre.onemoretodolist.core.designsystem.components.AppNavigationBar
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
-import com.artemonre.onemoretodolist.feature.settings.navigation.SettingsRoute
-import com.artemonre.onemoretodolist.feature.todolist.navigation.TodoListRoute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.tab_settings
+import onemoretodolist.app.shared.generated.resources.tab_todo
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -66,28 +69,26 @@ private fun tabSlideLeft(): ContentTransform =
 private fun tabSlideRight(): ContentTransform =
     slideInHorizontally(initialOffsetX = { -it }) togetherWith slideOutHorizontally(targetOffsetX = { it })
 
-// Every feature's NavKey subtypes must be registered here so the back stack can be
-// saved/restored across process death. Add a `subclass(...)` line per new route as
-// features are added.
-private val navSavedStateConfiguration = SavedStateConfiguration {
+// Every tab's NavKey subtypes, so the back stack can be saved/restored across process death -
+// each tab registers its own (NavigationTab.registerRoutes).
+private fun navSavedStateConfiguration(tabs: List<NavigationTab>) = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
-            subclass(TodoListRoute.List::class)
-            subclass(SettingsRoute.Main::class)
+            tabs.forEach { it.registerRoutes(this) }
         }
     }
 }
 
 @Composable
 fun ContainerRoot(
-    contentTabs: List<NavigationTab>,
-    viewModel: ContainerViewModel = koinViewModel(parameters = { parametersOf(contentTabs) })
+    tabs: List<NavigationTab>,
+    viewModel: ContainerViewModel = koinViewModel(parameters = { parametersOf(tabs) })
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     // ON_START fires both on first launch and on every later foreground (unlike LaunchedEffect(Unit),
-    // which only ran once per process - see ContainerViewModel.OnStart for why a resume needs to
-    // re-run this too, not just a cold start.
+    // which only ran once per process) - start tasks need a resume too, not just a cold start (see
+    // TodoListStartTask).
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
         viewModel.onAction(ContainerAction.OnStart)
     }
@@ -100,9 +101,10 @@ fun ContainerScreen(
     state: ContainerState,
     onAction: (ContainerAction) -> Unit
 ) {
+    val savedStateConfiguration = remember(state.tabs) { navSavedStateConfiguration(state.tabs) }
     val backStack = rememberNavBackStack(
-        navSavedStateConfiguration,
-        state.tabs.getOrNull(state.selectedTabIndex)?.startDestination ?: TodoListRoute.List
+        savedStateConfiguration,
+        (state.tabs.getOrNull(state.selectedTabIndex) ?: state.tabs.first()).startDestination
     )
 
     // A tab switch replaces the back stack wholesale (see below) rather than pushing/popping it,
@@ -146,7 +148,7 @@ fun ContainerScreen(
                         onAction(ContainerAction.OnTabSelected(index))
                     },
                     icon = { it.icon },
-                    label = { it.label },
+                    label = resourceLabels(state.tabs) { it.label },
                     modifier = Modifier.onGloballyPositioned { navBarHeightPx = it.size.height }
                 )
             }
@@ -200,16 +202,19 @@ private fun ContainerScreenPreview() {
             state = ContainerState(
                 tabs = listOf(
                     NavigationTab(
-                        label = "Todo",
+                        label = Res.string.tab_todo,
                         icon = Icons.AutoMirrored.Filled.ListIcon,
                         startDestination = ContainerPreviewRoute,
-                        entries = { entry(ContainerPreviewRoute) { } }
+                        entries = { entry(ContainerPreviewRoute) { } },
+                        registerRoutes = { subclass(ContainerPreviewRoute::class) }
                     ),
                     NavigationTab(
-                        label = "Settings",
+                        label = Res.string.tab_settings,
                         icon = Icons.Filled.Settings,
                         startDestination = ContainerPreviewRoute,
-                        entries = { entry(ContainerPreviewRoute) { } }
+                        entries = { entry(ContainerPreviewRoute) { } },
+                        // Same route as the first tab - registering it twice would throw.
+                        registerRoutes = {}
                     )
                 ),
                 selectedTabIndex = 0

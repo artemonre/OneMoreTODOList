@@ -1,8 +1,10 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
+import org.jetbrains.compose.resources.StringResource
+
 sealed interface TodoListEvent {
     data object ShowAddTodoSheet : TodoListEvent
     data object ShowAddTodoFullScreenDialog : TodoListEvent
     data class ShowEditTodoSheet(val item: TodoItemUi) : TodoListEvent
-    data class ShowUndoSnackbar(val message: String) : TodoListEvent
+    data class ShowUndoSnackbar(val message: StringResource) : TodoListEvent
 }

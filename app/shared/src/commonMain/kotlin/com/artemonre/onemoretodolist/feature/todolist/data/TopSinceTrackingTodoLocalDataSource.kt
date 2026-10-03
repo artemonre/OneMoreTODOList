@@ -8,6 +8,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
@@ -44,4 +45,17 @@ class TopSinceTrackingTodoLocalDataSource(
         if (result is Result.Success) updateTopSince()
         return result
     }
+
+    override suspend fun getAllIncludingDeleted(): List<TodoItem> = delegate.getAllIncludingDeleted()
+
+    // Copies arriving from elsewhere (import, restore, sync) can reshuffle the top just like a
+    // local edit can.
+    override suspend fun upsertVerbatim(todos: List<TodoItem>): EmptyResult<DataError.Local> {
+        val result = delegate.upsertVerbatim(todos)
+        if (result is Result.Success) updateTopSince()
+        return result
+    }
+
+    override suspend fun purgeDeletedBefore(cutoff: Instant): EmptyResult<DataError.Local> =
+        delegate.purgeDeletedBefore(cutoff)
 }

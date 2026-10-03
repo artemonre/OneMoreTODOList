@@ -9,6 +9,7 @@ keystore.properties
 play-publisher-credentials.json
 sentry.properties
 posthog.properties
+admob.properties
 *.jks
 *.keystore
 .idea
@@ -24,3 +25,5 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 /release-notes/
+/ROADMAP.md
+gateway/*/release/

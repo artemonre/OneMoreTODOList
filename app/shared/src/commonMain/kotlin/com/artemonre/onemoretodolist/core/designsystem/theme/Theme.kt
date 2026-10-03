@@ -41,7 +41,8 @@ fun AppTheme(
     CompositionLocalProvider(
         LocalAppIcons provides themeConfig.iconSet.toAppIcons(),
         LocalActionPlacement provides themeConfig.actionPlacement,
-        LocalUiStyle provides themeConfig.uiStyle
+        LocalUiStyle provides themeConfig.uiStyle,
+        LocalAccentSwatches provides if (useDarkTheme) DarkAccentSwatches else LightAccentSwatches
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

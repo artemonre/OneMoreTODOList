@@ -3,6 +3,7 @@ import com.github.triplet.gradle.androidpublisher.ResolutionStrategy
 
 plugins {
     id("gateway.application")
+    alias(libs.plugins.ksp)
     alias(libs.plugins.sentryAndroidGradle)
     alias(libs.plugins.gradlePlayPublisher)
 }
@@ -16,6 +17,11 @@ android {
         debug {
             resValue("string", "app_name", "OneMoreTODOList-dev")
         }
+    }
+    // Local JVM unit tests (src/test) cover plain Kotlin logic only - anything that reaches into
+    // the Android framework stubs gets a default value instead of a "not mocked" crash.
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
 }
 
@@ -72,12 +78,87 @@ play {
     resolutionStrategy.set(ResolutionStrategy.AUTO)
 }
 
+// Release guardrails - every task that uploads a build to Play (publish*Bundle/Apk/Apps,
+// promote*Artifact) first runs verifyReleaseReady, which fails unless:
+// - the current branch is release/v<versionName> and has no uncommitted changes to tracked files
+//   (a release is always cut on its own branch, never straight from develop or master)
+// - no v<versionName> tag exists yet (catches a forgotten versionName bump)
+// - release-notes/v<versionName>.md exists and carries an "Approved: yes" line - added only after
+//   the notes were reviewed and accepted - and its "## Play notes" section matches alpha.txt
+//   exactly and fits Play's 500-character limit
+// Listing/products/subscriptions tasks aren't tied to a build version, so they're not gated.
+val verifyReleaseReady = tasks.register("verifyReleaseReady") {
+    group = "publishing"
+    description = "Fails unless this checkout is in a state that's allowed to publish to Play."
+    // Locals rather than script-level vals - the configuration cache can't serialize a doLast that
+    // reaches back into the build script object.
+    val releaseVersionName = android.defaultConfig.versionName.orEmpty()
+    val releaseBranch = providers.exec { commandLine("git", "rev-parse", "--abbrev-ref", "HEAD") }
+        .standardOutput.asText.map { it.trim() }
+    val trackedChanges = providers.exec { commandLine("git", "status", "--porcelain", "--untracked-files=no") }
+        .standardOutput.asText.map { it.trim() }
+    val existingReleaseTag = providers.exec { commandLine("git", "tag", "--list", "v$releaseVersionName") }
+        .standardOutput.asText.map { it.trim() }
+    val releaseNotesDraft = rootProject.layout.projectDirectory.file("release-notes/v$releaseVersionName.md")
+    val playReleaseNotes = layout.projectDirectory.file("src/main/play/release-notes/en-US/alpha.txt")
+    doLast {
+        val problems = buildList {
+            val expectedBranch = "release/v$releaseVersionName"
+            if (releaseBranch.get() != expectedBranch) {
+                add("Publish only from $expectedBranch - current branch is ${releaseBranch.get()}.")
+            }
+            if (trackedChanges.get().isNotEmpty()) {
+                add("Commit or discard tracked changes first:\n${trackedChanges.get()}")
+            }
+            if (existingReleaseTag.get().isNotEmpty()) {
+                add("Tag v$releaseVersionName already exists - bump versionName for a new release.")
+            }
+            val draftFile = releaseNotesDraft.asFile
+            if (!draftFile.isFile) {
+                add("Missing ${draftFile.path} - draft the release notes and get them reviewed first.")
+            } else {
+                val draft = draftFile.readText()
+                if (draft.lines().none { it.trim().equals("Approved: yes", ignoreCase = true) }) {
+                    add("Release notes v$releaseVersionName aren't approved yet (no \"Approved: yes\" line).")
+                }
+                val approvedPlayNotes = draft.substringAfter("## Play notes", missingDelimiterValue = "")
+                    .substringAfter('\n').trim()
+                val publishedPlayNotes = playReleaseNotes.asFile.readText().trim()
+                if (approvedPlayNotes != publishedPlayNotes) {
+                    add("alpha.txt doesn't match the approved \"## Play notes\" section of ${draftFile.name}.")
+                }
+                if (publishedPlayNotes.length > 500) {
+                    add("alpha.txt is ${publishedPlayNotes.length} characters - Play allows 500.")
+                }
+            }
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException("Not ready to publish:\n- " + problems.joinToString("\n- "))
+        }
+    }
+}
+
+tasks.matching { task ->
+    listOf("Bundle", "Apk", "Apps").any { task.name.startsWith("publish") && task.name.endsWith(it) } ||
+        (task.name.startsWith("promote") && task.name.endsWith("Artifact"))
+}.configureEach { dependsOn(verifyReleaseReady) }
+
 dependencies {
     implementation(libs.compose.material3)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    implementation(libs.androidx.appfunctions)
+    ksp(libs.androidx.appfunctions.compiler)
+    testImplementation(libs.kotlin.testJunit)
     debugImplementation(libs.androidx.glance.preview)
     debugImplementation(libs.androidx.glance.appwidget.preview)
+}
+
+// AppFunctions (on-device agent access, see appfunctions/BaseTodoAppFunctionService.kt): the
+// compiler generates the concrete service plus the XML that describes every function to the OS.
+// Aggregation is on for this module since it's the app that ships the service.
+ksp {
+    arg("appfunctions:aggregateAppFunctions", "true")
 }

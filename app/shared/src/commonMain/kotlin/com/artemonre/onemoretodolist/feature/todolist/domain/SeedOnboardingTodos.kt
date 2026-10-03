@@ -67,9 +67,13 @@ val ONBOARDING_TODOS = listOf(
 class SeedOnboardingTodos(
     private val todoLocalDataSource: TodoLocalDataSource
 ) {
-    suspend operator fun invoke() {
+    // texts replaces each sample todo's (English) text by position, so the samples arrive in the
+    // user's language - any missing entry keeps the English default.
+    suspend operator fun invoke(texts: List<String> = emptyList()) {
         if (todoLocalDataSource.observeTodos().first().isNotEmpty()) return
 
-        ONBOARDING_TODOS.forEach { todoLocalDataSource.upsertTodo(it) }
+        ONBOARDING_TODOS.forEachIndexed { index, todo ->
+            todoLocalDataSource.upsertTodo(todo.copy(text = texts.getOrElse(index) { todo.text }))
+        }
     }
 }

@@ -8,7 +8,7 @@ import androidx.core.content.getSystemService
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
-import com.artemonre.onemoretodolist.feature.todolist.domain.dueInstant
+import com.artemonre.onemoretodolist.feature.todolist.domain.nextAlarmInstant
 import kotlin.time.Duration.Companion.minutes
 
 // Broadcast to whichever component (in the gateway module - app:shared can't reference it
@@ -32,7 +32,9 @@ class AndroidAlarmDueTimeScheduler(private val context: Context) : DueTimeSchedu
         // toggle, on boot, on a timezone change, ...) - todo.dueDate/dueTime are wall-clock local
         // values, not a fixed instant, so "10am" keeps meaning 10am local even across a timezone
         // change, rather than staying pinned to whatever zone was active when it was first set.
-        val dueAt = todo.dueInstant() ?: return
+        // The earlier of the due time and any pending snooze - see TodoItem.snoozedUntil. A snooze
+        // reuses the todo's own dueTimeMode (Exact only if the user already opted into that).
+        val dueAt = todo.nextAlarmInstant() ?: return
         val pendingIntent = pendingIntentFor(todo.id, create = true) ?: return
         val dueAtMillis = dueAt.toEpochMilliseconds()
         if (todo.dueTimeMode == DueTimeMode.Exact) {

@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import kotlin.time.Duration
@@ -39,8 +40,6 @@ val CARD_SHAPE_RADIUS = 4.dp
 // Exposed so callers that draw behind/around the card (e.g. a swipe-reveal background) can match
 // its corners exactly - see AppListItemCardShape.
 val PaperListItemCardShape: Shape = RoundedCornerShape(CARD_SHAPE_RADIUS)
-
-private val CARD_CONTENT_PADDING = 8.dp
 
 // Kept above Material3's 1.dp ElevatedCard default so the press-flatten effect reads more clearly.
 private val CARD_ELEVATION = 6.dp
@@ -109,7 +108,7 @@ fun ListItemCard(
             CardDefaults.elevatedCardColors()
         }
     ) {
-        Box(modifier = Modifier.padding(CARD_CONTENT_PADDING)) {
+        Box(modifier = Modifier.padding(AppSpacing.s)) {
             content()
         }
     }

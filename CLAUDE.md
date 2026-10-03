@@ -40,6 +40,16 @@ No detekt/ktlint config and no CI workflows exist in this repo yet.
 
 `gateway/todoList` uses the Gradle Play Publisher plugin (`./gradlew :gateway:todoList:publishBundle`) with `resolutionStrategy.set(ResolutionStrategy.AUTO)`. This **overrides** the shared convention's "every merge into master auto-increments versionCode by 1" rule for this project — GPP picks a versionCode higher than whatever's already live on Play at publish time, so `defaultConfig`'s `versionCode` no longer needs manual bumping. `versionName` is still always asked for manually, per the shared convention.
 
+Release pipeline (overrides the shared convention's "merge into master, then build, then tag" order for this project — Claude doesn't merge into `master` here):
+1. Draft `release-notes/vX.Y.Z.md` (local-only, gitignored) with a `## Play notes` section (the condensed `alpha.txt` text) and get it reviewed. Only after explicit approval add an `Approved: yes` line to it.
+2. Create `release/vX.Y.Z` from `develop`, bump `versionName`, copy the approved Play notes into `gateway/todoList/src/main/play/release-notes/en-US/alpha.txt`, commit, push the branch.
+3. Run `./gradlew :gateway:todoList:publishBundle` from that branch (closed testing / alpha track only).
+4. Tag `vX.Y.Z` on that commit and push the tag.
+5. Open a PR `release/vX.Y.Z` → `master` for the user to merge.
+6. Once that PR is merged, update `develop` from `master` (merge `master` into `develop`) — never from the release branch directly.
+
+Every build-uploading Play task (`publish*Bundle/Apk/Apps`, `promote*Artifact`) depends on `verifyReleaseReady` (in `gateway/todoList/build.gradle.kts`), which fails unless: the branch is `release/v<versionName>` with no uncommitted tracked changes, no `v<versionName>` tag exists yet, and `release-notes/v<versionName>.md` is approved and its Play notes match `alpha.txt` (max 500 characters). Production releases aren't gated by the build — they need an explicit `--track production` and are limited by the Play service account's permissions.
+
 ## Architecture
 
 Gradle modules (declared in `settings.gradle.kts`):

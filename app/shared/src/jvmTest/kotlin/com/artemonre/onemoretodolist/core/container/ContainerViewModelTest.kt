@@ -1,16 +1,12 @@
 package com.artemonre.onemoretodolist.core.container
 
-import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
-import com.artemonre.onemoretodolist.feature.todolist.domain.FakeTodoLocalDataSource
-import com.artemonre.onemoretodolist.feature.todolist.domain.ONBOARDING_TODOS
-import com.artemonre.onemoretodolist.feature.todolist.domain.SeedOnboardingTodos
+import com.artemonre.onemoretodolist.core.domain.AppStartTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -32,28 +28,24 @@ class ContainerViewModelTest {
     }
 
     @Test
-    fun `OnStart action triggers onboarding seeding`() = runTest(testDispatcher) {
-        val dataSource = FakeTodoLocalDataSource()
+    fun `OnStart runs every start task in order, again on each start`() = runTest(testDispatcher) {
+        val ran = mutableListOf<String>()
         val viewModel = ContainerViewModel(
-            contentTabs = emptyList(),
-            seedOnboardingTodos = SeedOnboardingTodos(dataSource),
-            applyDueRecurrences = ApplyDueRecurrences(dataSource)
+            tabs = emptyList(),
+            startTasks = listOf(AppStartTask { ran += "first" }, AppStartTask { ran += "second" })
         )
 
         viewModel.onAction(ContainerAction.OnStart)
         testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.onAction(ContainerAction.OnStart)
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(ONBOARDING_TODOS.size, dataSource.observeTodos().first().size)
+        assertEquals(listOf("first", "second", "first", "second"), ran)
     }
 
     @Test
     fun `OnTabSelected action updates the selected tab index`() = runTest(testDispatcher) {
-        val dataSource = FakeTodoLocalDataSource()
-        val viewModel = ContainerViewModel(
-            contentTabs = emptyList(),
-            seedOnboardingTodos = SeedOnboardingTodos(dataSource),
-            applyDueRecurrences = ApplyDueRecurrences(dataSource)
-        )
+        val viewModel = ContainerViewModel(tabs = emptyList(), startTasks = emptyList())
 
         viewModel.onAction(ContainerAction.OnTabSelected(1))
 
