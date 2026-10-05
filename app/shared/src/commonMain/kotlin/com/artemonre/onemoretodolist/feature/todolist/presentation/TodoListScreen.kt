@@ -40,9 +40,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -313,7 +313,7 @@ fun TodoListScreen(
                     // to Active.
                     if (state.filter == TodoListFilter.Active) {
                         Box {
-                            Button(
+                            FilledTonalButton(
                                 onClick = { sortMenuExpanded = true },
                                 contentPadding = SORT_BUTTON_CONTENT_PADDING
                             ) {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.luminance
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
@@ -48,6 +49,9 @@ fun AppTheme(
             colorScheme = colorScheme,
             typography = appTypography(themeConfig.font.toFontFamily())
         ) {
+            // Driven by the rendered background color rather than useDarkTheme so it stays correct
+            // across dynamic color and custom palettes too.
+            ConfigureSystemBarIcons(darkIcons = colorScheme.background.luminance() > 0.5f)
             if (paintBackground) {
                 AppBackground(style = themeConfig.background, content = content)
             } else {

@@ -50,7 +50,7 @@ fun TodoItemCard(
                 .fillMaxWidth()
                 .cloudTexture(
                     seed = id.hashCode(),
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.background,
                     isDarkTheme = MaterialTheme.colorScheme.surface.luminance() <= 0.5f
                 )
         ) {
