@@ -459,15 +459,16 @@ fun TodoListScreen(
     }
 
     shareItem?.let { item ->
+        val shareText = rememberShareText(item)
         TodoShareBottomSheet(
-            itemText = item.text,
+            shareText = shareText,
             onShareClick = {
                 val launcher = nativeShareLauncher
                 if (launcher != null) {
-                    launcher(item.text)
+                    launcher(shareText)
                 } else {
                     coroutineScope.launch {
-                        clipboard.setClipEntry(createPlainTextClipEntry(item.text))
+                        clipboard.setClipEntry(createPlainTextClipEntry(shareText))
                         snackbarHostState.showSnackbar(getString(Res.string.snackbar_copied))
                     }
                 }

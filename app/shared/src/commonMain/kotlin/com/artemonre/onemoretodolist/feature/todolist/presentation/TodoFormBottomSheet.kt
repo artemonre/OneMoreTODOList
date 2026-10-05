@@ -102,7 +102,6 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format.MonthNames
-import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import onemoretodolist.app.shared.generated.resources.Res
@@ -840,12 +839,6 @@ private fun localNow(): LocalDateTime = Clock.System.now().toLocalDateTime(TimeZ
 private fun earliestReminder(): LocalDateTime {
     val earliest = (Clock.System.now() + REMINDER_LEAD_TIME).toLocalDateTime(TimeZone.currentSystemDefault())
     return LocalDateTime(earliest.date, LocalTime(earliest.hour, earliest.minute))
-}
-
-private val dueTimeFormat = LocalTime.Format {
-    hour()
-    char(':')
-    minute()
 }
 
 // A read-only OutlinedTextField that opens a picker on tap - the field itself exposes no onClick,

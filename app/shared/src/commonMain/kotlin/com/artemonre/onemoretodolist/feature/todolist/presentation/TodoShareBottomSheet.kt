@@ -32,9 +32,11 @@ import onemoretodolist.app.shared.generated.resources.share_make_note
 import onemoretodolist.app.shared.generated.resources.share_title
 import org.jetbrains.compose.resources.stringResource
 
+private const val SHARE_PREVIEW_MAX_LINES = 8
+
 @Composable
 fun TodoShareBottomSheet(
-    itemText: String,
+    shareText: String,
     onShareClick: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -50,9 +52,10 @@ fun TodoShareBottomSheet(
                 .padding(bottom = AppSpacing.l)
         ) {
             Text(
-                text = itemText,
+                // Exactly what gets sent - checklist, reminder and hashtags included.
+                text = shareText,
                 style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
+                maxLines = SHARE_PREVIEW_MAX_LINES,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -115,7 +118,7 @@ private fun ShareSheetRow(
 private fun TodoShareBottomSheetPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoShareBottomSheet(
-            itemText = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature",
+            shareText = "Write project architecture document covering module boundaries, data flow, and testing strategy for the new feature",
             onShareClick = {},
             onDismiss = {}
         )
