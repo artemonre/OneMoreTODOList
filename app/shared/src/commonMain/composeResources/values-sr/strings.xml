@@ -110,9 +110,10 @@
     <string name="form_select_time">Izaberi vreme</string>
     <string name="form_pick_time">Izaberi vreme</string>
     <string name="form_exact_time">Tačno vreme</string>
+    <string name="form_exact_permission_title">Obaveštenje u tačno vreme</string>
     <string name="form_notifications_off">Obaveštenje neće stići jer su obaveštenja za ovu aplikaciju isključena.</string>
     <string name="form_approximate_description">Obaveštenje će stići u roku od 15 minuta oko zadatog vremena.</string>
-    <string name="form_exact_needs_permission">Potrebna je dodatna dozvola koju treba da odobriš.</string>
+    <string name="form_exact_needs_permission">Ova opcija zahteva dodatnu dozvolu koju možeš da odobriš samo ručno.</string>
     <string name="form_exact_description">Obaveštenje će stići tačno u zadato vreme.</string>
     <string name="form_allow_notifications">Dozvoli obaveštenja</string>
     <string name="form_grant_permission">Odobri dozvolu</string>

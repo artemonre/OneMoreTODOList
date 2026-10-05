@@ -33,16 +33,14 @@ fun AppTheme(
     // Falls back to the palette scheme if dynamic color isn't actually available (unsupported
     // platform/OS version) even though the preference is set - e.g. after downgrading Android, or
     // restoring settings on a different platform.
-    val colorScheme = if (themeConfig.useDynamicColor) {
-        dynamicColorScheme(useDarkTheme) ?: paletteColorScheme
-    } else {
-        paletteColorScheme
-    }
+    val dynamicScheme = if (themeConfig.useDynamicColor) dynamicColorScheme(useDarkTheme) else null
+    val colorScheme = dynamicScheme ?: paletteColorScheme
 
     CompositionLocalProvider(
         LocalAppIcons provides themeConfig.iconSet.toAppIcons(),
         LocalActionPlacement provides themeConfig.actionPlacement,
         LocalUiStyle provides themeConfig.uiStyle,
+        LocalColorPalette provides themeConfig.palette.takeIf { dynamicScheme == null },
         LocalAccentSwatches provides if (useDarkTheme) DarkAccentSwatches else LightAccentSwatches
     ) {
         MaterialTheme(

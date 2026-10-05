@@ -75,6 +75,8 @@ import androidx.compose.ui.window.Dialog
 import com.artemonre.onemoretodolist.SpeechRecognitionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.components.keepsKeyboardOnTap
+import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedTextField
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialSegmentedButton
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
@@ -90,10 +92,12 @@ import com.artemonre.onemoretodolist.rememberDueTimeNotificationPermissionState
 import com.artemonre.onemoretodolist.rememberExactAlarmPermissionState
 import com.artemonre.onemoretodolist.rememberSpeechToText
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -115,6 +119,7 @@ import onemoretodolist.app.shared.generated.resources.form_due_time
 import onemoretodolist.app.shared.generated.resources.form_every
 import onemoretodolist.app.shared.generated.resources.form_exact_description
 import onemoretodolist.app.shared.generated.resources.form_exact_needs_permission
+import onemoretodolist.app.shared.generated.resources.form_exact_permission_title
 import onemoretodolist.app.shared.generated.resources.form_exact_time
 import onemoretodolist.app.shared.generated.resources.form_grant_permission
 import onemoretodolist.app.shared.generated.resources.form_increase
@@ -276,10 +281,10 @@ fun TodoFormBody(
     // null where exact alarms aren't a distinct grantable permission (pre-Android 12, or any
     // non-Android target) - the "Grant permission" button only shows where it's actually needed.
     val exactAlarmPermission = rememberExactAlarmPermissionState()
-    // null on any non-Android target - request() is called once, the first time "Due time" is
+    // null on any non-Android target - request() is called once, the first time "Reminder" is
     // turned on (see below); declining doesn't block saving, unlike exactAlarmPermission.
     val notificationPermission = rememberDueTimeNotificationPermissionState()
-    // Values survive unchecking "Due time" the same way recurrenceInterval/Unit do. Prefilled from
+    // Values survive unchecking "Reminder" the same way recurrenceInterval/Unit do. Prefilled from
     // editingItem, same as the recurrence fields above.
     var dueTimeEnabled by remember { mutableStateOf(editingItem?.dueDate != null) }
     // Off = approximate (the silent default/fallback, no extra permission needed) - on is an
@@ -292,6 +297,7 @@ fun TodoFormBody(
     }
     // Wall-clock local values, not a resolved instant - "10am" should keep meaning 10am local even
     // if the timezone changes before it fires, see TodoItem.dueInstant.
+    var showExactPermissionDialog by remember { mutableStateOf(false) }
     var dueDate by remember { mutableStateOf(editingItem?.dueDate) }
     var dueTime by remember { mutableStateOf(editingItem?.dueTime) }
     var showDueDatePicker by remember { mutableStateOf(false) }
@@ -302,11 +308,15 @@ fun TodoFormBody(
     } else {
         null
     }
-    // Due time checked but not both fields actually picked would otherwise silently discard the
+    // Reminder checked but not both fields actually picked would otherwise silently discard the
     // user's intent on save - block it the same way a missing exact-alarm permission is blocked.
     val dueTimeIncomplete = dueTimeEnabled && (dueDate == null || dueTime == null)
+    // Re-checked on every recomposition, so a reminder that slips into the past while the form
+    // sits open blocks saving as soon as anything else on the form changes.
+    val dueDateTime = dueDate?.let { date -> dueTime?.let { time -> LocalDateTime(date, time) } }
+    val dueTimeInPast = dueTimeEnabled && dueDateTime != null && dueDateTime < localNow()
     val dueTimeExactPermissionMissing = dueTimeEnabled && exactTimeEnabled && exactAlarmPermission?.isGranted == false
-    val canSubmit = (textState.text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeExactPermissionMissing
+    val canSubmit = (textState.text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeInPast && !dueTimeExactPermissionMissing
     val openedAt = remember {
         dueTimeFormat.format(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time)
     }
@@ -393,6 +403,7 @@ fun TodoFormBody(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(textFocusRequester)
+                .keepsKeyboardOnTap()
         )
         if (showTags) {
             Spacer(Modifier.height(AppSpacing.m))
@@ -491,7 +502,12 @@ fun TodoFormBody(
                             .fillMaxWidth()
                             .toggleable(
                                 value = exactTimeEnabled,
-                                onValueChange = { exactTimeEnabled = it },
+                                onValueChange = { checked ->
+                                    exactTimeEnabled = checked
+                                    if (checked && exactAlarmPermission?.isGranted == false) {
+                                        showExactPermissionDialog = true
+                                    }
+                                },
                                 role = Role.Checkbox
                             )
                             .padding(vertical = AppSpacing.s),
@@ -563,7 +579,19 @@ fun TodoFormBody(
                 confirmButton = {
                     TextButton(onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            dueDate = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date
+                            val pickedDate = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date
+                            dueDate = pickedDate
+                            // Today defaults to a reminder shortly from now, unless the time
+                            // already picked is still later than that. Can roll over to tomorrow
+                            // right before midnight.
+                            val earliest = earliestReminder()
+                            val currentTime = dueTime
+                            if (pickedDate <= earliest.date &&
+                                (currentTime == null || LocalDateTime(pickedDate, currentTime) < earliest)
+                            ) {
+                                dueDate = earliest.date
+                                dueTime = earliest.time
+                            }
                         }
                         showDueDatePicker = false
                     }) {
@@ -578,6 +606,33 @@ fun TodoFormBody(
             ) {
                 DatePicker(state = datePickerState)
             }
+        }
+        // Asked up front when "Exact time" is ticked without the permission. Backing out of it
+        // unticks the box again; the inline description and Grant permission button below stay
+        // as the way back in.
+        if (showExactPermissionDialog && exactAlarmPermission != null) {
+            val cancel = {
+                exactTimeEnabled = false
+                showExactPermissionDialog = false
+            }
+            MaterialAlertDialog(
+                onDismissRequest = cancel,
+                title = { Text(stringResource(Res.string.form_exact_permission_title)) },
+                text = { Text(stringResource(Res.string.form_exact_needs_permission)) },
+                confirmButton = {
+                    Button(onClick = {
+                        showExactPermissionDialog = false
+                        exactAlarmPermission.request()
+                    }) {
+                        Text(stringResource(Res.string.form_grant_permission))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = cancel) {
+                        Text(stringResource(Res.string.form_cancel))
+                    }
+                }
+            )
         }
         if (showDueTimePicker) {
             val timePickerState = rememberTimePickerState(
@@ -604,10 +659,17 @@ fun TodoFormBody(
                                 Text(stringResource(Res.string.form_cancel))
                             }
                             Spacer(Modifier.width(AppSpacing.s))
-                            TextButton(onClick = {
-                                dueTime = LocalTime(timePickerState.hour, timePickerState.minute)
-                                showDueTimePicker = false
-                            }) {
+                            val pickedTime = LocalTime(timePickerState.hour, timePickerState.minute)
+                            val pickedDate = dueDate
+                            TextButton(
+                                onClick = {
+                                    dueTime = pickedTime
+                                    showDueTimePicker = false
+                                },
+                                // No past reminders - only checkable once a date is picked; picking
+                                // today afterwards bumps an already-past time instead (see above).
+                                enabled = pickedDate == null || LocalDateTime(pickedDate, pickedTime) >= localNow()
+                            ) {
                                 Text(stringResource(Res.string.form_ok))
                             }
                         }
@@ -768,6 +830,16 @@ private fun IntervalCounter(
             Icon(imageVector = Icons.Filled.Add, contentDescription = stringResource(Res.string.form_increase))
         }
     }
+}
+
+private val REMINDER_LEAD_TIME = 10.minutes
+
+private fun localNow(): LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+
+// Now + REMINDER_LEAD_TIME, truncated to the minute - the pickers have no seconds.
+private fun earliestReminder(): LocalDateTime {
+    val earliest = (Clock.System.now() + REMINDER_LEAD_TIME).toLocalDateTime(TimeZone.currentSystemDefault())
+    return LocalDateTime(earliest.date, LocalTime(earliest.hour, earliest.minute))
 }
 
 private val dueTimeFormat = LocalTime.Format {

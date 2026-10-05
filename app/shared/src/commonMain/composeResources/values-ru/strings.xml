@@ -113,9 +113,10 @@
     <string name="form_select_time">Выбери время</string>
     <string name="form_pick_time">Выбрать время</string>
     <string name="form_exact_time">Точное время</string>
+    <string name="form_exact_permission_title">Уведомление в точное время</string>
     <string name="form_notifications_off">Уведомление не придёт: для приложения отключены уведомления.</string>
     <string name="form_approximate_description">Уведомление придёт в течение 15 минут около указанного времени.</string>
-    <string name="form_exact_needs_permission">Нужно дополнительное разрешение, которое ты выдашь вручную.</string>
+    <string name="form_exact_needs_permission">Эта опция требует дополнительного разрешения, которое ты можешь выдать только вручную.</string>
     <string name="form_exact_description">Уведомление придёт точно в указанное время.</string>
     <string name="form_allow_notifications">Разрешить уведомления</string>
     <string name="form_grant_permission">Выдать разрешение</string>

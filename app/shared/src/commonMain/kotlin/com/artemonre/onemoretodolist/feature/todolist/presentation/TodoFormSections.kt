@@ -50,6 +50,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.components.keepsKeyboardOnTap
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAssistChip
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialInputChip
@@ -368,7 +369,7 @@ private fun ChecklistItemTextField(
         textStyle = textStyle,
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-        modifier = modifier,
+        modifier = modifier.keepsKeyboardOnTap(),
         decorationBox = { innerTextField ->
             Box(modifier = Modifier.padding(CHECKLIST_FIELD_PADDING)) {
                 if (value.isEmpty()) {
