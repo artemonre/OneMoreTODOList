@@ -37,6 +37,7 @@ fun TodoItemCard(
     onToggleDone: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     attention: TopTodoAttention = TopTodoAttention.None,
     tags: List<TodoTag> = emptyList(),
     checklistDone: Int = 0,
@@ -44,6 +45,7 @@ fun TodoItemCard(
 ) {
     AppListItemCard(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier,
         containerColor = attention.containerColor()
     ) {

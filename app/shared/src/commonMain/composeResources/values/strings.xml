@@ -77,6 +77,8 @@
     <string name="snackbar_copied">Copied to clipboard</string>
     <string name="snackbar_todo_deleted">Todo deleted</string>
     <string name="snackbar_todo_completed">Todo completed</string>
+    <string name="snackbar_switched_to_manual_sort">Switched to Manual sort</string>
+    <string name="snackbar_reorder_hint">Switch to Manual sort to reorder todos</string>
     <string name="detail_attention_info">Info:\nThis todo wasn't interacted with in %1$d days, maybe you should change or replace it</string>
     <string name="share_title">Share</string>
     <string name="share_make_note">Make a note</string>

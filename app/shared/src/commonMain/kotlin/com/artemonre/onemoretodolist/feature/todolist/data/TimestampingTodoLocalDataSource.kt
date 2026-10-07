@@ -26,10 +26,19 @@ class TimestampingTodoLocalDataSource(
 
     override suspend fun upsertTodo(todo: TodoItem): EmptyResult<DataError.Local> {
         val stored = delegate.getAllIncludingDeleted().firstOrNull { it.id == todo.id }
+        return delegate.upsertTodo(todo.stamped(stored))
+    }
+
+    override suspend fun upsertTodos(todos: List<TodoItem>): EmptyResult<DataError.Local> {
+        val storedById = delegate.getAllIncludingDeleted().associateBy { it.id }
+        return delegate.upsertTodos(todos.map { it.stamped(storedById[it.id]) })
+    }
+
+    private fun TodoItem.stamped(stored: TodoItem?): TodoItem {
         val onlyTopSinceChanged = stored != null &&
-            stored.copy(topSince = todo.topSince, updatedAt = todo.updatedAt) == todo
-        val updatedAt = if (onlyTopSinceChanged) stored.updatedAt else clock.now()
-        return delegate.upsertTodo(todo.copy(updatedAt = updatedAt))
+            stored.copy(topSince = topSince, updatedAt = updatedAt) == this
+        val updatedAt = if (onlyTopSinceChanged && stored != null) stored.updatedAt else clock.now()
+        return copy(updatedAt = updatedAt)
     }
 
     override suspend fun deleteTodo(id: String): EmptyResult<DataError.Local> = delegate.deleteTodo(id)

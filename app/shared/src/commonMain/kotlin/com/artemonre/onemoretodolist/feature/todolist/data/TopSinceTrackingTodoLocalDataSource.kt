@@ -29,15 +29,26 @@ class TopSinceTrackingTodoLocalDataSource(
     override fun observeTodos(): Flow<List<TodoItem>> = delegate.observeTodos()
 
     override suspend fun upsertTodo(todo: TodoItem): EmptyResult<DataError.Local> {
-        // A genuine edit (lastEditDate actually moved, as opposed to a write that leaves it alone -
-        // completing, reordering, a recurrence catch-up) counts as the user dealing with this todo,
-        // so it restarts the "how long has this sat at the top" clock even if it never left the top.
-        val previousEditDate = delegate.observeTodos().first().firstOrNull { it.id == todo.id }?.lastEditDate
-        val wasEdited = previousEditDate != null && previousEditDate != todo.lastEditDate
-        val toSave = if (wasEdited) todo.copy(topSince = Clock.System.now()) else todo
-        val result = delegate.upsertTodo(toSave)
+        val previous = delegate.observeTodos().first().firstOrNull { it.id == todo.id }
+        val result = delegate.upsertTodo(todo.withEditRestartingTopSince(previous))
         if (result is Result.Success) updateTopSince()
         return result
+    }
+
+    // One recompute for the whole batch, not one per todo.
+    override suspend fun upsertTodos(todos: List<TodoItem>): EmptyResult<DataError.Local> {
+        val previousById = delegate.observeTodos().first().associateBy { it.id }
+        val result = delegate.upsertTodos(todos.map { it.withEditRestartingTopSince(previousById[it.id]) })
+        if (result is Result.Success) updateTopSince()
+        return result
+    }
+
+    // A genuine edit (lastEditDate actually moved, as opposed to a write that leaves it alone -
+    // completing, reordering, a recurrence catch-up) counts as the user dealing with this todo,
+    // so it restarts the "how long has this sat at the top" clock even if it never left the top.
+    private fun TodoItem.withEditRestartingTopSince(previous: TodoItem?): TodoItem {
+        val wasEdited = previous != null && previous.lastEditDate != lastEditDate
+        return if (wasEdited) copy(topSince = Clock.System.now()) else this
     }
 
     override suspend fun deleteTodo(id: String): EmptyResult<DataError.Local> {

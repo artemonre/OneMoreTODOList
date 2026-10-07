@@ -11,7 +11,7 @@ import kotlin.coroutines.CoroutineContext
 
 @Database(
     entities = [TodoEntity::class],
-    version = 10,
+    version = 11,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = RenameTodoTitleToText::class),
         AutoMigration(from = 3, to = 4),
@@ -33,7 +33,10 @@ import kotlin.coroutines.CoroutineContext
         AutoMigration(from = 8, to = 9),
         // Sync prep: adds updatedAt (NOT NULL, backfilled from lastEditDate - see
         // BackfillUpdatedAt) and the nullable deletedAt tombstone column.
-        AutoMigration(from = 9, to = 10, spec = BackfillUpdatedAt::class)
+        AutoMigration(from = 9, to = 10, spec = BackfillUpdatedAt::class),
+        // Adds createdAt (NOT NULL, backfilled from creationDate + sortOrder - see
+        // BackfillCreatedAt), Date sort's same-day tiebreak.
+        AutoMigration(from = 10, to = 11, spec = BackfillCreatedAt::class)
     ]
 )
 @ColumnTypeConverters(TodoDateConverters::class)

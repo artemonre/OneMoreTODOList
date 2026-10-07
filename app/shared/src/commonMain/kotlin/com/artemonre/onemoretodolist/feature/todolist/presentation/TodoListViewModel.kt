@@ -8,6 +8,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
@@ -31,6 +32,8 @@ import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.snackbar_reorder_hint
+import onemoretodolist.app.shared.generated.resources.snackbar_switched_to_manual_sort
 import onemoretodolist.app.shared.generated.resources.snackbar_todo_completed
 import onemoretodolist.app.shared.generated.resources.snackbar_todo_deleted
 
@@ -57,14 +60,22 @@ class TodoListViewModel(
         // ISO week - Monday is day 1, so this is always this week's Monday, even on a Sunday.
         val startOfWeek = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
         val startOfMonth = LocalDate(today.year, today.month, 1)
+        val activeTodos = todos.filter { it.status == TodoStatus.Active }
         val items = when (filter) {
-            TodoListFilter.Active -> todos.filter { it.status == TodoStatus.Active }.sortedByOption(sortOption)
+            TodoListFilter.Active -> activeTodos.sortedByOption(sortOption)
             // Most recently completed first - sortOption only orders the active list.
             TodoListFilter.Done -> todos.filter { it.status == TodoStatus.Done }.sortedByDescending { it.completionDate }
         }
+        // Under another sort, dragging is still allowed while the list already looks exactly like
+        // Manual would show it - so switching to Manual on drop changes nothing but the dragged item.
+        val isReorderEnabled = filter == TodoListFilter.Active && (
+            sortOption == TodoSortOption.Manual ||
+                items.map { it.id } == activeTodos.sortedByOption(TodoSortOption.Manual).map { it.id }
+            )
         TodoListState(
             sortOption = sortOption,
             filter = filter,
+            isReorderEnabled = isReorderEnabled,
             items = items.map { it.toTodoItemUi() },
             activeCount = todos.count { it.status == TodoStatus.Active },
             completedCount = todos.count { it.status == TodoStatus.Done },
@@ -96,6 +107,9 @@ class TodoListViewModel(
             }
             is TodoListAction.OnFilterSelected -> filter.value = action.filter
             is TodoListAction.OnReorder -> reorder(action.orderedIds)
+            is TodoListAction.OnReorderUnavailable -> viewModelScope.launch {
+                _events.send(TodoListEvent.ShowSnackbar(Res.string.snackbar_reorder_hint))
+            }
             is TodoListAction.OnAddTodoClick -> {
                 viewModelScope.launch {
                     _events.send(TodoListEvent.ShowAddTodoSheet)
@@ -170,13 +184,26 @@ class TodoListViewModel(
     }
 
     private fun reorder(orderedIds: List<String>) {
+        val switchesToManual = state.value.sortOption != TodoSortOption.Manual
+        // Dropped back in place - only Manual's own sortOrders are worth normalizing then, another
+        // sort shouldn't flip to Manual over a drag that moved nothing.
+        if (switchesToManual && orderedIds == state.value.items.map { it.id }) return
         val itemsById = todos.value.associateBy { it.id }
+        // One batch write, so the list updates once instead of passing through a half-reordered
+        // state per changed todo.
+        val changed = orderedIds.mapIndexedNotNull { index, id ->
+            itemsById[id]?.takeIf { it.sortOrder != index }?.copy(sortOrder = index)
+        }
+        if (changed.isEmpty()) return
         viewModelScope.launch {
-            orderedIds.forEachIndexed { index, id ->
-                val item = itemsById[id] ?: return@forEachIndexed
-                if (item.sortOrder != index) {
-                    todoLocalDataSource.upsertTodo(item.copy(sortOrder = index))
-                }
+            // Sort first: the drag was only allowed because the Manual order matched the one on
+            // screen, so this emits the same items and the dragged list isn't reset to the
+            // pre-drag order in between. Writing the new order first would flash it back.
+            if (switchesToManual) todoPreferences.setSortOption(TodoSortOption.Manual)
+            todoLocalDataSource.upsertTodos(changed)
+            if (switchesToManual) {
+                updateTopSince()
+                _events.send(TodoListEvent.ShowSnackbar(Res.string.snackbar_switched_to_manual_sort))
             }
         }
     }

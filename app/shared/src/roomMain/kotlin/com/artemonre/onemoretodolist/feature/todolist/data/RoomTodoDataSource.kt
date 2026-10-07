@@ -18,6 +18,10 @@ class RoomTodoDataSource(private val dao: TodoDao) : TodoLocalDataSource {
     override suspend fun upsertTodo(todo: TodoItem): EmptyResult<DataError.Local> =
         runWrite { dao.upsert(todo.toTodoEntity()) }
 
+    // Room runs a list @Upsert in a single transaction - one invalidation, one Flow emission.
+    override suspend fun upsertTodos(todos: List<TodoItem>): EmptyResult<DataError.Local> =
+        runWrite { dao.upsertAll(todos.map { it.toTodoEntity() }) }
+
     override suspend fun deleteTodo(id: String): EmptyResult<DataError.Local> =
         runWrite { dao.markDeleted(id, Clock.System.now().toEpochMilliseconds()) }
 
