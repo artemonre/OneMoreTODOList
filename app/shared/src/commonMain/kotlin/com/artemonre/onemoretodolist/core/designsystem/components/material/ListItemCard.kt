@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
+import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCardContentPadding
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 
@@ -45,7 +45,7 @@ fun ListItemCard(
         Box(
             modifier = Modifier
                 .combinedClickable(onLongClick = onLongClick, onClick = onClick)
-                .padding(AppSpacing.s)
+                .padding(AppListItemCardContentPadding)
         ) {
             content()
         }

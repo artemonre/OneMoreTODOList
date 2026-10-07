@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
+import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCardContentPadding
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import kotlin.time.Duration
@@ -110,7 +110,7 @@ fun ListItemCard(
             CardDefaults.elevatedCardColors()
         }
     ) {
-        Box(modifier = Modifier.padding(AppSpacing.s)) {
+        Box(modifier = Modifier.padding(AppListItemCardContentPadding)) {
             content()
         }
     }

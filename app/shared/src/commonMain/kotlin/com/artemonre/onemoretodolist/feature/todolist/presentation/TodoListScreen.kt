@@ -75,6 +75,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
+import com.artemonre.onemoretodolist.core.designsystem.components.CLOUD_SEGMENT_COUNT
+import com.artemonre.onemoretodolist.core.designsystem.components.CloudSegment
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -273,6 +275,18 @@ fun TodoListScreen(
     var listEntries by remember { mutableStateOf(state.items.withMascot()) }
     LaunchedEffect(state.items) { listEntries = state.items.withMascot() }
 
+    // Each todo's slice of the shared cloud texture, by its position among the todos (the mascot
+    // doesn't count). CLOUD_SEGMENT_COUNT matches MASCOT_AFTER_TODO_COUNT, so the first cloud ends
+    // right above the mascot. Follows listEntries, so it re-forms live around a dragged todo.
+    val cloudSegments = remember(listEntries) {
+        listEntries.filterIsInstance<ListEntry.Todo>().withIndex().associate { (index, entry) ->
+            entry.item.id to CloudSegment(
+                cloudIndex = index / CLOUD_SEGMENT_COUNT,
+                segment = index % CLOUD_SEGMENT_COUNT
+            )
+        }
+    }
+
     // from.index/to.index are positions in the whole LazyColumn, not in listEntries - the
     // summary card and filter/sort header shift them. Look entries up by key instead of trusting
     // the raw index.
@@ -402,6 +416,7 @@ fun TodoListScreen(
                         }
                     SwipeableTodoRow(
                         item = item,
+                        cloudSegment = cloudSegments[item.id],
                         modifier = rowModifier,
                         swipeEnabled = !isDragging,
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
@@ -582,7 +597,8 @@ private fun SwipeableTodoRow(
     onShareSwipe: () -> Unit,
     modifier: Modifier = Modifier,
     swipeEnabled: Boolean = true,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    cloudSegment: CloudSegment? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -659,7 +675,6 @@ private fun SwipeableTodoRow(
         }
 
         TodoItemCard(
-            id = item.id,
             text = item.text,
             isDone = item.status == TodoStatus.Done || isCompleting,
             formattedDate = rememberShortDateFormat().format(item.creationDate),
@@ -667,6 +682,7 @@ private fun SwipeableTodoRow(
             tags = item.tags,
             checklistDone = item.checklist.count { it.isDone },
             checklistTotal = item.checklist.size,
+            cloudSegment = cloudSegment,
             onToggleDone = {
                 if (item.status == TodoStatus.Active) {
                     isCompleting = true
