@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.core.designsystem.components.material
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,16 +21,20 @@ import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
  * [androidx.compose.material3.CardDefaults], no custom shadow or press animation. Domain-agnostic:
  * takes only an [onClick] and arbitrary [content], so any feature can use it for a clickable list
  * row without this module knowing what that row represents.
+ *
+ * The onClick ElevatedCard overload has no long-click, so the click lives on the content instead -
+ * the card clips it, so the ripple still fills the card. Nothing visible is lost: an elevated
+ * card's pressed elevation equals its resting one.
  */
 @Composable
 fun ListItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     containerColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     ElevatedCard(
-        onClick = onClick,
         modifier = modifier,
         colors = if (containerColor != null) {
             CardDefaults.elevatedCardColors(containerColor = containerColor, contentColor = contentColorFor(containerColor))
@@ -37,7 +42,11 @@ fun ListItemCard(
             CardDefaults.elevatedCardColors()
         }
     ) {
-        Box(modifier = Modifier.padding(AppSpacing.s)) {
+        Box(
+            modifier = Modifier
+                .combinedClickable(onLongClick = onLongClick, onClick = onClick)
+                .padding(AppSpacing.s)
+        ) {
             content()
         }
     }

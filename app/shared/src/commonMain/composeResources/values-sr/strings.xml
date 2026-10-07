@@ -73,6 +73,8 @@
     <string name="snackbar_copied">Kopirano u privremenu memoriju</string>
     <string name="snackbar_todo_deleted">Zadatak je obrisan</string>
     <string name="snackbar_todo_completed">Zadatak je završen</string>
+    <string name="snackbar_switched_to_manual_sort">Uključeno je ručno sortiranje</string>
+    <string name="snackbar_reorder_hint">Uključite ručno sortiranje da biste menjali redosled zadataka</string>
     <string name="detail_attention_info">Info:\nOvaj zadatak nije diran već %1$d dana, možda bi trebalo da ga izmeniš ili zameniš</string>
     <string name="share_title">Podeli</string>
     <string name="share_make_note">Napravi belešku</string>
@@ -110,9 +112,10 @@
     <string name="form_select_time">Izaberi vreme</string>
     <string name="form_pick_time">Izaberi vreme</string>
     <string name="form_exact_time">Tačno vreme</string>
+    <string name="form_exact_permission_title">Obaveštenje u tačno vreme</string>
     <string name="form_notifications_off">Obaveštenje neće stići jer su obaveštenja za ovu aplikaciju isključena.</string>
     <string name="form_approximate_description">Obaveštenje će stići u roku od 15 minuta oko zadatog vremena.</string>
-    <string name="form_exact_needs_permission">Potrebna je dodatna dozvola koju treba da odobriš.</string>
+    <string name="form_exact_needs_permission">Ova opcija zahteva dodatnu dozvolu koju možeš da odobriš samo ručno.</string>
     <string name="form_exact_description">Obaveštenje će stići tačno u zadato vreme.</string>
     <string name="form_allow_notifications">Dozvoli obaveštenja</string>
     <string name="form_grant_permission">Odobri dozvolu</string>

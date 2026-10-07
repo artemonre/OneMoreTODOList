@@ -77,6 +77,8 @@
     <string name="snackbar_copied">Copied to clipboard</string>
     <string name="snackbar_todo_deleted">Todo deleted</string>
     <string name="snackbar_todo_completed">Todo completed</string>
+    <string name="snackbar_switched_to_manual_sort">Switched to Manual sort</string>
+    <string name="snackbar_reorder_hint">Switch to Manual sort to reorder todos</string>
     <string name="detail_attention_info">Info:\nThis todo wasn't interacted with in %1$d days, maybe you should change or replace it</string>
     <string name="share_title">Share</string>
     <string name="share_make_note">Make a note</string>
@@ -108,7 +110,7 @@
     <string name="form_stop_listening">Stop listening</string>
     <string name="form_speak_text">Speak todo text</string>
     <string name="form_put_to_top">Put to top</string>
-    <string name="form_due_time">Due time</string>
+    <string name="form_due_time">Reminder</string>
     <string name="form_date">Date</string>
     <string name="form_select_date">Select date</string>
     <string name="form_pick_date">Pick date</string>
@@ -116,9 +118,10 @@
     <string name="form_select_time">Select time</string>
     <string name="form_pick_time">Pick time</string>
     <string name="form_exact_time">Exact time</string>
+    <string name="form_exact_permission_title">Exact time notification</string>
     <string name="form_notifications_off">The notification won't arrive because notifications are turned off for this app.</string>
     <string name="form_approximate_description">The notification will arrive within a 15-minute window around the specified time.</string>
-    <string name="form_exact_needs_permission">Requires an extra permission that you'll need to grant.</string>
+    <string name="form_exact_needs_permission">This option requires an extra permission that only you can grant.</string>
     <string name="form_exact_description">The notification will arrive at the exact time you set.</string>
     <string name="form_allow_notifications">Allow notifications</string>
     <string name="form_grant_permission">Grant permission</string>

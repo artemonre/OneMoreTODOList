@@ -19,6 +19,9 @@ data class TodoEntity(
     val sortOrder: Int,
     val creationDate: LocalDate,
     val lastEditDate: LocalDate,
+    // Epoch millis. The 0 default only exists so the 10 -> 11 AutoMigration can add a NOT NULL
+    // column - BackfillCreatedAt then replaces it on every existing row.
+    @ColumnInfo(defaultValue = "0") val createdAt: Instant = Instant.fromEpochMilliseconds(0),
     val completionDate: LocalDate?,
     val priorityOrder: Double?,
     // type/interval/unit all null together means "does not repeat" - see TodoMappers.

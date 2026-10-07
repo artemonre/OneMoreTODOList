@@ -94,6 +94,7 @@ fun TodoDetailDialog(
 ) {
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
+    val shareText = rememberShareText(item)
 
     MaterialAlertDialog(
         onDismissRequest = onDismiss,
@@ -121,7 +122,7 @@ fun TodoDetailDialog(
                     text = remember(item.text, linkColor) { linkify(item.text, linkColor) },
                     modifier = Modifier.clickable {
                         coroutineScope.launch {
-                            clipboard.setClipEntry(createPlainTextClipEntry(item.text))
+                            clipboard.setClipEntry(createPlainTextClipEntry(shareText))
                             if (!hasNativeCopyConfirmation) onCopied()
                         }
                     }

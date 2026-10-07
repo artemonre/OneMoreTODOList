@@ -26,6 +26,11 @@ class InMemoryTodoDataSource : TodoLocalDataSource {
         return Result.Success(Unit)
     }
 
+    override suspend fun upsertTodos(todos: List<TodoItem>): EmptyResult<DataError.Local> {
+        this.todos.update { current -> current.upserting(todos) }
+        return Result.Success(Unit)
+    }
+
     override suspend fun deleteTodo(id: String): EmptyResult<DataError.Local> {
         val now = Clock.System.now()
         todos.update { current ->

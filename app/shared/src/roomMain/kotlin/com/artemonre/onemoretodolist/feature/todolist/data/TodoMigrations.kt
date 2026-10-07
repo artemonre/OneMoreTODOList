@@ -27,6 +27,15 @@ class BackfillUpdatedAt : AutoMigrationSpec {
     }
 }
 
+// createdAt arrives as 0 on every existing row, like updatedAt did in BackfillUpdatedAt. Backfill it
+// with legacyCreatedAt's formula (creationDate is stored as epoch days), so same-day todos keep the
+// Date sort order they had before, when sortOrder was its tiebreak.
+class BackfillCreatedAt : AutoMigrationSpec {
+    override suspend fun onPostMigrate(connection: SQLiteConnection) {
+        connection.execSQL("UPDATE `todo_items` SET `createdAt` = `creationDate` * 86400000 + `sortOrder`")
+    }
+}
+
 // Splits the single `date` column into `creationDate` and `lastEditDate`. This can't be an
 // AutoMigration (@RenameColumn only handles a 1:1 rename) since it also introduces a genuinely
 // new NOT NULL column that needs a per-row value, not a single fixed default - existing rows get

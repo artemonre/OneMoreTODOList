@@ -23,7 +23,9 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.artemonre.onemoretodolist.core.designsystem.components.DismissKeyboardOnTap
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.designsystem.theme.ConfigureSystemBarIcons
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.isDueTimeUiSupported
@@ -34,16 +36,6 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.isDueTimeUiSupporte
 // scroll past, so the Create/Discard row can end up hidden behind it. Other platforms don't have
 // this property at all, hence expect/actual rather than a plain shared DialogProperties(...) call.
 internal expect fun fullScreenDialogProperties(): DialogProperties
-
-// A Dialog opens its own platform window, separate from the host Activity's - so it doesn't
-// inherit whatever status/navigation bar icon appearance the host window already has configured
-// (e.g. via enableEdgeToEdge()). Without this, a light-surfaced dialog can end up with light
-// (white) status bar icons left over from the platform default, i.e. white-on-white. Driven by
-// the actual rendered surface color rather than a light/dark theme flag so it stays correct across
-// dynamic color and custom palettes too. Android-only concern, hence expect/actual (no-op
-// elsewhere).
-@Composable
-internal expect fun ConfigureFullScreenDialogStatusBarIcons(darkIcons: Boolean)
 
 // The modern (non-DialogFragment) replacement for a full-screen modal: a full-size Dialog hosting
 // the same TodoFormBody used by the quick-add bottom sheet. Used for both the detailed add flow
@@ -78,7 +70,9 @@ fun TodoFormFullScreenDialog(
         onDismissRequest = requestDismiss,
         properties = fullScreenDialogProperties()
     ) {
-        ConfigureFullScreenDialogStatusBarIcons(darkIcons = MaterialTheme.colorScheme.surface.luminance() > 0.5f)
+        // A Dialog opens its own platform window, separate from the host Activity's, so it doesn't
+        // inherit the icon appearance AppTheme configured there - set it again for this window.
+        ConfigureSystemBarIcons(darkIcons = MaterialTheme.colorScheme.surface.luminance() > 0.5f)
         AnimatedVisibility(
             visibleState = visibleState,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -88,23 +82,27 @@ fun TodoFormFullScreenDialog(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.surface
             ) {
-                TodoFormBody(
-                    editingItem = editingItem,
-                    onConfirm = onConfirm,
-                    onDismiss = requestDismiss,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .windowInsetsPadding(WindowInsets.safeDrawing)
-                        .verticalScroll(rememberScrollState()),
-                    fieldMaxLines = Int.MAX_VALUE,
-                    showDueTime = isDueTimeUiSupported,
-                    showRecurrence = true,
-                    showTags = true,
-                    showChecklist = true,
-                    knownTags = knownTags,
-                    requireText = true,
-                    initialText = initialText
-                )
+                // Tapping any button, checkbox or other control closes the keyboard - empty
+                // background and the form's own text fields don't.
+                DismissKeyboardOnTap {
+                    TodoFormBody(
+                        editingItem = editingItem,
+                        onConfirm = onConfirm,
+                        onDismiss = requestDismiss,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.safeDrawing)
+                            .verticalScroll(rememberScrollState()),
+                        fieldMaxLines = Int.MAX_VALUE,
+                        showDueTime = isDueTimeUiSupported,
+                        showRecurrence = true,
+                        showTags = true,
+                        showChecklist = true,
+                        knownTags = knownTags,
+                        requireText = true,
+                        initialText = initialText
+                    )
+                }
             }
         }
     }

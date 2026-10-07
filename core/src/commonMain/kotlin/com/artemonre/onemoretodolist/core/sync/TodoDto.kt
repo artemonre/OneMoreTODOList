@@ -17,6 +17,8 @@ data class TodoDto(
     val sortOrder: Int,
     val creationDate: String,
     val lastEditDate: String,
+    // Epoch millis. Null in files written before it existed - see legacyCreatedAt in the app.
+    val createdAt: Long? = null,
     val completionDate: String? = null,
     val priorityOrder: Double? = null,
     val recurrence: RecurrenceDto? = null,
