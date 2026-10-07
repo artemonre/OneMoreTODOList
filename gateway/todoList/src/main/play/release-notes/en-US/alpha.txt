@@ -1,7 +1,6 @@
-- Add a checklist to any todo - tick items off right from the todo's details, with progress shown on the card
-- Colored tags for todos
-- Snooze reminders from the notification (+1 hour / tomorrow)
-- Back up your todos: to Google Drive (Android), or to a file, and optional daily auto backup
-- The app is now available in Russian and Serbian (Latin)
-- On Android 16+, on-device assistants can manage your todos
-- Privacy policy updated for backups
+- More understandable use of manual sorting
+- Date sort keeps same-day todos in creation order
+- Sharing includes checklist, reminder and tags
+- "Due time" is now "Reminder", with smarter time defaults
+- Easier setup for exact-time reminders
+- Status bar icons follow the app theme
