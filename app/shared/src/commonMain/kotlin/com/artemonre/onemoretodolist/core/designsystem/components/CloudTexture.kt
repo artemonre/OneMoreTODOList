@@ -20,10 +20,8 @@ import kotlin.math.sqrt
 import kotlin.math.tan
 import kotlin.random.Random
 
-// How far the line's dark/light edge is blended towards black/white to build its gradient's
-// opaque end - a fraction (not absolute color) so it scales with however light or dark [color]
-// itself already is.
-private const val GRADIENT_SHADE_FRACTION = 0.55f
+// A touch of see-through on the whole line, so even its opaque edge sits softly on the card.
+private const val LINE_ALPHA = 0.9f
 private val STROKE_WIDTH = 3.dp
 
 // Compose has no "shade a Path across its own local width" primitive - a Brush is positioned in
@@ -47,13 +45,12 @@ private val sessionSeed = Random.nextInt()
 // same card always redraws identically across recompositions instead of reshuffling every frame,
 // but the whole set looks different again next time the app is started (see [sessionSeed]). The
 // line itself is shaded across its own width (not its length, and consistently along its whole
-// length - see [RAIL_COUNT]): opaque (tinted towards black, or towards white when [isDarkTheme],
-// so the "raised" edge reads the same way under both themes) on its left edge, fading to fully
-// transparent - blending into whatever is behind it - on its right. Draw-only: relies on the
+// length - see [RAIL_COUNT]): exactly [color] (at [LINE_ALPHA]) on its left edge, fading to fully
+// transparent - so it ends in whatever is behind it, the card's own color - on its right. Draw-only: relies on the
 // caller's own clip (a Card's shape, typically) to crop it at the real edges - it deliberately
 // draws one extra arc past both the top and bottom so the line reads as continuing off-screen
 // rather than starting/ending at the edge.
-fun Modifier.cloudTexture(seed: Int, color: Color, isDarkTheme: Boolean): Modifier = drawBehind {
+fun Modifier.cloudTexture(seed: Int, color: Color): Modifier = drawBehind {
     val random = Random(seed xor sessionSeed)
     val angleRad = (random.nextFloat() * 15f + 35f) * (PI.toFloat() / 180f) // 35-50 deg off vertical
 
@@ -69,14 +66,12 @@ fun Modifier.cloudTexture(seed: Int, color: Color, isDarkTheme: Boolean): Modifi
     val chord = hypot(xStep, stepPx)
     val radius = chord / (random.nextFloat() * 0.3f + 1.3f) // shallow bump, not a tight semicircle
     val strokeWidthPx = STROKE_WIDTH.toPx()
-    val alpha = random.nextFloat() * 0.2f + 0.3f
 
     // Perpendicular to the line's own climb direction (cos/sin of angleRad) - the axis every rail
     // below is offset along.
     val perpX = cos(angleRad)
     val perpY = sin(angleRad)
-    val opaqueColor = if (isDarkTheme) lerp(color, Color.White, GRADIENT_SHADE_FRACTION) else lerp(color, Color.Black, GRADIENT_SHADE_FRACTION)
-    val transparentColor = opaqueColor.copy(alpha = 0f)
+    val transparentColor = color.copy(alpha = 0f)
 
     val baseX = size.width * (random.nextFloat() * 0.4f + 0.1f) // 10%-50% of the width, left to right
     val baseY = size.height + stepPx / 2f
@@ -98,8 +93,8 @@ fun Modifier.cloudTexture(seed: Int, color: Color, isDarkTheme: Boolean): Modifi
         }
         drawPath(
             path = path,
-            color = lerp(opaqueColor, transparentColor, t),
-            alpha = alpha,
+            color = lerp(color, transparentColor, t),
+            alpha = LINE_ALPHA,
             style = Stroke(width = railWidthPx, cap = StrokeCap.Round)
         )
     }

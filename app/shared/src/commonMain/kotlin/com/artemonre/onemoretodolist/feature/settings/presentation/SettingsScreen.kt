@@ -84,7 +84,11 @@ import org.koin.compose.viewmodel.koinViewModel
 private const val SUPPORT_EMAIL_URI = "mailto:artemonsupport@gmail.com"
 private const val PRIVACY_POLICY_URL = "https://artemonre.github.io/OneMoreTODOList/privacy-policy"
 
-private val AVAILABLE_PALETTES = listOf(ColorPaletteOption.Default, ColorPaletteOption.Slate)
+private val AVAILABLE_PALETTES = listOf(
+    ColorPaletteOption.Default,
+    ColorPaletteOption.Slate,
+    ColorPaletteOption.MaterialPaletteGreen
+)
 
 // Extra inner padding for settings sections on top of the card's own 8dp - together one spacing
 // step up (12dp), since these hold several rows of controls. Shared with SettingsBackupCard.

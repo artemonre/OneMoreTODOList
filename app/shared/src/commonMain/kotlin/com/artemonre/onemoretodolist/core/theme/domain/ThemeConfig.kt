@@ -20,7 +20,7 @@ enum class ThemeMode { System, Light, Dark }
 // press-flattening card look the todo list screen currently uses (designsystem/components/paper).
 enum class UiStyleOption { Material, Paper }
 
-enum class ColorPaletteOption { Default, Slate }
+enum class ColorPaletteOption { Default, Slate, MaterialPaletteGreen }
 
 enum class IconSetOption { Default, Rounded }
 

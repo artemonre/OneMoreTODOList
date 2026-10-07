@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.tooling.preview.Preview
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCard
 import com.artemonre.onemoretodolist.core.designsystem.components.cloudTexture
@@ -56,8 +55,7 @@ fun TodoItemCard(
                     if (LocalColorPalette.current == ColorPaletteOption.Default) {
                         Modifier.cloudTexture(
                             seed = id.hashCode(),
-                            color = MaterialTheme.colorScheme.background,
-                            isDarkTheme = MaterialTheme.colorScheme.surface.luminance() <= 0.5f
+                            color = MaterialTheme.colorScheme.background
                         )
                     } else {
                         Modifier
