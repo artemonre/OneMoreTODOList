@@ -27,6 +27,12 @@ class NotifyingTodoLocalDataSource(
         return result
     }
 
+    override suspend fun upsertTodos(todos: List<TodoItem>): EmptyResult<DataError.Local> {
+        val result = delegate.upsertTodos(todos)
+        if (result is Result.Success) onDataChanged()
+        return result
+    }
+
     override suspend fun deleteTodo(id: String): EmptyResult<DataError.Local> {
         val result = delegate.deleteTodo(id)
         if (result is Result.Success) onDataChanged()

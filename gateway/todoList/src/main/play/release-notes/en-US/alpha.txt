@@ -1,1 +1,6 @@
-- Privacy policy updated with the app's new name
+- More understandable use of manual sorting
+- Date sort keeps same-day todos in creation order
+- Sharing includes checklist, reminder and tags
+- "Due time" is now "Reminder", with smarter time defaults
+- Easier setup for exact-time reminders
+- Status bar icons follow the app theme

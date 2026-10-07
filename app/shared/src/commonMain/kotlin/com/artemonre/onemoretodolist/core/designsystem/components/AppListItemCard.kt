@@ -20,11 +20,12 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 fun AppListItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     containerColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material -> MaterialListItemCard(onClick, modifier, containerColor, content)
-        UiStyleOption.Paper -> PaperListItemCard(onClick, modifier, containerColor, content)
+        UiStyleOption.Material -> MaterialListItemCard(onClick, modifier, onLongClick, containerColor, content)
+        UiStyleOption.Paper -> PaperListItemCard(onClick, modifier, onLongClick, containerColor, content)
     }
 }

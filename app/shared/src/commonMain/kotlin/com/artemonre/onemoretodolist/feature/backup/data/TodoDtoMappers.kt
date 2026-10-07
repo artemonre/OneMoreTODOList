@@ -13,6 +13,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TagColor
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
+import com.artemonre.onemoretodolist.feature.todolist.domain.legacyCreatedAt
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -25,6 +26,7 @@ fun TodoItem.toTodoDto(): TodoDto = TodoDto(
     sortOrder = sortOrder,
     creationDate = creationDate.toString(),
     lastEditDate = lastEditDate.toString(),
+    createdAt = createdAt.toEpochMilliseconds(),
     completionDate = completionDate?.toString(),
     priorityOrder = priorityOrder,
     recurrence = recurrence?.let { RecurrenceDto(type = it.type.name, interval = it.interval, unit = it.unit.name) },
@@ -45,13 +47,15 @@ fun TodoItem.toTodoDto(): TodoDto = TodoDto(
 // the todo itself is still perfectly usable without them.
 fun TodoDto.toTodoItemOrNull(): TodoItem? {
     return try {
+        val creationDate = LocalDate.parse(creationDate)
         TodoItem(
             id = id,
             text = text,
             status = enumOrNull<TodoStatus>(status) ?: return null,
             sortOrder = sortOrder,
-            creationDate = LocalDate.parse(creationDate),
+            creationDate = creationDate,
             lastEditDate = LocalDate.parse(lastEditDate),
+            createdAt = createdAt?.let(Instant::fromEpochMilliseconds) ?: legacyCreatedAt(creationDate, sortOrder),
             completionDate = completionDate?.let(LocalDate::parse),
             priorityOrder = priorityOrder,
             recurrence = recurrence?.toRecurrenceOrNull(),

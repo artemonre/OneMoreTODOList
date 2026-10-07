@@ -1,7 +1,7 @@
 package com.artemonre.onemoretodolist.core.designsystem.components.paper
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -62,6 +62,7 @@ private val CARD_PRESS_MIN_VISIBLE_DURATION = 150.milliseconds
 fun ListItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     containerColor: Color? = null,
     content: @Composable () -> Unit
 ) {
@@ -74,11 +75,11 @@ fun ListItemCard(
         modifier = modifier
             .shadow(elevation = cardElevation, shape = cardShape)
             // Raw pointer down/up drives the visual only, immediately and independent of any
-            // scroll-vs-tap disambiguation. clickable (below) still owns onClick and all of
+            // scroll-vs-tap disambiguation. combinedClickable (below) still owns onClick and all of
             // Compose's built-in tap/scroll/drag safety for the actual action - inside a
             // LazyColumn, clickable intentionally delays/suppresses its own Press interaction
             // until it's sure a gesture isn't the start of a scroll, so a fast tap never reaches
-            // clickable's interactionSource in time to drive a press effect from it.
+            // combinedClickable's interactionSource in time to drive a press effect from it.
             .pointerInput(Unit) {
                 // awaitEachGesture runs in a restricted suspend scope that can't call
                 // kotlinx.coroutines.delay directly, so the minimum-visible-duration wait is
@@ -95,9 +96,10 @@ fun ListItemCard(
                     }
                 }
             }
-            .clickable(
+            .combinedClickable(
                 interactionSource = null,
                 indication = null,
+                onLongClick = onLongClick,
                 onClick = onClick
             ),
         shape = cardShape,

@@ -24,6 +24,11 @@ class FakeTodoLocalDataSource(
         return Result.Success(Unit)
     }
 
+    override suspend fun upsertTodos(todos: List<TodoItem>): EmptyResult<DataError.Local> {
+        upsertAll(todos)
+        return Result.Success(Unit)
+    }
+
     override suspend fun deleteTodo(id: String): EmptyResult<DataError.Local> {
         val now = Clock.System.now()
         todos.update { current ->

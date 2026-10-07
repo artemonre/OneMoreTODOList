@@ -40,9 +40,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -131,6 +131,26 @@ private const val MASCOT_AFTER_TODO_COUNT = 5
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
 
+// One row of the non-empty list. The mascot is a slot in the same reorderable list as the todos,
+// so dragging a todo past it swaps with it like with any other row - instead of the mascot being
+// a fixed, non-reorderable gap the drag has to jump across.
+private sealed interface ListEntry {
+    val key: Any
+
+    data class Todo(val item: TodoItemUi) : ListEntry {
+        override val key: Any get() = item.id
+    }
+
+    data object Mascot : ListEntry {
+        override val key: Any = "mascot"
+    }
+}
+
+// The mascot sits after the first MASCOT_AFTER_TODO_COUNT todos, or after all of them when there
+// are fewer.
+private fun List<TodoItemUi>.withMascot(): List<ListEntry> =
+    take(MASCOT_AFTER_TODO_COUNT).map(ListEntry::Todo) + ListEntry.Mascot + drop(MASCOT_AFTER_TODO_COUNT).map(ListEntry::Todo)
+
 @Composable
 fun TodoListRoot(
     viewModel: TodoListViewModel = koinViewModel()
@@ -164,6 +184,11 @@ fun TodoListRoot(
                     if (result == SnackbarResult.ActionPerformed) {
                         viewModel.onAction(TodoListAction.OnUndoClick)
                     }
+                }
+            }
+            is TodoListEvent.ShowSnackbar -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(getString(event.message))
                 }
             }
         }
@@ -245,18 +270,27 @@ fun TodoListScreen(
     // It's re-synced from state.items whenever that changes - which OnReorder itself never
     // triggers mid-drag (it's only dispatched on drag-stop), so this can't fight an in-progress
     // drag; it only picks up genuinely external changes (add/edit/delete/toggle elsewhere).
-    var manualOrderItems by remember { mutableStateOf(state.items) }
-    LaunchedEffect(state.items) { manualOrderItems = state.items }
+    var listEntries by remember { mutableStateOf(state.items.withMascot()) }
+    LaunchedEffect(state.items) { listEntries = state.items.withMascot() }
 
-    // from.index/to.index are positions in the whole LazyColumn, not in manualOrderItems - the
-    // summary card, filter/sort header and mascot items shift them. Look items up by key instead of trusting the
-    // raw index.
+    // from.index/to.index are positions in the whole LazyColumn, not in listEntries - the
+    // summary card and filter/sort header shift them. Look entries up by key instead of trusting
+    // the raw index.
     val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
-        val fromIndex = manualOrderItems.indexOfFirst { it.id == from.key }
-        val toIndex = manualOrderItems.indexOfFirst { it.id == to.key }
+        val fromIndex = listEntries.indexOfFirst { it.key == from.key }
+        val toIndex = listEntries.indexOfFirst { it.key == to.key }
         if (fromIndex != -1 && toIndex != -1) {
-            manualOrderItems = manualOrderItems.toMutableList().apply {
+            val swapped = listEntries.toMutableList().apply {
                 add(toIndex, removeAt(fromIndex))
+            }
+            // Crossing the mascot is a plain swap, so the dragged todo moves past it smoothly. A
+            // swap with another todo puts the mascot back after MASCOT_AFTER_TODO_COUNT todos, so
+            // when the mascot was off by one, the swapped neighbour goes through it (two slots)
+            // instead - and it never needs to snap back in one big move.
+            listEntries = if (to.key == ListEntry.Mascot.key) {
+                swapped
+            } else {
+                swapped.filterIsInstance<ListEntry.Todo>().map { it.item }.withMascot()
             }
         }
     }
@@ -313,7 +347,7 @@ fun TodoListScreen(
                     // to Active.
                     if (state.filter == TodoListFilter.Active) {
                         Box {
-                            Button(
+                            FilledTonalButton(
                                 onClick = { sortMenuExpanded = true },
                                 contentPadding = SORT_BUTTON_CONTENT_PADDING
                             ) {
@@ -351,10 +385,15 @@ fun TodoListScreen(
                         .animateItem()
                         .graphicsLayer { rotationZ = rotation }
                         .let { base ->
-                            if (state.filter == TodoListFilter.Active && state.sortOption == TodoSortOption.Manual) {
+                            if (state.isReorderEnabled) {
                                 base.longPressDraggableHandle(
                                     onDragStopped = {
-                                        onAction(TodoListAction.OnReorder(manualOrderItems.map { it.id }))
+                                        val todos = listEntries.filterIsInstance<ListEntry.Todo>().map { it.item }
+                                        // Put the mascot back right away - dragging a todo just past
+                                        // it doesn't change the todo order, so no state.items update
+                                        // would come to re-sync it.
+                                        listEntries = todos.withMascot()
+                                        onAction(TodoListAction.OnReorder(todos.map { it.id }))
                                     }
                                 )
                             } else {
@@ -369,7 +408,14 @@ fun TodoListScreen(
                         onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
                         onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
                         onItemClick = { detailItemId = item.id },
-                        onShareSwipe = { shareItem = item }
+                        onShareSwipe = { shareItem = item },
+                        // Only where long-press would otherwise do nothing - when reorder is on,
+                        // the drag handle above owns long-press.
+                        onLongClick = if (state.filter == TodoListFilter.Active && !state.isReorderEnabled) {
+                            { onAction(TodoListAction.OnReorderUnavailable) }
+                        } else {
+                            null
+                        }
                     )
                 }
             }
@@ -404,23 +450,23 @@ fun TodoListScreen(
                     }
                 }
             } else {
-                items(manualOrderItems.take(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
-
-                // Sits after the first MASCOT_AFTER_TODO_COUNT todos, or after all of them when
-                // there are fewer. Not a ReorderableItem, so dragging a todo across it is a no-op -
-                // the reorder callback above looks items up by key and ignores anything outside
-                // manualOrderItems.
-                item(key = "mascot") {
-                    Image(
-                        painter = painterResource(Res.drawable.mascot_staying),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(MASCOT_HEIGHT)
-                    )
+                items(listEntries, key = { it.key }) { entry ->
+                    when (entry) {
+                        is ListEntry.Todo -> todoRow(entry.item)
+                        // A ReorderableItem so a dragged todo swaps with it, but without a drag
+                        // handle - the mascot itself can't be picked up.
+                        ListEntry.Mascot -> ReorderableItem(reorderableListState, key = entry.key) {
+                            Image(
+                                painter = painterResource(Res.drawable.mascot_staying),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .height(MASCOT_HEIGHT)
+                            )
+                        }
+                    }
                 }
-
-                items(manualOrderItems.drop(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
             }
         }
 
@@ -459,15 +505,16 @@ fun TodoListScreen(
     }
 
     shareItem?.let { item ->
+        val shareText = rememberShareText(item)
         TodoShareBottomSheet(
-            itemText = item.text,
+            shareText = shareText,
             onShareClick = {
                 val launcher = nativeShareLauncher
                 if (launcher != null) {
-                    launcher(item.text)
+                    launcher(shareText)
                 } else {
                     coroutineScope.launch {
-                        clipboard.setClipEntry(createPlainTextClipEntry(item.text))
+                        clipboard.setClipEntry(createPlainTextClipEntry(shareText))
                         snackbarHostState.showSnackbar(getString(Res.string.snackbar_copied))
                     }
                 }
@@ -534,7 +581,8 @@ private fun SwipeableTodoRow(
     onItemClick: () -> Unit,
     onShareSwipe: () -> Unit,
     modifier: Modifier = Modifier,
-    swipeEnabled: Boolean = true
+    swipeEnabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -627,6 +675,7 @@ private fun SwipeableTodoRow(
                 }
             },
             onClick = onItemClick,
+            onLongClick = onLongClick,
             modifier = Modifier
                 .padding(horizontal = AppSpacing.s)
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }
