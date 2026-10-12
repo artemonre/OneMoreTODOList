@@ -87,7 +87,8 @@ private const val PRIVACY_POLICY_URL = "https://artemonre.github.io/OneMoreTODOL
 private val AVAILABLE_PALETTES = listOf(
     ColorPaletteOption.Default,
     ColorPaletteOption.Slate,
-    ColorPaletteOption.MaterialPaletteGreen
+    ColorPaletteOption.MaterialPaletteGreen,
+    ColorPaletteOption.MaterialPaletteYellow
 )
 
 // Extra inner padding for settings sections on top of the card's own 8dp - together one spacing
