@@ -75,6 +75,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
+import com.artemonre.onemoretodolist.core.designsystem.components.CLOUD_SEGMENT_COUNT
+import com.artemonre.onemoretodolist.core.designsystem.components.CloudSegment
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -99,8 +101,7 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_this_mon
 import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
-import onemoretodolist.app.shared.generated.resources.mascot_staying
-import onemoretodolist.app.shared.generated.resources.mascot_staying_green
+import onemoretodolist.app.shared.generated.resources.mascot_aussie
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_date
 import onemoretodolist.app.shared.generated.resources.sort_manual
@@ -127,29 +128,8 @@ private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
 private val MASCOT_HEIGHT = 160.dp
 // Half of ButtonDefaults.ContentPadding (24dp/8dp), snapped to the spacing scale.
 private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.xs)
-private const val MASCOT_AFTER_TODO_COUNT = 5
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
-
-// One row of the non-empty list. The mascot is a slot in the same reorderable list as the todos,
-// so dragging a todo past it swaps with it like with any other row - instead of the mascot being
-// a fixed, non-reorderable gap the drag has to jump across.
-private sealed interface ListEntry {
-    val key: Any
-
-    data class Todo(val item: TodoItemUi) : ListEntry {
-        override val key: Any get() = item.id
-    }
-
-    data object Mascot : ListEntry {
-        override val key: Any = "mascot"
-    }
-}
-
-// The mascot sits after the first MASCOT_AFTER_TODO_COUNT todos, or after all of them when there
-// are fewer.
-private fun List<TodoItemUi>.withMascot(): List<ListEntry> =
-    take(MASCOT_AFTER_TODO_COUNT).map(ListEntry::Todo) + ListEntry.Mascot + drop(MASCOT_AFTER_TODO_COUNT).map(ListEntry::Todo)
 
 @Composable
 fun TodoListRoot(
@@ -270,27 +250,28 @@ fun TodoListScreen(
     // It's re-synced from state.items whenever that changes - which OnReorder itself never
     // triggers mid-drag (it's only dispatched on drag-stop), so this can't fight an in-progress
     // drag; it only picks up genuinely external changes (add/edit/delete/toggle elsewhere).
-    var listEntries by remember { mutableStateOf(state.items.withMascot()) }
-    LaunchedEffect(state.items) { listEntries = state.items.withMascot() }
+    var listTodos by remember { mutableStateOf(state.items) }
+    LaunchedEffect(state.items) { listTodos = state.items }
 
-    // from.index/to.index are positions in the whole LazyColumn, not in listEntries - the
-    // summary card and filter/sort header shift them. Look entries up by key instead of trusting
-    // the raw index.
+    // Each todo's slice of the shared cloud texture, by its position in the list. Follows
+    // listTodos, so it re-forms live around a dragged todo.
+    val cloudSegments = remember(listTodos) {
+        listTodos.withIndex().associate { (index, item) ->
+            item.id to CloudSegment(
+                cloudIndex = index / CLOUD_SEGMENT_COUNT,
+                segment = index % CLOUD_SEGMENT_COUNT
+            )
+        }
+    }
+
+    // from.index/to.index are positions in the whole LazyColumn, not in listTodos - the summary
+    // card and filter/sort header shift them. Look todos up by key instead of trusting the raw index.
     val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
-        val fromIndex = listEntries.indexOfFirst { it.key == from.key }
-        val toIndex = listEntries.indexOfFirst { it.key == to.key }
+        val fromIndex = listTodos.indexOfFirst { it.id == from.key }
+        val toIndex = listTodos.indexOfFirst { it.id == to.key }
         if (fromIndex != -1 && toIndex != -1) {
-            val swapped = listEntries.toMutableList().apply {
+            listTodos = listTodos.toMutableList().apply {
                 add(toIndex, removeAt(fromIndex))
-            }
-            // Crossing the mascot is a plain swap, so the dragged todo moves past it smoothly. A
-            // swap with another todo puts the mascot back after MASCOT_AFTER_TODO_COUNT todos, so
-            // when the mascot was off by one, the swapped neighbour goes through it (two slots)
-            // instead - and it never needs to snap back in one big move.
-            listEntries = if (to.key == ListEntry.Mascot.key) {
-                swapped
-            } else {
-                swapped.filterIsInstance<ListEntry.Todo>().map { it.item }.withMascot()
             }
         }
     }
@@ -388,12 +369,7 @@ fun TodoListScreen(
                             if (state.isReorderEnabled) {
                                 base.longPressDraggableHandle(
                                     onDragStopped = {
-                                        val todos = listEntries.filterIsInstance<ListEntry.Todo>().map { it.item }
-                                        // Put the mascot back right away - dragging a todo just past
-                                        // it doesn't change the todo order, so no state.items update
-                                        // would come to re-sync it.
-                                        listEntries = todos.withMascot()
-                                        onAction(TodoListAction.OnReorder(todos.map { it.id }))
+                                        onAction(TodoListAction.OnReorder(listTodos.map { it.id }))
                                     }
                                 )
                             } else {
@@ -402,6 +378,7 @@ fun TodoListScreen(
                         }
                     SwipeableTodoRow(
                         item = item,
+                        cloudSegment = cloudSegments[item.id],
                         modifier = rowModifier,
                         swipeEnabled = !isDragging,
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
@@ -421,8 +398,7 @@ fun TodoListScreen(
             }
 
             if (state.items.isEmpty()) {
-                // The green mascot fronts the empty state (both Active and Done) in place of the
-                // blue one that sits among the todos otherwise.
+                // The mascot fronts the empty state, both Active and Done.
                 item(key = "empty_state") {
                     Column(
                         modifier = Modifier
@@ -431,7 +407,7 @@ fun TodoListScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = painterResource(Res.drawable.mascot_staying_green),
+                            painter = painterResource(Res.drawable.mascot_aussie),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -450,23 +426,7 @@ fun TodoListScreen(
                     }
                 }
             } else {
-                items(listEntries, key = { it.key }) { entry ->
-                    when (entry) {
-                        is ListEntry.Todo -> todoRow(entry.item)
-                        // A ReorderableItem so a dragged todo swaps with it, but without a drag
-                        // handle - the mascot itself can't be picked up.
-                        ListEntry.Mascot -> ReorderableItem(reorderableListState, key = entry.key) {
-                            Image(
-                                painter = painterResource(Res.drawable.mascot_staying),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .animateItem()
-                                    .fillMaxWidth()
-                                    .height(MASCOT_HEIGHT)
-                            )
-                        }
-                    }
-                }
+                items(listTodos, key = { it.id }) { item -> todoRow(item) }
             }
         }
 
@@ -582,7 +542,8 @@ private fun SwipeableTodoRow(
     onShareSwipe: () -> Unit,
     modifier: Modifier = Modifier,
     swipeEnabled: Boolean = true,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    cloudSegment: CloudSegment? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -659,7 +620,6 @@ private fun SwipeableTodoRow(
         }
 
         TodoItemCard(
-            id = item.id,
             text = item.text,
             isDone = item.status == TodoStatus.Done || isCompleting,
             formattedDate = rememberShortDateFormat().format(item.creationDate),
@@ -667,6 +627,7 @@ private fun SwipeableTodoRow(
             tags = item.tags,
             checklistDone = item.checklist.count { it.isDone },
             checklistTotal = item.checklist.size,
+            cloudSegment = cloudSegment,
             onToggleDone = {
                 if (item.status == TodoStatus.Active) {
                     isCompleting = true

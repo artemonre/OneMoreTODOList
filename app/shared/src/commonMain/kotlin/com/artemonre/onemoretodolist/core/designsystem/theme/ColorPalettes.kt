@@ -11,6 +11,14 @@ data class ColorPalette(
 
 private val DefaultPalette = ColorPalette(light = LightColorSchemeDefault, dark = DarkColorSchemeDefault)
 private val SlatePalette = ColorPalette(light = SlateLightColorScheme, dark = SlateDarkColorScheme)
+private val MaterialPaletteGreenPalette = ColorPalette(
+    light = MaterialPaletteGreenLightColorScheme,
+    dark = MaterialPaletteGreenDarkColorScheme
+)
+private val MaterialPaletteYellowPalette = ColorPalette(
+    light = MaterialPaletteYellowLightColorScheme,
+    dark = MaterialPaletteYellowDarkColorScheme
+)
 
 // The palette the current colors come from, or null when dynamic color is overriding it.
 val LocalColorPalette = staticCompositionLocalOf<ColorPaletteOption?> { ColorPaletteOption.Default }
@@ -18,4 +26,6 @@ val LocalColorPalette = staticCompositionLocalOf<ColorPaletteOption?> { ColorPal
 fun ColorPaletteOption.toColorPalette(): ColorPalette = when (this) {
     ColorPaletteOption.Default -> DefaultPalette
     ColorPaletteOption.Slate -> SlatePalette
+    ColorPaletteOption.MaterialPaletteGreen -> MaterialPaletteGreenPalette
+    ColorPaletteOption.MaterialPaletteYellow -> MaterialPaletteYellowPalette
 }

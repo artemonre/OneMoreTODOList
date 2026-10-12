@@ -27,7 +27,7 @@ fun main() = application {
     installAwtExceptionReporting()
     Window(
         onCloseRequest = ::exitApplication,
-        title = "OneMoreTODOList",
+        title = "TODO it later",
     ) {
         App(
             platformModules = listOf(jvmTodoDataModule()),
