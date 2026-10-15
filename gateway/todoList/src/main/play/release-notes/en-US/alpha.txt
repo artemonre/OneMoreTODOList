@@ -1,6 +1,4 @@
-- More understandable use of manual sorting
-- Date sort keeps same-day todos in creation order
-- Sharing includes checklist, reminder and tags
-- "Due time" is now "Reminder", with smarter time defaults
-- Easier setup for exact-time reminders
-- Status bar icons follow the app theme
+- New green and yellow color palettes
+- The widget follows your wallpaper colors with Dynamic color on (Android 12+)
+- The app is now called "TODO it later" on your home screen
+- Meet the new mascot - they don't have a name yet, however from now on you two will be seeing each other more often

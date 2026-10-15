@@ -15,7 +15,7 @@ android {
     }
     buildTypes {
         debug {
-            resValue("string", "app_name", "OneMoreTODOList-dev")
+            resValue("string", "app_name", "TODO it later-dev")
         }
     }
     // Local JVM unit tests (src/test) cover plain Kotlin logic only - anything that reaches into
