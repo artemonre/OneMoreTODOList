@@ -26,7 +26,9 @@ class RearmDueTodoAlarms(
 ) {
     suspend operator fun invoke() {
         dataSource.observeTodos().first()
-            .filter { it.status == TodoStatus.Active && (it.dueDate != null || it.snoozedUntil != null) }
+            // A Done recurring todo still carrying a due date is waiting on that alarm to bring it
+            // back (see HandleDueTodoFired), so it needs re-arming just as much as an Active one.
+            .filter { (it.status == TodoStatus.Active || it.recurrence != null) && (it.dueDate != null || it.snoozedUntil != null) }
             .forEach { dueTimeScheduler.reschedule(it) }
     }
 }

@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,9 +60,11 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -90,6 +93,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.rememberNativeShareLauncher
 import kotlin.math.roundToInt
+import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -102,6 +106,7 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_this_wee
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
 import onemoretodolist.app.shared.generated.resources.mascot_aussie
+import onemoretodolist.app.shared.generated.resources.mascot_ball
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_date
 import onemoretodolist.app.shared.generated.resources.sort_manual
@@ -128,8 +133,33 @@ private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
 private val MASCOT_HEIGHT = 160.dp
 // Half of ButtonDefaults.ContentPadding (24dp/8dp), snapped to the spacing scale.
 private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.xs)
+private const val BALL_AFTER_TODO_COUNT = 5
+private val BALL_SIZE = 36.dp
+// The ball only fills a bit over half of its square canvas, so the canvas is drawn this much bigger
+// than BALL_SIZE (and overflows it) for the ball itself to come out at BALL_SIZE.
+private val BALL_CANVAS_SIZE = 64.dp
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
+
+// One row of the non-empty list. The ball is a slot in the same reorderable list as the todos, so
+// dragging a todo past it swaps with it like with any other row - instead of the ball being a
+// fixed, non-reorderable gap the drag has to jump across.
+private sealed interface ListEntry {
+    val key: Any
+
+    data class Todo(val item: TodoItemUi) : ListEntry {
+        override val key: Any get() = item.id
+    }
+
+    data object Ball : ListEntry {
+        override val key: Any = "ball"
+    }
+}
+
+// The ball sits after the first BALL_AFTER_TODO_COUNT todos, or after all of them when there are
+// fewer.
+private fun List<TodoItemUi>.withBall(): List<ListEntry> =
+    take(BALL_AFTER_TODO_COUNT).map(ListEntry::Todo) + ListEntry.Ball + drop(BALL_AFTER_TODO_COUNT).map(ListEntry::Todo)
 
 @Composable
 fun TodoListRoot(
@@ -250,28 +280,42 @@ fun TodoListScreen(
     // It's re-synced from state.items whenever that changes - which OnReorder itself never
     // triggers mid-drag (it's only dispatched on drag-stop), so this can't fight an in-progress
     // drag; it only picks up genuinely external changes (add/edit/delete/toggle elsewhere).
-    var listTodos by remember { mutableStateOf(state.items) }
-    LaunchedEffect(state.items) { listTodos = state.items }
+    // Where across the list the ball lies, -1 (start) to 1 (end) - a new spot each time the screen
+    // is opened, kept across scrolling and rotation.
+    val ballHorizontalBias = rememberSaveable { Random.nextFloat() * 2 - 1 }
+    var listEntries by remember { mutableStateOf(state.items.withBall()) }
+    LaunchedEffect(state.items) { listEntries = state.items.withBall() }
 
-    // Each todo's slice of the shared cloud texture, by its position in the list. Follows
-    // listTodos, so it re-forms live around a dragged todo.
-    val cloudSegments = remember(listTodos) {
-        listTodos.withIndex().associate { (index, item) ->
-            item.id to CloudSegment(
+    // Each todo's slice of the shared cloud texture, by its position among the todos (the ball
+    // doesn't count). CLOUD_SEGMENT_COUNT matches BALL_AFTER_TODO_COUNT, so the first cloud ends
+    // right above the ball. Follows listEntries, so it re-forms live around a dragged todo.
+    val cloudSegments = remember(listEntries) {
+        listEntries.filterIsInstance<ListEntry.Todo>().withIndex().associate { (index, entry) ->
+            entry.item.id to CloudSegment(
                 cloudIndex = index / CLOUD_SEGMENT_COUNT,
                 segment = index % CLOUD_SEGMENT_COUNT
             )
         }
     }
 
-    // from.index/to.index are positions in the whole LazyColumn, not in listTodos - the summary
-    // card and filter/sort header shift them. Look todos up by key instead of trusting the raw index.
+    // from.index/to.index are positions in the whole LazyColumn, not in listEntries - the
+    // summary card and filter/sort header shift them. Look entries up by key instead of trusting
+    // the raw index.
     val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
-        val fromIndex = listTodos.indexOfFirst { it.id == from.key }
-        val toIndex = listTodos.indexOfFirst { it.id == to.key }
+        val fromIndex = listEntries.indexOfFirst { it.key == from.key }
+        val toIndex = listEntries.indexOfFirst { it.key == to.key }
         if (fromIndex != -1 && toIndex != -1) {
-            listTodos = listTodos.toMutableList().apply {
+            val swapped = listEntries.toMutableList().apply {
                 add(toIndex, removeAt(fromIndex))
+            }
+            // Crossing the ball is a plain swap, so the dragged todo moves past it smoothly. A swap
+            // with another todo puts the ball back after BALL_AFTER_TODO_COUNT todos, so when the
+            // ball was off by one, the swapped neighbour goes through it (two slots) instead - and
+            // it never needs to snap back in one big move.
+            listEntries = if (to.key == ListEntry.Ball.key) {
+                swapped
+            } else {
+                swapped.filterIsInstance<ListEntry.Todo>().map { it.item }.withBall()
             }
         }
     }
@@ -369,7 +413,12 @@ fun TodoListScreen(
                             if (state.isReorderEnabled) {
                                 base.longPressDraggableHandle(
                                     onDragStopped = {
-                                        onAction(TodoListAction.OnReorder(listTodos.map { it.id }))
+                                        val todos = listEntries.filterIsInstance<ListEntry.Todo>().map { it.item }
+                                        // Put the ball back right away - dragging a todo just past
+                                        // it doesn't change the todo order, so no state.items update
+                                        // would come to re-sync it.
+                                        listEntries = todos.withBall()
+                                        onAction(TodoListAction.OnReorder(todos.map { it.id }))
                                     }
                                 )
                             } else {
@@ -426,7 +475,33 @@ fun TodoListScreen(
                     }
                 }
             } else {
-                items(listTodos, key = { it.id }) { item -> todoRow(item) }
+                items(listEntries, key = { it.key }) { entry ->
+                    when (entry) {
+                        is ListEntry.Todo -> todoRow(entry.item)
+                        // A ReorderableItem so a dragged todo swaps with it, but without a drag
+                        // handle - the ball itself can't be picked up.
+                        ListEntry.Ball -> ReorderableItem(reorderableListState, key = entry.key) {
+                            Box(
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .padding(horizontal = AppSpacing.s)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(BiasAlignment(horizontalBias = ballHorizontalBias, verticalBias = 0f))
+                                        .size(BALL_SIZE)
+                                ) {
+                                    Image(
+                                        painter = painterResource(Res.drawable.mascot_ball),
+                                        contentDescription = null,
+                                        modifier = Modifier.requiredSize(BALL_CANVAS_SIZE)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
