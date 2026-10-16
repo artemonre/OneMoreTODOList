@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -65,6 +66,10 @@ fun MaterialAlertDialog(
     text: @Composable (() -> Unit)? = null,
     contentPadding: PaddingValues = MaterialAlertDialogDefaults.ContentPadding,
     buttonsTopSpacing: Dp = MaterialAlertDialogDefaults.ButtonsTopSpacing,
+    // Drawn centered over the card's top edge, on top of it - sticks out above the card by
+    // topDecorationOverhang, and whatever's taller than that overlaps onto the card.
+    topDecoration: @Composable (() -> Unit)? = null,
+    topDecorationOverhang: Dp = 0.dp,
     properties: DialogProperties = DialogProperties()
 ) {
     BasicAlertDialog(
@@ -72,61 +77,69 @@ fun MaterialAlertDialog(
         modifier = modifier,
         properties = properties
     ) {
-        Surface(
-            shape = AlertDialogDefaults.shape,
-            color = AlertDialogDefaults.containerColor,
-            tonalElevation = AlertDialogDefaults.TonalElevation
-        ) {
-            Column(modifier = Modifier.padding(contentPadding)) {
-                icon?.let {
-                    CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.iconContentColor) {
-                        Box(
-                            Modifier
-                                .padding(bottom = ICON_BOTTOM_SPACING)
-                                .align(Alignment.CenterHorizontally)
+        // propagateMinConstraints keeps the card at the dialog's own minimum width, same as without
+        // a decoration - the decoration itself opts out of it via wrapContentSize.
+        Box(propagateMinConstraints = true) {
+            Surface(
+                modifier = Modifier.padding(top = topDecorationOverhang),
+                shape = AlertDialogDefaults.shape,
+                color = AlertDialogDefaults.containerColor,
+                tonalElevation = AlertDialogDefaults.TonalElevation
+            ) {
+                Column(modifier = Modifier.padding(contentPadding)) {
+                    icon?.let {
+                        CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.iconContentColor) {
+                            Box(
+                                Modifier
+                                    .padding(bottom = ICON_BOTTOM_SPACING)
+                                    .align(Alignment.CenterHorizontally)
+                            ) {
+                                icon()
+                            }
+                        }
+                    }
+                    title?.let {
+                        ProvideContentColorTextStyle(
+                            contentColor = AlertDialogDefaults.titleContentColor,
+                            textStyle = MaterialTheme.typography.headlineSmall
                         ) {
-                            icon()
+                            Box(
+                                // Centered when an icon is present, same as stock.
+                                Modifier
+                                    .padding(bottom = TITLE_BOTTOM_SPACING)
+                                    .align(if (icon == null) Alignment.Start else Alignment.CenterHorizontally)
+                            ) {
+                                title()
+                            }
+                        }
+                    }
+                    text?.let {
+                        ProvideContentColorTextStyle(
+                            contentColor = AlertDialogDefaults.textContentColor,
+                            textStyle = MaterialTheme.typography.bodyMedium
+                        ) {
+                            Box(
+                                Modifier
+                                    .weight(weight = 1f, fill = false)
+                                    .padding(bottom = buttonsTopSpacing)
+                                    .align(Alignment.Start)
+                            ) {
+                                text()
+                            }
+                        }
+                    }
+                    Box(modifier = Modifier.align(Alignment.End)) {
+                        ProvideContentColorTextStyle(
+                            contentColor = MaterialTheme.colorScheme.primary,
+                            textStyle = MaterialTheme.typography.labelLarge
+                        ) {
+                            DialogButtons(confirmButton = confirmButton, dismissButton = dismissButton)
                         }
                     }
                 }
-                title?.let {
-                    ProvideContentColorTextStyle(
-                        contentColor = AlertDialogDefaults.titleContentColor,
-                        textStyle = MaterialTheme.typography.headlineSmall
-                    ) {
-                        Box(
-                            // Centered when an icon is present, same as stock.
-                            Modifier
-                                .padding(bottom = TITLE_BOTTOM_SPACING)
-                                .align(if (icon == null) Alignment.Start else Alignment.CenterHorizontally)
-                        ) {
-                            title()
-                        }
-                    }
-                }
-                text?.let {
-                    ProvideContentColorTextStyle(
-                        contentColor = AlertDialogDefaults.textContentColor,
-                        textStyle = MaterialTheme.typography.bodyMedium
-                    ) {
-                        Box(
-                            Modifier
-                                .weight(weight = 1f, fill = false)
-                                .padding(bottom = buttonsTopSpacing)
-                                .align(Alignment.Start)
-                        ) {
-                            text()
-                        }
-                    }
-                }
-                Box(modifier = Modifier.align(Alignment.End)) {
-                    ProvideContentColorTextStyle(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        textStyle = MaterialTheme.typography.labelLarge
-                    ) {
-                        DialogButtons(confirmButton = confirmButton, dismissButton = dismissButton)
-                    }
-                }
+            }
+            topDecoration?.let {
+                Box(Modifier.wrapContentSize(Alignment.TopCenter)) { it() }
             }
         }
     }

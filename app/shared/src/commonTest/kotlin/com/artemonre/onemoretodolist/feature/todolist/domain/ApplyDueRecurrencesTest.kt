@@ -3,7 +3,10 @@ package com.artemonre.onemoretodolist.feature.todolist.domain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -29,7 +32,7 @@ class ApplyDueRecurrencesTest {
             initialTodos = listOf(original, todoItem(id = "2", sortOrder = 0))
         )
 
-        ApplyDueRecurrences(dataSource)()
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
 
         val todos = dataSource.observeTodos().first()
         val updated = todos.first { it.id == "1" }
@@ -53,7 +56,7 @@ class ApplyDueRecurrencesTest {
             )
         )
 
-        ApplyDueRecurrences(dataSource)()
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
 
         val updated = dataSource.observeTodos().first().single()
         assertEquals(TodoStatus.Active, updated.status)
@@ -66,7 +69,7 @@ class ApplyDueRecurrencesTest {
         val original = todoItem(id = "1", sortOrder = 5, recurrence = recurrence, recurrenceAnchorInstant = now)
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
 
-        ApplyDueRecurrences(dataSource)()
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
 
         assertEquals(original, dataSource.observeTodos().first().single())
     }
@@ -86,7 +89,7 @@ class ApplyDueRecurrencesTest {
             )
         )
 
-        ApplyDueRecurrences(dataSource)()
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
 
         val updated = dataSource.observeTodos().first().single()
         assertEquals(TodoStatus.Active, updated.status)
@@ -99,7 +102,7 @@ class ApplyDueRecurrencesTest {
         val original = todoItem(id = "1", status = TodoStatus.Active, recurrence = recurrence)
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
 
-        ApplyDueRecurrences(dataSource)()
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
 
         assertEquals(original, dataSource.observeTodos().first().single())
     }
@@ -117,9 +120,98 @@ class ApplyDueRecurrencesTest {
         )
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
 
-        ApplyDueRecurrences(dataSource)()
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
 
         assertEquals(original, dataSource.observeTodos().first().single())
+    }
+
+    @Test
+    fun `an Every todo with a due time waits for it, however long ago its anchor was`() = runTest {
+        // Daily repeat with the first reminder 10 days out - it must not resurface every day before then.
+        val recurrence = Recurrence(type = RecurrenceType.Every, interval = 1, unit = RecurrenceUnit.Day)
+        val original = todoItem(
+            id = "1",
+            sortOrder = 5,
+            recurrence = recurrence,
+            recurrenceAnchorInstant = now - 3.days
+        ).withDueAt(now + 10.days)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
+
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
+
+        assertEquals(original, dataSource.observeTodos().first().single())
+    }
+
+    @Test
+    fun `an Every todo whose due time only just passed is left to its own alarm`() = runTest {
+        val recurrence = Recurrence(type = RecurrenceType.Every, interval = 1, unit = RecurrenceUnit.Day)
+        val original = todoItem(id = "1", status = TodoStatus.Done, completionDate = today(), recurrence = recurrence)
+            .withDueAt(now - 5.minutes)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
+
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
+
+        assertEquals(original, dataSource.observeTodos().first().single())
+    }
+
+    @Test
+    fun `a missed Every due time reactivates the todo and moves on to the next occurrence still ahead`() = runTest {
+        val recurrence = Recurrence(type = RecurrenceType.Every, interval = 1, unit = RecurrenceUnit.Day)
+        val original = todoItem(id = "1", status = TodoStatus.Done, completionDate = today(), recurrence = recurrence)
+            .withDueAt(now - 3.days)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
+        val scheduler = FakeDueTimeScheduler()
+
+        ApplyDueRecurrences(dataSource, scheduler)()
+
+        val updated = dataSource.observeTodos().first().single()
+        assertEquals(TodoStatus.Active, updated.status)
+        assertNull(updated.completionDate)
+        assertEquals(original.dueTime, updated.dueTime)
+        val nextDue = updated.dueInstant() ?: error("expected a due time")
+        assertTrue(nextDue > now && nextDue <= now + 1.days)
+        assertEquals(listOf("1"), scheduler.rescheduledIds)
+    }
+
+    @Test
+    fun `an AfterCompletion todo with a due time waits for it even once its delay has passed`() = runTest {
+        // Completed early in the day with the reminder later on - the delay alone mustn't beat the reminder.
+        val recurrence = Recurrence(type = RecurrenceType.AfterCompletion, interval = 1, unit = RecurrenceUnit.Day)
+        val original = todoItem(
+            id = "1",
+            status = TodoStatus.Done,
+            completionDate = today(),
+            recurrence = recurrence,
+            recurrenceAnchorInstant = now - recurrence.duration()
+        ).withDueAt(now + 2.days)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
+
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
+
+        assertEquals(original, dataSource.observeTodos().first().single())
+    }
+
+    @Test
+    fun `a missed AfterCompletion due time reactivates the todo, keeping only the time of day`() = runTest {
+        val recurrence = Recurrence(type = RecurrenceType.AfterCompletion, interval = 1, unit = RecurrenceUnit.Day)
+        val original = todoItem(
+            id = "1",
+            status = TodoStatus.Done,
+            completionDate = today(),
+            recurrence = recurrence,
+            recurrenceAnchorInstant = now - 2.days
+        ).withDueAt(now - 1.days)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
+        val scheduler = FakeDueTimeScheduler()
+
+        ApplyDueRecurrences(dataSource, scheduler)()
+
+        val updated = dataSource.observeTodos().first().single()
+        assertEquals(TodoStatus.Active, updated.status)
+        assertNull(updated.completionDate)
+        assertNull(updated.dueDate)
+        assertEquals(original.dueTime, updated.dueTime)
+        assertEquals(listOf("1"), scheduler.rescheduledIds)
     }
 
     @Test
@@ -127,9 +219,14 @@ class ApplyDueRecurrencesTest {
         val original = todoItem(id = "1", status = TodoStatus.Done, completionDate = today())
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
 
-        ApplyDueRecurrences(dataSource)()
+        ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler())()
 
         assertEquals(original, dataSource.observeTodos().first().single())
+    }
+
+    private fun TodoItem.withDueAt(instant: Instant): TodoItem {
+        val local = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        return copy(dueDate = local.date, dueTime = local.time, dueTimeMode = DueTimeMode.Approximate)
     }
 
     private fun today(): LocalDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date

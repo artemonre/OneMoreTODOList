@@ -41,6 +41,18 @@ class RearmDueTodoAlarmsTest {
         assertEquals(emptyList(), scheduler.rescheduledIds)
     }
 
+    @Test
+    fun `reschedules a done recurring todo still waiting on its next occurrence`() = runTest {
+        val waiting = dueTodo(id = "1", status = TodoStatus.Done)
+            .copy(recurrence = Recurrence(RecurrenceType.Every, 1, RecurrenceUnit.Day))
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(waiting))
+        val scheduler = FakeDueTimeScheduler()
+
+        RearmDueTodoAlarms(dataSource, scheduler)()
+
+        assertEquals(listOf("1"), scheduler.rescheduledIds)
+    }
+
     // Regression guard for the forward-timezone-jump fix: a due todo must still be rearmed even
     // when its wall-clock time has already passed, so AlarmManager can fire it immediately instead
     // of it being silently dropped - see RearmDueTodoAlarms' own comment.

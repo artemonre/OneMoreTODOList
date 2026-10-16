@@ -13,7 +13,7 @@ class TodoListStartTaskTest {
         val texts = ONBOARDING_TODOS.indices.map { "Sample $it" }
         val task = TodoListStartTask(
             SeedOnboardingTodos(dataSource),
-            ApplyDueRecurrences(dataSource),
+            ApplyDueRecurrences(dataSource, NoOpDueTimeScheduler()),
             PurgeDeletedTodos(dataSource),
             OnboardingTexts { texts }
         )

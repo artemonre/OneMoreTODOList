@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -24,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
@@ -35,6 +38,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
@@ -48,11 +52,21 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
 import com.artemonre.onemoretodolist.hasNativeCopyConfirmation
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import kotlinx.datetime.LocalDate
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.action_close
 import onemoretodolist.app.shared.generated.resources.detail_attention_info
+import onemoretodolist.app.shared.generated.resources.mascot_head_leaning_on_fence
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+
+private val MASCOT_SIZE = 160.dp
+// Where the drawing actually starts (the ear tips) and where its fence line runs, as fractions of its
+// square canvas. The card's top edge goes on the fence line, so the head peeks out from behind the
+// card while the paws rest on it.
+private const val MASCOT_EARS_FRACTION = 0.3f
+private const val MASCOT_FENCE_FRACTION = 0.65f
 
 private val URL_REGEX = Regex("""(?:https?://|www\.)\S+""")
 private val TRAILING_URL_PUNCTUATION = ".,;:!?)]}\"'".toSet()
@@ -101,6 +115,8 @@ fun TodoDetailDialog(
         // Tighter than stock below the text: half the bottom padding, two-thirds of the text-to-buttons gap.
         contentPadding = PaddingValues(start = AppSpacing.xl, top = AppSpacing.xl, end = AppSpacing.xl, bottom = AppSpacing.m),
         buttonsTopSpacing = AppSpacing.l,
+        topDecoration = { PeekingMascot() },
+        topDecorationOverhang = (MASCOT_FENCE_FRACTION - MASCOT_EARS_FRACTION) * MASCOT_SIZE,
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.action_close))
@@ -171,6 +187,22 @@ fun TodoDetailDialog(
                 }
             }
         }
+    )
+}
+
+@Composable
+private fun PeekingMascot() {
+    Image(
+        painter = painterResource(Res.drawable.mascot_head_leaning_on_fence),
+        contentDescription = null,
+        modifier = Modifier
+            // Leaves the empty canvas above the ears out of the layout, so it doesn't push the card down.
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                val emptyTop = (placeable.height * MASCOT_EARS_FRACTION).roundToInt()
+                layout(placeable.width, placeable.height - emptyTop) { placeable.place(0, -emptyTop) }
+            }
+            .size(MASCOT_SIZE)
     )
 }
 
