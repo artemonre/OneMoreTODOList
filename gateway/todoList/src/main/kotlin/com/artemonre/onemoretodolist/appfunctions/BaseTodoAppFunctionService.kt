@@ -77,7 +77,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
      * @param reminderDateTime Optional local date and time in ISO-8601 (e.g. "2026-10-03T09:30") at which to notify the user. Must be in the future. For a repeating todo, this is the first occurrence and sets the time of day for the following ones.
      * @param exactReminder Whether the reminder must fire at the exact time rather than within a 15-minute window around it. May fall back to the window if the user hasn't allowed exact alarms.
      * @param recurrence Optional repeat rule. Without a reminder, the todo simply becomes active again when the interval has passed.
-     * @param checklist Optional checklist items; pass null as each item's ID.
+     * @param checklist Optional checklist items, at most 10 - any beyond that are dropped; pass null as each item's ID.
      * @param tags Optional tags. Reusing an existing tag name keeps that tag's color.
      * @return The created todo.
      * @throws AppFunctionInvalidArgumentException If text is blank, reminderDateTime isn't a valid future ISO-8601 local date-time, or the recurrence, or a tag color, is invalid. If thrown, ask the user to clarify.
@@ -123,7 +123,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
      * @param clearReminder Pass true to remove the reminder. Takes priority over reminderDateTime.
      * @param recurrence New repeat rule, replacing the current one.
      * @param clearRecurrence Pass true to stop the todo from repeating. Takes priority over recurrence.
-     * @param checklist The complete new checklist, replacing the current one. To change one item, send back the whole list from getTodoList with that item edited, keeping the other items' IDs. Pass an empty list to remove the checklist.
+     * @param checklist The complete new checklist, replacing the current one. To change one item, send back the whole list from getTodoList with that item edited, keeping the other items' IDs. At most 10 items - any beyond that are dropped. Pass an empty list to remove the checklist.
      * @param tags The complete new set of tags, replacing the current ones. Pass an empty list to remove all tags.
      * @return The todo after the change.
      * @throws AppFunctionElementNotFoundException If no todo has this ID. If thrown, call "getTodoList" to find the correct ID.
