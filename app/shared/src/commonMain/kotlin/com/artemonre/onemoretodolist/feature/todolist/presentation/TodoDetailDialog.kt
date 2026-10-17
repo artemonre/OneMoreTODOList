@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -67,6 +69,11 @@ private val MASCOT_SIZE = 160.dp
 // card while the paws rest on it.
 private const val MASCOT_EARS_FRACTION = 0.3f
 private const val MASCOT_FENCE_FRACTION = 0.65f
+private val MASCOT_OVERHANG = (MASCOT_FENCE_FRACTION - MASCOT_EARS_FRACTION) * MASCOT_SIZE
+
+// The card never grows past this share of the screen's height - a long text or checklist scrolls
+// inside it instead.
+private const val MAX_CARD_HEIGHT_SCREEN_FRACTION = 0.6f
 
 private val URL_REGEX = Regex("""(?:https?://|www\.)\S+""")
 private val TRAILING_URL_PUNCTUATION = ".,;:!?)]}\"'".toSet()
@@ -109,14 +116,18 @@ fun TodoDetailDialog(
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
     val shareText = rememberShareText(item)
+    // Read here, outside the dialog, so it's the app window's height rather than the dialog's own.
+    val maxCardHeight = LocalWindowInfo.current.containerDpSize.height * MAX_CARD_HEIGHT_SCREEN_FRACTION
 
     MaterialAlertDialog(
         onDismissRequest = onDismiss,
+        // The mascot's overhang sits above the card, so it doesn't count toward the card's cap.
+        modifier = Modifier.heightIn(max = maxCardHeight + MASCOT_OVERHANG),
         // Tighter than stock below the text: half the bottom padding, two-thirds of the text-to-buttons gap.
         contentPadding = PaddingValues(start = AppSpacing.xl, top = AppSpacing.xl, end = AppSpacing.xl, bottom = AppSpacing.m),
         buttonsTopSpacing = AppSpacing.l,
         topDecoration = { PeekingMascot() },
-        topDecorationOverhang = (MASCOT_FENCE_FRACTION - MASCOT_EARS_FRACTION) * MASCOT_SIZE,
+        topDecorationOverhang = MASCOT_OVERHANG,
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.action_close))
