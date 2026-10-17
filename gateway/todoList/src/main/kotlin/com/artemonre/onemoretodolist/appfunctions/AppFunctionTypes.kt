@@ -3,6 +3,7 @@ package com.artemonre.onemoretodolist.appfunctions
 import androidx.appfunctions.AppFunctionSerializable
 import androidx.appfunctions.AppFunctionStringValueConstraint
 import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
+import com.artemonre.onemoretodolist.feature.todolist.domain.MAX_CHECKLIST_ITEMS
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
@@ -130,10 +131,12 @@ internal fun TodoRecurrence.toRecurrence(): Recurrence {
 }
 
 // Items with a known ID keep it (so the agent can re-send a list it read and edit a line in place);
-// new ones get a fresh ID. Blank lines are dropped, same as the app's form.
+// new ones get a fresh ID. Blank lines are dropped and anything past MAX_CHECKLIST_ITEMS is cut off,
+// same as the app's form allows.
 @OptIn(ExperimentalUuidApi::class)
 internal fun List<TodoChecklistItem>.toChecklist(): List<ChecklistItem> =
     filter { it.text.isNotBlank() }
+        .take(MAX_CHECKLIST_ITEMS)
         .map { ChecklistItem(id = it.id ?: Uuid.random().toString(), text = it.text.trim(), isDone = it.isDone) }
 
 // A name already used on another todo keeps its color unless one is given explicitly - same

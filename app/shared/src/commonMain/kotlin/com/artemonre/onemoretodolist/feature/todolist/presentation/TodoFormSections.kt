@@ -58,6 +58,7 @@ import com.artemonre.onemoretodolist.core.designsystem.components.material.Mater
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialSuggestionChip
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
+import com.artemonre.onemoretodolist.feature.todolist.domain.MAX_CHECKLIST_ITEMS
 import com.artemonre.onemoretodolist.feature.todolist.domain.TagColor
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import kotlin.uuid.ExperimentalUuidApi
@@ -283,7 +284,7 @@ private fun TagColor.nameResource(): StringResource = when (this) {
 }
 
 // One flat level of items - tick, edit text, remove - plus "Add item", which appends a blank item
-// and focuses it. Blank items are dropped on save (see TodoFormBody). Only the full-screen form
+// and focuses it, until there are MAX_CHECKLIST_ITEMS. Blank items are dropped on save (see TodoFormBody). Only the full-screen form
 // shows this - see TodoFormBody's showChecklist.
 @OptIn(ExperimentalUuidApi::class)
 @Composable
@@ -339,6 +340,7 @@ internal fun TodoFormChecklistSection(
             Spacer(Modifier.height(AppSpacing.xs))
         }
         TextButton(
+            enabled = items.size < MAX_CHECKLIST_ITEMS,
             onClick = {
                 val newItem = ChecklistItem(id = Uuid.random().toString(), text = "")
                 justAddedId = newItem.id
