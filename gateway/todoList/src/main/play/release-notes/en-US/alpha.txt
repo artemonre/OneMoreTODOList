@@ -1,4 +1,6 @@
-- New green and yellow color palettes
-- The widget follows your wallpaper colors with Dynamic color on (Android 12+)
-- The app is now called "TODO it later" on your home screen
-- Meet the new mascot - they don't have a name yet, however from now on you two will be seeing each other more often
+- Repeating todos with a reminder now wait for it instead of jumping to the top before it
+- Repeat-after-completion todos no longer come back before their reminder time
+- Repeating reminders survive a phone restart
+- Long todo details scroll instead of filling the screen
+- Checklists hold up to 10 items
+- The mascot now peeks in when you open a todo, and left their ball in your list
