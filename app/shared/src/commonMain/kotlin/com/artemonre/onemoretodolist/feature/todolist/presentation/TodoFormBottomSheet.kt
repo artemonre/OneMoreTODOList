@@ -141,6 +141,7 @@ import onemoretodolist.app.shared.generated.resources.form_text_placeholder
 import onemoretodolist.app.shared.generated.resources.form_time
 import onemoretodolist.app.shared.generated.resources.form_title_add
 import onemoretodolist.app.shared.generated.resources.form_title_edit
+import onemoretodolist.app.shared.generated.resources.mascot_put_paws_on_fence
 import onemoretodolist.app.shared.generated.resources.recurrence_after_completion
 import onemoretodolist.app.shared.generated.resources.recurrence_day
 import onemoretodolist.app.shared.generated.resources.recurrence_every
@@ -155,6 +156,14 @@ import org.jetbrains.compose.resources.PluralStringResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+
+private val MASCOT_SIZE = 160.dp
+// Where the drawing actually starts (the ear tips) and where the sheet's top edge goes, as fractions
+// of its square canvas - a bit above the bottom of its body, so the body's bottom and the paws rest
+// on the sheet.
+private const val MASCOT_EARS_FRACTION = 0.225f
+private const val MASCOT_FENCE_FRACTION = 0.65f
+private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_SIZE, MASCOT_EARS_FRACTION, MASCOT_FENCE_FRACTION)
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
 @Composable
@@ -175,7 +184,9 @@ fun TodoFormBottomSheet(
     AppBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
-        onExpanded = { isSheetExpanded = true }
+        onExpanded = { isSheetExpanded = true },
+        topDecoration = { PeekingMascot(Res.drawable.mascot_put_paws_on_fence, MASCOT_SIZE, MASCOT_EARS_FRACTION) },
+        topDecorationOverhang = MASCOT_OVERHANG
     ) {
         Row(
             modifier = Modifier
