@@ -116,7 +116,11 @@ fun TodoDetailDialog(
     MaterialAlertDialog(
         onDismissRequest = onDismiss,
         // The mascot's overhang sits above the card, so it doesn't count toward the card's cap.
-        modifier = Modifier.heightIn(max = maxCardHeight + MASCOT_OVERHANG),
+        // fillMaxWidth keeps the card at the dialog's max width whatever the text length, so
+        // short and long todos look the same.
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = maxCardHeight + MASCOT_OVERHANG),
         // Tighter than stock below the text: half the bottom padding, two-thirds of the text-to-buttons gap.
         contentPadding = PaddingValues(start = AppSpacing.xl, top = AppSpacing.xl, end = AppSpacing.xl, bottom = AppSpacing.m),
         buttonsTopSpacing = AppSpacing.l,

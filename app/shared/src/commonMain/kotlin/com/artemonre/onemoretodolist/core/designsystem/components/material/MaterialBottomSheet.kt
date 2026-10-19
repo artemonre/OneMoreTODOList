@@ -1,10 +1,13 @@
 package com.artemonre.onemoretodolist.core.designsystem.components.material
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -17,14 +20,19 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * A stock Material3 [ModalBottomSheet] - default shape, colors, and scrim all from
@@ -71,6 +79,9 @@ fun MaterialBottomSheet(
         return
     }
 
+    val scope = rememberCoroutineScope()
+    val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
+
     // The stock sheet clips its content to its own shape, so nothing can stick out above it. Instead
     // the stock sheet itself is left invisible and an identical-looking sheet is drawn inside it,
     // topDecorationOverhang lower - the decoration fills the gap. Drag handle and insets move inside
@@ -104,6 +115,23 @@ fun MaterialBottomSheet(
                     content()
                 }
             }
+            // The gap above the visible sheet is still the (invisible) stock sheet, not scrim, so taps
+            // there - beside the decoration or on its part above the sheet - would otherwise do
+            // nothing. Dismiss like a scrim tap instead. A plain tap detector rather than clickable,
+            // so drags still reach the sheet and the scrim stays the only "close" for accessibility.
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .wrapContentHeight(Alignment.Top)
+                    .height(topDecorationOverhang)
+                    .pointerInput(Unit) {
+                        detectTapGestures {
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) currentOnDismissRequest()
+                            }
+                        }
+                    }
+            )
             Box(Modifier.wrapContentSize(Alignment.TopCenter)) { topDecoration() }
         }
     }
