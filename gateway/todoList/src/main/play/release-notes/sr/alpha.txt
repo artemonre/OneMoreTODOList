@@ -1,0 +1,6 @@
+- Ponavljajući zadaci s podsetnikom više ne skaču na vrh pre njega
+- Zadaci koji se ponavljaju nakon završetka više ne stižu pre podsetnika
+- Ponavljajući podsetnici ostaju i posle restarta telefona
+- Dugi zadaci se skroluju umesto da zauzmu ceo ekran
+- Kontrolna lista može imati do 10 stavki
+- Kuca sada viri kad otvoriš zadatak i ostavila je lopticu u tvojoj listi
