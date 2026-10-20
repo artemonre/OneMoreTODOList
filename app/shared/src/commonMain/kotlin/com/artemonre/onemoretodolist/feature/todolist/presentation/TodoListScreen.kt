@@ -105,7 +105,7 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_this_mon
 import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
-import onemoretodolist.app.shared.generated.resources.mascot_aussie
+import onemoretodolist.app.shared.generated.resources.mascot_sitting
 import onemoretodolist.app.shared.generated.resources.mascot_ball
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_date
@@ -456,7 +456,7 @@ fun TodoListScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = painterResource(Res.drawable.mascot_aussie),
+                            painter = painterResource(Res.drawable.mascot_sitting),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()

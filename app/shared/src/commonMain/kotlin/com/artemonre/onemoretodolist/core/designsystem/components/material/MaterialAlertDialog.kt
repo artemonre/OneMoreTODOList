@@ -1,11 +1,14 @@
 package com.artemonre.onemoretodolist.core.designsystem.components.material
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
@@ -20,9 +23,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -139,6 +145,21 @@ fun MaterialAlertDialog(
                 }
             }
             topDecoration?.let {
+                // The gap above the card is still inside the dialog's bounds, so taps there - beside
+                // the decoration or on its part above the card - wouldn't count as outside taps.
+                // Dismiss like one instead. A plain tap detector rather than clickable, so the dialog
+                // doesn't gain a second "close" for accessibility.
+                // matchParentSize so it follows the card's width instead of widening the dialog.
+                if (properties.dismissOnClickOutside) {
+                    val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .wrapContentHeight(Alignment.Top)
+                            .height(topDecorationOverhang)
+                            .pointerInput(Unit) { detectTapGestures { currentOnDismissRequest() } }
+                    )
+                }
                 Box(Modifier.wrapContentSize(Alignment.TopCenter)) { it() }
             }
         }
