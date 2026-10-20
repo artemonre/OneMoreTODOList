@@ -154,7 +154,7 @@
     <string name="settings_ui_style_paper">Бумага</string>
     <string name="settings_todos">Задачи</string>
     <string name="settings_archive_completed">Архивировать выполненные</string>
-    <string name="settings_archive_completed_description">Если выключено, выполненная в приложении задача сразу удаляется (её можно вернуть кнопкой «Отменить»). Флажок в виджете всегда архивирует задачу, чтобы случайное нажатие нельзя было потерять.</string>
+    <string name="settings_archive_completed_description">Если выключено, выполненная в приложении задача сразу удаляется (её можно вернуть кнопкой «Отменить»). Флажок в виджете всегда архивирует задачу, чтобы нельзя было удалить задачу случайным нажатием.</string>
     <string name="settings_support">Поддержка</string>
     <string name="settings_send_email">Написать письмо</string>
     <string name="settings_privacy_policy">Политика конфиденциальности</string>
