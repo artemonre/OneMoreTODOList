@@ -8,8 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.theme.AccentSwatch
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAccentSwatches
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
@@ -44,7 +44,7 @@ fun TodoTagChip(tag: TodoTag, modifier: Modifier = Modifier) {
         overflow = TextOverflow.Ellipsis,
         modifier = modifier
             .background(color = swatch.container, shape = MaterialTheme.shapes.small)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = AppSpacing.s, vertical = AppSpacing.xs)
     )
 }
 

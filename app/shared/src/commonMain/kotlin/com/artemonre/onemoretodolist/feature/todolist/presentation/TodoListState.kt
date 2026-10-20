@@ -11,6 +11,10 @@ data class TodoListState(
     val items: List<TodoItemUi> = emptyList(),
     val sortOption: TodoSortOption = TodoSortOption.Date,
     val filter: TodoListFilter = TodoListFilter.Active,
+    // Whether long-press drags todos. Precomputed so the gesture only reads it: true under Manual,
+    // and also under another sort whose order happens to match the Manual one - dropping a drag
+    // there switches the sort to Manual (see TodoListViewModel.reorder).
+    val isReorderEnabled: Boolean = false,
     // All independent of filter/sortOption/items - not just whatever the current view happens to
     // be showing. activeCount is every Active todo (the Active chip); completedCount is every Done
     // one (the Done chip). The doneXCount values count by completionDate for the Completed

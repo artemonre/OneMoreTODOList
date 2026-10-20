@@ -16,8 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -33,11 +37,9 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
@@ -47,10 +49,12 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -63,7 +67,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -72,6 +75,11 @@ import androidx.compose.ui.window.Dialog
 import com.artemonre.onemoretodolist.SpeechRecognitionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.components.keepsKeyboardOnTap
+import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedTextField
+import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialSegmentedButton
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
@@ -85,14 +93,16 @@ import com.artemonre.onemoretodolist.rememberDueTimeNotificationPermissionState
 import com.artemonre.onemoretodolist.rememberExactAlarmPermissionState
 import com.artemonre.onemoretodolist.rememberSpeechToText
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format.MonthNames
-import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import onemoretodolist.app.shared.generated.resources.Res
@@ -109,6 +119,7 @@ import onemoretodolist.app.shared.generated.resources.form_due_time
 import onemoretodolist.app.shared.generated.resources.form_every
 import onemoretodolist.app.shared.generated.resources.form_exact_description
 import onemoretodolist.app.shared.generated.resources.form_exact_needs_permission
+import onemoretodolist.app.shared.generated.resources.form_exact_permission_title
 import onemoretodolist.app.shared.generated.resources.form_exact_time
 import onemoretodolist.app.shared.generated.resources.form_grant_permission
 import onemoretodolist.app.shared.generated.resources.form_increase
@@ -131,6 +142,7 @@ import onemoretodolist.app.shared.generated.resources.form_text_placeholder
 import onemoretodolist.app.shared.generated.resources.form_time
 import onemoretodolist.app.shared.generated.resources.form_title_add
 import onemoretodolist.app.shared.generated.resources.form_title_edit
+import onemoretodolist.app.shared.generated.resources.mascot_put_paws_on_fence
 import onemoretodolist.app.shared.generated.resources.recurrence_after_completion
 import onemoretodolist.app.shared.generated.resources.recurrence_day
 import onemoretodolist.app.shared.generated.resources.recurrence_every
@@ -145,6 +157,14 @@ import org.jetbrains.compose.resources.PluralStringResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+
+private val MASCOT_SIZE = 160.dp
+// Where the drawing actually starts (the ear tips) and where the sheet's top edge goes, as fractions
+// of its square canvas - a bit above the bottom of its body, so the body's bottom and the paws rest
+// on the sheet.
+private const val MASCOT_EARS_FRACTION = 0.225f
+private const val MASCOT_FENCE_FRACTION = 0.65f
+private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_SIZE, MASCOT_EARS_FRACTION, MASCOT_FENCE_FRACTION)
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
 @Composable
@@ -165,12 +185,14 @@ fun TodoFormBottomSheet(
     AppBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
-        onExpanded = { isSheetExpanded = true }
+        onExpanded = { isSheetExpanded = true },
+        topDecoration = { PeekingMascot(Res.drawable.mascot_put_paws_on_fence, MASCOT_SIZE, MASCOT_EARS_FRACTION) },
+        topDecorationOverhang = MASCOT_OVERHANG
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = AppSpacing.l),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -196,7 +218,7 @@ fun TodoFormBottomSheet(
             // marking it as an add/edit form.
             showTitle = false,
             fieldMaxLines = Int.MAX_VALUE,
-            actionsTopSpacing = 8.dp,
+            actionsTopSpacing = AppSpacing.s,
             awaitAutoFocusReady = { snapshotFlow { isSheetExpanded }.first { it } }
         )
     }
@@ -246,12 +268,16 @@ fun TodoFormBody(
     onTextChange: (String) -> Unit = {},
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
-    // TextFieldValue (not a plain String) so pre-filled text - editing an existing todo, or a
-    // draft carried over from the quick-add sheet - starts with the cursor at the end instead of
-    // Compose's default of the start, which is what you'd want to keep typing from.
-    var text by remember {
-        val prefilled = editingItem?.text ?: initialText
-        mutableStateOf(TextFieldValue(text = prefilled, selection = TextRange(prefilled.length)))
+    // Pre-filled text - editing an existing todo, or a draft carried over from the quick-add sheet -
+    // starts with the cursor at the end instead of the start, which is what you'd want to keep
+    // typing from.
+    val textState = (editingItem?.text ?: initialText).let { prefilled ->
+        rememberTextFieldState(initialText = prefilled, initialSelection = TextRange(prefilled.length))
+    }
+    // Every change after the prefill - typing, clearing, speech - reaches onTextChange.
+    val currentOnTextChange by rememberUpdatedState(onTextChange)
+    LaunchedEffect(textState) {
+        snapshotFlow { textState.text.toString() }.drop(1).collect { currentOnTextChange(it) }
     }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
     var tags by remember { mutableStateOf(editingItem?.tags.orEmpty()) }
@@ -269,10 +295,10 @@ fun TodoFormBody(
     // null where exact alarms aren't a distinct grantable permission (pre-Android 12, or any
     // non-Android target) - the "Grant permission" button only shows where it's actually needed.
     val exactAlarmPermission = rememberExactAlarmPermissionState()
-    // null on any non-Android target - request() is called once, the first time "Due time" is
+    // null on any non-Android target - request() is called once, the first time "Reminder" is
     // turned on (see below); declining doesn't block saving, unlike exactAlarmPermission.
     val notificationPermission = rememberDueTimeNotificationPermissionState()
-    // Values survive unchecking "Due time" the same way recurrenceInterval/Unit do. Prefilled from
+    // Values survive unchecking "Reminder" the same way recurrenceInterval/Unit do. Prefilled from
     // editingItem, same as the recurrence fields above.
     var dueTimeEnabled by remember { mutableStateOf(editingItem?.dueDate != null) }
     // Off = approximate (the silent default/fallback, no extra permission needed) - on is an
@@ -285,6 +311,7 @@ fun TodoFormBody(
     }
     // Wall-clock local values, not a resolved instant - "10am" should keep meaning 10am local even
     // if the timezone changes before it fires, see TodoItem.dueInstant.
+    var showExactPermissionDialog by remember { mutableStateOf(false) }
     var dueDate by remember { mutableStateOf(editingItem?.dueDate) }
     var dueTime by remember { mutableStateOf(editingItem?.dueTime) }
     var showDueDatePicker by remember { mutableStateOf(false) }
@@ -295,11 +322,15 @@ fun TodoFormBody(
     } else {
         null
     }
-    // Due time checked but not both fields actually picked would otherwise silently discard the
+    // Reminder checked but not both fields actually picked would otherwise silently discard the
     // user's intent on save - block it the same way a missing exact-alarm permission is blocked.
     val dueTimeIncomplete = dueTimeEnabled && (dueDate == null || dueTime == null)
+    // Re-checked on every recomposition, so a reminder that slips into the past while the form
+    // sits open blocks saving as soon as anything else on the form changes.
+    val dueDateTime = dueDate?.let { date -> dueTime?.let { time -> LocalDateTime(date, time) } }
+    val dueTimeInPast = dueTimeEnabled && dueDateTime != null && dueDateTime < localNow()
     val dueTimeExactPermissionMissing = dueTimeEnabled && exactTimeEnabled && exactAlarmPermission?.isGranted == false
-    val canSubmit = (text.text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeExactPermissionMissing
+    val canSubmit = (textState.text.isNotBlank() || !requireText) && !dueTimeIncomplete && !dueTimeInPast && !dueTimeExactPermissionMissing
     val openedAt = remember {
         dueTimeFormat.format(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time)
     }
@@ -309,7 +340,7 @@ fun TodoFormBody(
     val submit = {
         onConfirm(
             TodoDraft(
-                text = text.text.trim().ifEmpty { defaultText },
+                text = textState.text.trim().toString().ifEmpty { defaultText },
                 isPrioritized = isPrioritized,
                 recurrence = recurrence,
                 dueDate = dueDate,
@@ -325,7 +356,7 @@ fun TodoFormBody(
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val speechController = rememberSpeechToText(
-        onResult = { text = TextFieldValue(text = it, selection = TextRange(it.length)); onTextChange(it) }
+        onResult = { textState.setTextAndPlaceCursorAtEnd(it) }
     )
 
     LaunchedEffect(Unit) {
@@ -340,35 +371,31 @@ fun TodoFormBody(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 16.dp)
+            .padding(horizontal = AppSpacing.l)
+            .padding(bottom = AppSpacing.l)
     ) {
         if (showTitle) {
             Text(
                 text = stringResource(if (editingItem != null) Res.string.form_title_edit else Res.string.form_title_add),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = AppSpacing.s)
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(AppSpacing.l))
         }
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it; onTextChange(it.text) },
+        MaterialOutlinedTextField(
+            state = textState,
             label = { Text(stringResource(Res.string.form_text_label)) },
             placeholder = { Text(stringResource(Res.string.form_text_placeholder)) },
-            singleLine = false,
-            minLines = fieldMinLines,
-            maxLines = fieldMaxLines,
+            lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = fieldMinLines, maxHeightInLines = fieldMaxLines),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
                 imeAction = ImeAction.Done
             ),
-            keyboardActions = KeyboardActions(
-                onDone = { if (canSubmit) submit() }
-            ),
-            trailingIcon = if (text.text.isNotEmpty()) {
+            onKeyboardAction = { if (canSubmit) submit() },
+            compact = true,
+            trailingIcon = if (textState.text.isNotEmpty()) {
                 {
-                    IconButton(onClick = { text = TextFieldValue(""); onTextChange("") }) {
+                    IconButton(onClick = { textState.clearText() }) {
                         Icon(imageVector = Icons.Filled.Close, contentDescription = stringResource(Res.string.form_clear_text))
                     }
                 }
@@ -390,9 +417,10 @@ fun TodoFormBody(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(textFocusRequester)
+                .keepsKeyboardOnTap()
         )
         if (showTags) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(AppSpacing.m))
             TodoFormTagsSection(
                 tags = tags,
                 knownTags = knownTags,
@@ -407,25 +435,25 @@ fun TodoFormBody(
                     onValueChange = { isPrioritized = it },
                     role = Role.Checkbox
                 )
-                .padding(vertical = 8.dp),
+                .padding(vertical = AppSpacing.s),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppCheckToggle(
                 checked = isPrioritized,
                 onCheckedChange = null
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(AppSpacing.m))
             Text(stringResource(Res.string.form_put_to_top))
         }
         if (showChecklist) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(AppSpacing.xs))
             TodoFormChecklistSection(
                 items = checklist,
                 onItemsChange = { checklist = it }
             )
         }
         if (showDueTime) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(AppSpacing.xs))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -439,28 +467,28 @@ fun TodoFormBody(
                         },
                         role = Role.Checkbox
                     )
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = AppSpacing.s),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AppCheckToggle(
                     checked = dueTimeEnabled,
                     onCheckedChange = null
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(AppSpacing.m))
                 Text(stringResource(Res.string.form_due_time))
             }
         }
         if (showDueTime && dueTimeEnabled) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(AppSpacing.s))
             // Mirrors the Recurrence section's bordered card below - same convention for a
             // checkbox-toggled block of detailed settings.
             OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(12.dp)
+                    modifier = Modifier.padding(AppSpacing.m)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.s)
                     ) {
                         ReadOnlyPickerField(
                             value = dueDate?.let { shortDateFormat.format(it) }.orEmpty(),
@@ -488,17 +516,22 @@ fun TodoFormBody(
                             .fillMaxWidth()
                             .toggleable(
                                 value = exactTimeEnabled,
-                                onValueChange = { exactTimeEnabled = it },
+                                onValueChange = { checked ->
+                                    exactTimeEnabled = checked
+                                    if (checked && exactAlarmPermission?.isGranted == false) {
+                                        showExactPermissionDialog = true
+                                    }
+                                },
                                 role = Role.Checkbox
                             )
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = AppSpacing.s),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AppCheckToggle(
                             checked = exactTimeEnabled,
                             onCheckedChange = null
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(AppSpacing.m))
                         Text(stringResource(Res.string.form_exact_time))
                     }
                     // Notifications being off blocks delivery entirely regardless of exact/
@@ -521,7 +554,7 @@ fun TodoFormBody(
                                 color = MaterialTheme.colorScheme.background,
                                 shape = MaterialTheme.shapes.small
                             )
-                            .padding(horizontal = 8.dp, vertical = 8.dp)
+                            .padding(horizontal = AppSpacing.s, vertical = AppSpacing.s)
                     )
                     if (notificationPermission?.isGranted == false) {
                         TextButton(onClick = { notificationPermission.request(allowSettingsRedirect = true) }) {
@@ -560,7 +593,19 @@ fun TodoFormBody(
                 confirmButton = {
                     TextButton(onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            dueDate = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date
+                            val pickedDate = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date
+                            dueDate = pickedDate
+                            // Today defaults to a reminder shortly from now, unless the time
+                            // already picked is still later than that. Can roll over to tomorrow
+                            // right before midnight.
+                            val earliest = earliestReminder()
+                            val currentTime = dueTime
+                            if (pickedDate <= earliest.date &&
+                                (currentTime == null || LocalDateTime(pickedDate, currentTime) < earliest)
+                            ) {
+                                dueDate = earliest.date
+                                dueTime = earliest.time
+                            }
                         }
                         showDueDatePicker = false
                     }) {
@@ -576,6 +621,33 @@ fun TodoFormBody(
                 DatePicker(state = datePickerState)
             }
         }
+        // Asked up front when "Exact time" is ticked without the permission. Backing out of it
+        // unticks the box again; the inline description and Grant permission button below stay
+        // as the way back in.
+        if (showExactPermissionDialog && exactAlarmPermission != null) {
+            val cancel = {
+                exactTimeEnabled = false
+                showExactPermissionDialog = false
+            }
+            MaterialAlertDialog(
+                onDismissRequest = cancel,
+                title = { Text(stringResource(Res.string.form_exact_permission_title)) },
+                text = { Text(stringResource(Res.string.form_exact_needs_permission)) },
+                confirmButton = {
+                    Button(onClick = {
+                        showExactPermissionDialog = false
+                        exactAlarmPermission.request()
+                    }) {
+                        Text(stringResource(Res.string.form_grant_permission))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = cancel) {
+                        Text(stringResource(Res.string.form_cancel))
+                    }
+                }
+            )
+        }
         if (showDueTimePicker) {
             val timePickerState = rememberTimePickerState(
                 initialHour = dueTime?.hour ?: 10,
@@ -588,11 +660,11 @@ fun TodoFormBody(
                     color = MaterialTheme.colorScheme.surfaceContainerHigh
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(AppSpacing.xl),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         TimePicker(state = timePickerState)
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(AppSpacing.s))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
@@ -600,11 +672,18 @@ fun TodoFormBody(
                             TextButton(onClick = { showDueTimePicker = false }) {
                                 Text(stringResource(Res.string.form_cancel))
                             }
-                            Spacer(Modifier.width(8.dp))
-                            TextButton(onClick = {
-                                dueTime = LocalTime(timePickerState.hour, timePickerState.minute)
-                                showDueTimePicker = false
-                            }) {
+                            Spacer(Modifier.width(AppSpacing.s))
+                            val pickedTime = LocalTime(timePickerState.hour, timePickerState.minute)
+                            val pickedDate = dueDate
+                            TextButton(
+                                onClick = {
+                                    dueTime = pickedTime
+                                    showDueTimePicker = false
+                                },
+                                // No past reminders - only checkable once a date is picked; picking
+                                // today afterwards bumps an already-past time instead (see above).
+                                enabled = pickedDate == null || LocalDateTime(pickedDate, pickedTime) >= localNow()
+                            ) {
                                 Text(stringResource(Res.string.form_ok))
                             }
                         }
@@ -613,7 +692,7 @@ fun TodoFormBody(
             }
         }
         if (showRecurrence) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(AppSpacing.xs))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -622,37 +701,37 @@ fun TodoFormBody(
                         onValueChange = { repeatEnabled = it },
                         role = Role.Checkbox
                     )
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = AppSpacing.s),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AppCheckToggle(
                     checked = repeatEnabled,
                     onCheckedChange = null
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(AppSpacing.m))
                 Text(stringResource(Res.string.form_repeat))
             }
         }
         if (showRecurrence && repeatEnabled) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(AppSpacing.s))
             // A real bordered section for just the recurrence controls - not the Repeat checkbox
             // above, which toggles the section rather than belonging inside it.
             OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(12.dp)
+                    modifier = Modifier.padding(AppSpacing.m)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(stringResource(Res.string.form_every))
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(AppSpacing.s))
                         IntervalCounter(
                             value = recurrenceInterval,
                             onValueChange = { recurrenceInterval = it }
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(AppSpacing.s))
                     EnumSegmentedRow(
                         options = RecurrenceUnit.entries,
                         selected = recurrenceUnit,
@@ -677,14 +756,14 @@ fun TodoFormBody(
                                 },
                                 role = Role.Checkbox
                             )
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = AppSpacing.s),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AppCheckToggle(
                             checked = recurrenceType == RecurrenceType.AfterCompletion,
                             onCheckedChange = null
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(AppSpacing.m))
                         Text(stringResource(Res.string.form_only_after_completion))
                     }
                     recurrence?.let { current ->
@@ -697,7 +776,7 @@ fun TodoFormBody(
                                     color = MaterialTheme.colorScheme.background,
                                     shape = MaterialTheme.shapes.small
                                 )
-                                .padding(horizontal = 8.dp, vertical = 8.dp)
+                                .padding(horizontal = AppSpacing.s, vertical = AppSpacing.s)
                         )
                     }
                 }
@@ -711,7 +790,7 @@ fun TodoFormBody(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.form_discard))
             }
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(AppSpacing.s))
             Button(
                 onClick = submit,
                 enabled = canSubmit
@@ -767,10 +846,14 @@ private fun IntervalCounter(
     }
 }
 
-private val dueTimeFormat = LocalTime.Format {
-    hour()
-    char(':')
-    minute()
+private val REMINDER_LEAD_TIME = 10.minutes
+
+private fun localNow(): LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+
+// Now + REMINDER_LEAD_TIME, truncated to the minute - the pickers have no seconds.
+private fun earliestReminder(): LocalDateTime {
+    val earliest = (Clock.System.now() + REMINDER_LEAD_TIME).toLocalDateTime(TimeZone.currentSystemDefault())
+    return LocalDateTime(earliest.date, LocalTime(earliest.hour, earliest.minute))
 }
 
 // A read-only OutlinedTextField that opens a picker on tap - the field itself exposes no onClick,
@@ -787,15 +870,28 @@ private fun ReadOnlyPickerField(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            placeholder = { Text(placeholder) },
-            trailingIcon = { Icon(imageVector = icon, contentDescription = iconContentDescription) },
-            modifier = Modifier.fillMaxWidth()
-        )
+        // The whole field is one click target (the overlay below), so the trailing icon doesn't
+        // need its own 48dp touch area - dropping it lets the icon's padding shrink with the field's.
+        // The icon is then pinned to the field's edge, so it carries its own end padding; the gap
+        // on its start side already comes from the field's end padding.
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+            MaterialOutlinedTextField(
+                state = remember(value) { TextFieldState(value) },
+                readOnly = true,
+                label = { Text(label) },
+                placeholder = { Text(placeholder) },
+                trailingIcon = {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = iconContentDescription,
+                        modifier = Modifier.padding(end = AppSpacing.s)
+                    )
+                },
+                lineLimits = TextFieldLineLimits.SingleLine,
+                compact = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -841,10 +937,11 @@ internal fun <T> EnumSegmentedRow(
 ) {
     SingleChoiceSegmentedButtonRow(modifier = modifier) {
         options.forEachIndexed { index, option ->
-            SegmentedButton(
+            MaterialSegmentedButton(
                 selected = option == selected,
                 onClick = { onSelected(option) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                index = index,
+                count = options.size,
                 label = { Text(label(option)) }
             )
         }

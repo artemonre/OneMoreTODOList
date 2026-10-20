@@ -3,6 +3,7 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.format.DateTimeFormat
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
@@ -24,4 +25,11 @@ fun rememberShortDateFormat(): DateTimeFormat<LocalDate> {
             year()
         }
     }
+}
+
+// "18:05" - 24-hour, same as the reminder time picker.
+internal val dueTimeFormat = LocalTime.Format {
+    hour()
+    char(':')
+    minute()
 }

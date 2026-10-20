@@ -55,6 +55,9 @@ class ToggleTodoDone(
             // ApplyDueRecurrences/HandleDueTodoFired) - completing it early shouldn't cancel its
             // already-armed next alarm.
             item.recurrence.type == RecurrenceType.Every -> Triple(item.dueDate, item.dueTime, item.dueTimeMode)
+            // A reminder still ahead (e.g. the first one, set days out) hasn't happened yet -
+            // completing early keeps it rather than restarting the countdown from this completion.
+            item.dueInstant(zone)?.let { it > Clock.System.now() } == true -> Triple(item.dueDate, item.dueTime, item.dueTimeMode)
             // The dueTime template survived HandleDueTodoFired clearing only dueDate on the last
             // fire (or was never touched yet) - combine it with today to compute the next
             // occurrence, N (interval) after this completion, at the same time of day.

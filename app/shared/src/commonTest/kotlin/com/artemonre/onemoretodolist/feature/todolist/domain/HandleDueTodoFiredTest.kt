@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -78,6 +79,33 @@ class HandleDueTodoFiredTest {
         assertEquals(original.dueTimeMode, fired?.dueTimeMode)
         assertNotNull(fired?.recurrenceAnchorInstant)
         assertEquals(listOf("1"), scheduler.rescheduledIds)
+    }
+
+    @Test
+    fun `firing an Every todo that was completed reactivates it and advances`() = runTest {
+        val recurrence = Recurrence(type = RecurrenceType.Every, interval = 1, unit = RecurrenceUnit.Day)
+        val original = dueTodo(id = "1", status = TodoStatus.Done, recurrence = recurrence)
+            .copy(completionDate = now.toLocalDateTime(zone).date)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
+
+        val fired = HandleDueTodoFired(dataSource, NoOpDueTimeScheduler())("1")
+
+        assertEquals(TodoStatus.Active, fired?.status)
+        assertNull(fired?.completionDate)
+        assertEquals((now + recurrence.duration()).toLocalDateTime(zone).date, fired?.dueDate)
+    }
+
+    @Test
+    fun `an Every alarm firing long after its due time skips the missed occurrences`() = runTest {
+        val recurrence = Recurrence(type = RecurrenceType.Every, interval = 1, unit = RecurrenceUnit.Day)
+        val original = dueTodo(id = "1", recurrence = recurrence, dueInstant = now - 5.days)
+        val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(original))
+
+        val fired = HandleDueTodoFired(dataSource, NoOpDueTimeScheduler())("1")
+
+        val nextDue = fired?.dueInstant(zone)
+        assertNotNull(nextDue)
+        assertTrue(nextDue > now && nextDue <= now + 1.days)
     }
 
     @Test

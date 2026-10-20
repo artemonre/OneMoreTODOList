@@ -10,6 +10,8 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.color.ColorProviders
+import androidx.glance.color.DynamicThemeColorProviders
+import com.artemonre.onemoretodolist.core.designsystem.theme.isDynamicColorSupported
 import com.artemonre.onemoretodolist.core.designsystem.theme.toColorPalette
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
@@ -88,14 +90,26 @@ class TodoWidget : GlanceAppWidget(), KoinComponent {
         provideContent {
             val todos by activeTodos.collectAsState(initial = initialTodos)
             val theme by themeConfig.collectAsState(initial = initialThemeConfig)
+            // Same choice as the app: wallpaper colors when dynamic color is on and the OS has it
+            // (Android 12+), the selected palette otherwise. The system resolves the dynamic colors
+            // itself, so the widget re-tints on a wallpaper change without the app doing anything.
+            val useDynamicColor = theme.useDynamicColor && isDynamicColorSupported()
             val palette = theme.palette.toColorPalette()
-            // surfaceContainer isn't one of the roles ColorProviders exposes, so it's carried
-            // separately from the rest of the palette, which flows through GlanceTheme normally.
-            val colors: ColorProviders = androidx.glance.material3.ColorProviders(light = palette.light, dark = palette.dark)
-            val background = androidx.glance.color.ColorProvider(
-                day = palette.light.surfaceContainer,
-                night = palette.dark.surfaceContainer
-            )
+            val colors: ColorProviders = if (useDynamicColor) {
+                DynamicThemeColorProviders
+            } else {
+                androidx.glance.material3.ColorProviders(light = palette.light, dark = palette.dark)
+            }
+            // surfaceContainer isn't one of the roles ColorProviders exposes, so the palette's is
+            // carried separately; dynamic color uses the system's own widget background instead.
+            val background = if (useDynamicColor) {
+                DynamicThemeColorProviders.widgetBackground
+            } else {
+                androidx.glance.color.ColorProvider(
+                    day = palette.light.surfaceContainer,
+                    night = palette.dark.surfaceContainer
+                )
+            }
 
             val size = LocalSize.current
             when {

@@ -40,6 +40,16 @@ No detekt/ktlint config and no CI workflows exist in this repo yet.
 
 `gateway/todoList` uses the Gradle Play Publisher plugin (`./gradlew :gateway:todoList:publishBundle`) with `resolutionStrategy.set(ResolutionStrategy.AUTO)`. This **overrides** the shared convention's "every merge into master auto-increments versionCode by 1" rule for this project — GPP picks a versionCode higher than whatever's already live on Play at publish time, so `defaultConfig`'s `versionCode` no longer needs manual bumping. `versionName` is still always asked for manually, per the shared convention.
 
+Release pipeline (overrides the shared convention's "merge into master, then build, then tag" order for this project — Claude doesn't merge into `master` here):
+1. Create `release/vX.Y.Z` from `develop`, bump `versionName`, commit, push the branch. Any last-minute fixes go on a `release/vX.Y.Z_hotfix` branch made from it and merged back into it.
+2. On that branch, draft `release-notes/vX.Y.Z.md` (local-only, gitignored) with a `## Play notes` section (the condensed English `alpha.txt` text) plus `## Play notes (ru-RU)` and `## Play notes (sr)` translations (Serbian in Latin script), and get it reviewed. Only after explicit approval add an `Approved: yes` line to it, then copy each approved section into `gateway/todoList/src/main/play/release-notes/<en-US|ru-RU|sr>/alpha.txt`, commit, push.
+3. Run `./gradlew :gateway:todoList:publishBundle` from that branch (closed testing / alpha track only).
+4. Tag `vX.Y.Z` on that commit and push the tag.
+5. Open a PR `release/vX.Y.Z` → `master` for the user to merge.
+6. Once that PR is merged, update `develop` from `master` (merge `master` into `develop`) — never from the release branch directly.
+
+Every build-uploading Play task (`publish*Bundle/Apk/Apps`, `promote*Artifact`) depends on `verifyReleaseReady` (in `gateway/todoList/build.gradle.kts`), which fails unless: the branch is `release/v<versionName>` with no uncommitted tracked changes, no `v<versionName>` tag exists yet, and `release-notes/v<versionName>.md` is approved and its Play notes sections match the `en-US`, `ru-RU` and `sr` `alpha.txt` files (max 500 characters each). Production releases aren't gated by the build — they need an explicit `--track production` and are limited by the Play service account's permissions.
+
 ## Architecture
 
 Gradle modules (declared in `settings.gradle.kts`):

@@ -105,6 +105,10 @@ kotlin {
             // ML Kit has no Cyrillic model on Android - Tesseract covers Russian/Serbian Cyrillic,
             // with its models bundled under androidMain/assets/tessdata.
             implementation(libs.tesseract4android)
+            // Google Drive backup: OAuth consent for the drive.appdata scope (Identity
+            // AuthorizationClient), plus Ktor's OkHttp engine for the Drive REST calls.
+            implementation(libs.play.servicesAuth)
+            implementation(libs.ktor.clientOkhttp)
         }
         commonMain.dependencies {
             api(project(":core"))
@@ -137,10 +141,25 @@ kotlin {
             // (gateway/*, desktopApp, webApp, iosApp) that construct it - same reasoning as koin-core
             // above.
             api(libs.posthog.kmp)
+            // HTTP for Google Drive backup (Android) and the cloud sync client - each platform
+            // source set adds its own engine, which HttpClient() picks up automatically.
+            implementation(libs.ktor.clientCore)
+            implementation(libs.ktor.clientContentNegotiation)
+            implementation(libs.ktor.serializationKotlinxJson)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.clientMock)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.clientDarwin)
+        }
+        jvmMain.dependencies {
+            implementation(libs.ktor.clientJava)
+        }
+        webMain.dependencies {
+            implementation(libs.ktor.clientJs)
         }
         jvmTest.dependencies {
             implementation(libs.androidx.room3.testing)

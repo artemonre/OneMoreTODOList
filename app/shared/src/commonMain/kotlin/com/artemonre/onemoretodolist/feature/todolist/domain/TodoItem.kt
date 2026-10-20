@@ -14,6 +14,11 @@ data class TodoItem(
     val sortOrder: Int,
     val creationDate: LocalDate,
     val lastEditDate: LocalDate,
+    // The exact creation moment - Date sort's tiebreak between todos created on the same day, since
+    // creationDate alone is only day-precise. sortOrder used to fill that role, but it's the Manual
+    // position, so any drag reshuffled Date sort too. Set once by AddTodo, never changed after;
+    // todos stored before this field existed get legacyCreatedAt.
+    val createdAt: Instant = Instant.fromEpochMilliseconds(0),
     // Null while Active - set when toggled to Done, cleared when toggled back to Active.
     val completionDate: LocalDate? = null,
     // Rank among other prioritized items; null means not prioritized, lower sorts first.
@@ -56,8 +61,26 @@ data class TodoItem(
     // HandleDueTodoFired clears it once it fires, and ToggleTodoDone clears it on completion.
     val snoozedUntil: Instant? = null,
     val checklist: List<ChecklistItem> = emptyList(),
-    val tags: List<TodoTag> = emptyList()
+    val tags: List<TodoTag> = emptyList(),
+    // When any synced field last changed - the "newest copy wins" key for import, Drive restore and
+    // cloud sync (see MergeTodos). Never set by hand: TimestampingTodoLocalDataSource stamps it on
+    // every write, so the epoch default only ever shows on an item that hasn't been written yet.
+    // topSince is deliberately not "synced" - it's this device's own bookkeeping - so a write that
+    // only moves topSince keeps the old stamp.
+    val updatedAt: Instant = Instant.fromEpochMilliseconds(0),
+    // Soft-delete tombstone: a deleted todo stays stored (hidden from observeTodos) for a while so a
+    // deletion can travel to other copies (sync, merge-import) instead of the todo coming back from
+    // them. Purged after a retention period, see PurgeDeletedTodos.
+    val deletedAt: Instant? = null
 )
+
+// createdAt for a todo stored before that field existed: its creation day (UTC midnight, the same
+// epoch-day scale creationDate is stored in) plus sortOrder milliseconds - keeps same-day todos in
+// the order Date sort showed them until now. Mirrored in SQL by BackfillCreatedAt.
+fun legacyCreatedAt(creationDate: LocalDate, sortOrder: Int): Instant =
+    Instant.fromEpochMilliseconds(creationDate.toEpochDays() * MILLIS_PER_DAY + sortOrder)
+
+private const val MILLIS_PER_DAY = 86_400_000L
 
 fun TodoItem.dueInstant(zone: TimeZone = TimeZone.currentSystemDefault()): Instant? {
     val date = dueDate ?: return null

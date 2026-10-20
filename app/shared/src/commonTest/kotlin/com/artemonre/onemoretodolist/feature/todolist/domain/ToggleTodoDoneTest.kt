@@ -7,10 +7,12 @@ import kotlin.test.assertNull
 import kotlin.time.Clock
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import kotlinx.datetime.toInstant
 
@@ -115,6 +117,33 @@ class ToggleTodoDoneTest {
         assertEquals(expectedDate, updated.dueDate)
         assertEquals(dueTime, updated.dueTime)
         assertEquals(DueTimeMode.Exact, updated.dueTimeMode)
+    }
+
+    @Test
+    fun `completing an AfterCompletion todo before its first reminder keeps that reminder`() = runTest {
+        val recurrence = Recurrence(type = RecurrenceType.AfterCompletion, interval = 1, unit = RecurrenceUnit.Day)
+        val zone = TimeZone.currentSystemDefault()
+        val firstReminderDate = Clock.System.todayIn(zone).plus(10, DateTimeUnit.DAY)
+        val dueTime = LocalTime(9, 30)
+        val dataSource = FakeTodoLocalDataSource(
+            initialTodos = listOf(
+                recurringTodo(
+                    id = "1",
+                    recurrence = recurrence,
+                    dueDate = firstReminderDate,
+                    dueTime = dueTime,
+                    dueTimeMode = DueTimeMode.Exact
+                )
+            )
+        )
+        val toggleTodoDone = ToggleTodoDone(dataSource, FakeTodoPreferences(), NoOpDueTimeScheduler())
+
+        toggleTodoDone("1")
+
+        val updated = dataSource.observeTodos().first().single()
+        assertEquals(TodoStatus.Done, updated.status)
+        assertEquals(firstReminderDate, updated.dueDate)
+        assertEquals(dueTime, updated.dueTime)
     }
 
     @Test

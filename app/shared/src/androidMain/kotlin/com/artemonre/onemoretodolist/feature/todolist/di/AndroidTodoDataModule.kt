@@ -6,6 +6,7 @@ import com.artemonre.onemoretodolist.feature.todolist.data.NotifyingTodoLocalDat
 import com.artemonre.onemoretodolist.feature.todolist.data.NotifyingTodoPreferences
 import com.artemonre.onemoretodolist.feature.todolist.data.RoomTodoDataSource
 import com.artemonre.onemoretodolist.feature.todolist.data.SettingsTodoPreferences
+import com.artemonre.onemoretodolist.feature.todolist.data.TimestampingTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.data.TopSinceTrackingTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.data.getDatabaseBuilder
 import com.artemonre.onemoretodolist.feature.todolist.data.getRoomDatabase
@@ -31,7 +32,7 @@ fun androidTodoDataModule(context: Context, onDataChanged: suspend () -> Unit = 
     single { get<AppDatabase>().todoDao() }
     single<TodoLocalDataSource> {
         NotifyingTodoLocalDataSource(
-            TopSinceTrackingTodoLocalDataSource(RoomTodoDataSource(get()), get<TodoPreferences>()),
+            TopSinceTrackingTodoLocalDataSource(TimestampingTodoLocalDataSource(RoomTodoDataSource(get())), get<TodoPreferences>()),
             onDataChanged
         )
     }

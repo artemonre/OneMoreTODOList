@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -24,12 +25,13 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -39,13 +41,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarDefaults
+import androidx.compose.material3.ShortNavigationBarDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -57,9 +60,11 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -73,7 +78,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
+import com.artemonre.onemoretodolist.core.designsystem.components.CLOUD_SEGMENT_COUNT
+import com.artemonre.onemoretodolist.core.designsystem.components.CloudSegment
 import com.artemonre.onemoretodolist.core.designsystem.components.appListItemCardShape
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalActionPlacement
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
@@ -89,6 +97,7 @@ import com.artemonre.onemoretodolist.rememberNativeShareLauncher
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlin.math.roundToInt
+import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -100,11 +109,10 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_this_mon
 import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
-import onemoretodolist.app.shared.generated.resources.mascot_staying
-import onemoretodolist.app.shared.generated.resources.mascot_staying_green
+import onemoretodolist.app.shared.generated.resources.mascot_sitting
+import onemoretodolist.app.shared.generated.resources.mascot_ball
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
-import onemoretodolist.app.shared.generated.resources.sort_default
-import onemoretodolist.app.shared.generated.resources.sort_label
+import onemoretodolist.app.shared.generated.resources.sort_date
 import onemoretodolist.app.shared.generated.resources.sort_manual
 import onemoretodolist.app.shared.generated.resources.sort_text
 import onemoretodolist.app.shared.generated.resources.todo_filter_active
@@ -127,9 +135,35 @@ private val SWIPE_ACTION_WIDTH = 56.dp
 // room, so the last list item never ends up hidden behind it after a full scroll.
 private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
 private val MASCOT_HEIGHT = 160.dp
-private const val MASCOT_AFTER_TODO_COUNT = 5
+// Half of ButtonDefaults.ContentPadding (24dp/8dp), snapped to the spacing scale.
+private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.xs)
+private const val BALL_AFTER_TODO_COUNT = 5
+private val BALL_SIZE = 36.dp
+// The ball only fills a bit over half of its square canvas, so the canvas is drawn this much bigger
+// than BALL_SIZE (and overflows it) for the ball itself to come out at BALL_SIZE.
+private val BALL_CANVAS_SIZE = 64.dp
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
+
+// One row of the non-empty list. The ball is a slot in the same reorderable list as the todos, so
+// dragging a todo past it swaps with it like with any other row - instead of the ball being a
+// fixed, non-reorderable gap the drag has to jump across.
+private sealed interface ListEntry {
+    val key: Any
+
+    data class Todo(val item: TodoItemUi) : ListEntry {
+        override val key: Any get() = item.id
+    }
+
+    data object Ball : ListEntry {
+        override val key: Any = "ball"
+    }
+}
+
+// The ball sits after the first BALL_AFTER_TODO_COUNT todos, or after all of them when there are
+// fewer.
+private fun List<TodoItemUi>.withBall(): List<ListEntry> =
+    take(BALL_AFTER_TODO_COUNT).map(ListEntry::Todo) + ListEntry.Ball + drop(BALL_AFTER_TODO_COUNT).map(ListEntry::Todo)
 
 @OptIn(ExperimentalUuidApi::class)
 @Composable
@@ -178,6 +212,11 @@ fun TodoListRoot(
                     if (result == SnackbarResult.ActionPerformed) {
                         viewModel.onAction(TodoListAction.OnUndoClick)
                     }
+                }
+            }
+            is TodoListEvent.ShowSnackbar -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(getString(event.message))
                 }
             }
         }
@@ -292,18 +331,42 @@ fun TodoListScreen(
     // It's re-synced from state.items whenever that changes - which OnReorder itself never
     // triggers mid-drag (it's only dispatched on drag-stop), so this can't fight an in-progress
     // drag; it only picks up genuinely external changes (add/edit/delete/toggle elsewhere).
-    var manualOrderItems by remember { mutableStateOf(state.items) }
-    LaunchedEffect(state.items) { manualOrderItems = state.items }
+    // Where across the list the ball lies, -1 (start) to 1 (end) - a new spot each time the screen
+    // is opened, kept across scrolling and rotation.
+    val ballHorizontalBias = rememberSaveable { Random.nextFloat() * 2 - 1 }
+    var listEntries by remember { mutableStateOf(state.items.withBall()) }
+    LaunchedEffect(state.items) { listEntries = state.items.withBall() }
 
-    // from.index/to.index are positions in the whole LazyColumn, not in manualOrderItems - the
-    // summary card, filter/sort header and mascot items shift them. Look items up by key instead of trusting the
-    // raw index.
+    // Each todo's slice of the shared cloud texture, by its position among the todos (the ball
+    // doesn't count). CLOUD_SEGMENT_COUNT matches BALL_AFTER_TODO_COUNT, so the first cloud ends
+    // right above the ball. Follows listEntries, so it re-forms live around a dragged todo.
+    val cloudSegments = remember(listEntries) {
+        listEntries.filterIsInstance<ListEntry.Todo>().withIndex().associate { (index, entry) ->
+            entry.item.id to CloudSegment(
+                cloudIndex = index / CLOUD_SEGMENT_COUNT,
+                segment = index % CLOUD_SEGMENT_COUNT
+            )
+        }
+    }
+
+    // from.index/to.index are positions in the whole LazyColumn, not in listEntries - the
+    // summary card and filter/sort header shift them. Look entries up by key instead of trusting
+    // the raw index.
     val reorderableListState = rememberReorderableLazyListState(listState) { from, to ->
-        val fromIndex = manualOrderItems.indexOfFirst { it.id == from.key }
-        val toIndex = manualOrderItems.indexOfFirst { it.id == to.key }
+        val fromIndex = listEntries.indexOfFirst { it.key == from.key }
+        val toIndex = listEntries.indexOfFirst { it.key == to.key }
         if (fromIndex != -1 && toIndex != -1) {
-            manualOrderItems = manualOrderItems.toMutableList().apply {
+            val swapped = listEntries.toMutableList().apply {
                 add(toIndex, removeAt(fromIndex))
+            }
+            // Crossing the ball is a plain swap, so the dragged todo moves past it smoothly. A swap
+            // with another todo puts the ball back after BALL_AFTER_TODO_COUNT todos, so when the
+            // ball was off by one, the swapped neighbour goes through it (two slots) instead - and
+            // it never needs to snap back in one big move.
+            listEntries = if (to.key == ListEntry.Ball.key) {
+                swapped
+            } else {
+                swapped.filterIsInstance<ListEntry.Todo>().map { it.item }.withBall()
             }
         }
     }
@@ -314,9 +377,9 @@ fun TodoListScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = WindowInsets.safeDrawing
                 .only(WindowInsetsSides.Top)
-                .add(WindowInsets(top = 8.dp, bottom = LIST_BOTTOM_CONTENT_PADDING))
+                .add(WindowInsets(top = AppSpacing.s, bottom = LIST_BOTTOM_CONTENT_PADDING))
                 .asPaddingValues(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.s)
         ) {
             item(key = "completed_summary") {
                 CompletedSummaryCard(
@@ -325,7 +388,7 @@ fun TodoListScreen(
                     thisMonthCount = state.doneThisMonthCount,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
+                        .padding(horizontal = AppSpacing.s)
                 )
             }
 
@@ -333,7 +396,10 @@ fun TodoListScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
+                        // Pinned to the sort button's tap-target height, so the row doesn't change
+                        // size when the button disappears on the Done filter.
+                        .heightIn(min = LocalMinimumInteractiveComponentSize.current)
+                        .padding(horizontal = AppSpacing.s),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -350,40 +416,37 @@ fun TodoListScreen(
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
+                        compact = true
                     )
                     // Done is always most-recently-completed first, so sorting only applies
                     // to Active.
                     if (state.filter == TodoListFilter.Active) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(Res.string.sort_label),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Box {
-                                Button(onClick = { sortMenuExpanded = true }) {
-                                    Text(stringResource(state.sortOption.displayName()))
-                                }
-                                DropdownMenu(
-                                    expanded = sortMenuExpanded,
-                                    onDismissRequest = { sortMenuExpanded = false }
-                                ) {
-                                    TodoSortOption.entries.forEach { option ->
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(option.displayName())) },
-                                            onClick = {
-                                                onAction(TodoListAction.OnSortOptionSelected(option))
-                                                sortMenuExpanded = false
-                                            },
-                                            trailingIcon = if (option == state.sortOption) {
-                                                { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
-                                            } else {
-                                                null
-                                            },
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
+                        Box {
+                            FilledTonalButton(
+                                onClick = { sortMenuExpanded = true },
+                                contentPadding = SORT_BUTTON_CONTENT_PADDING
+                            ) {
+                                Text(stringResource(state.sortOption.displayName()))
+                            }
+                            DropdownMenu(
+                                expanded = sortMenuExpanded,
+                                onDismissRequest = { sortMenuExpanded = false }
+                            ) {
+                                TodoSortOption.entries.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(option.displayName())) },
+                                        onClick = {
+                                            onAction(TodoListAction.OnSortOptionSelected(option))
+                                            sortMenuExpanded = false
+                                        },
+                                        trailingIcon = if (option == state.sortOption) {
+                                            { Icon(imageVector = Icons.Filled.Check, contentDescription = null) }
+                                        } else {
+                                            null
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
                                 }
                             }
                         }
@@ -398,10 +461,15 @@ fun TodoListScreen(
                         .animateItem()
                         .graphicsLayer { rotationZ = rotation }
                         .let { base ->
-                            if (state.filter == TodoListFilter.Active && state.sortOption == TodoSortOption.Manual) {
+                            if (state.isReorderEnabled) {
                                 base.longPressDraggableHandle(
                                     onDragStopped = {
-                                        onAction(TodoListAction.OnReorder(manualOrderItems.map { it.id }))
+                                        val todos = listEntries.filterIsInstance<ListEntry.Todo>().map { it.item }
+                                        // Put the ball back right away - dragging a todo just past
+                                        // it doesn't change the todo order, so no state.items update
+                                        // would come to re-sync it.
+                                        listEntries = todos.withBall()
+                                        onAction(TodoListAction.OnReorder(todos.map { it.id }))
                                     }
                                 )
                             } else {
@@ -410,20 +478,27 @@ fun TodoListScreen(
                         }
                     SwipeableTodoRow(
                         item = item,
+                        cloudSegment = cloudSegments[item.id],
                         modifier = rowModifier,
                         swipeEnabled = !isDragging,
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                         onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
                         onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
                         onItemClick = { detailItemId = item.id },
-                        onShareSwipe = { shareItem = item }
+                        onShareSwipe = { shareItem = item },
+                        // Only where long-press would otherwise do nothing - when reorder is on,
+                        // the drag handle above owns long-press.
+                        onLongClick = if (state.filter == TodoListFilter.Active && !state.isReorderEnabled) {
+                            { onAction(TodoListAction.OnReorderUnavailable) }
+                        } else {
+                            null
+                        }
                     )
                 }
             }
 
             if (state.items.isEmpty()) {
-                // The green mascot fronts the empty state (both Active and Done) in place of the
-                // blue one that sits among the todos otherwise.
+                // The mascot fronts the empty state, both Active and Done.
                 item(key = "empty_state") {
                     Column(
                         modifier = Modifier
@@ -432,13 +507,13 @@ fun TodoListScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = painterResource(Res.drawable.mascot_staying_green),
+                            painter = painterResource(Res.drawable.mascot_sitting),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(MASCOT_HEIGHT)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(AppSpacing.l))
                         Text(
                             text = if (state.filter == TodoListFilter.Done) {
                                 stringResource(Res.string.todo_list_empty_completed)
@@ -451,23 +526,33 @@ fun TodoListScreen(
                     }
                 }
             } else {
-                items(manualOrderItems.take(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
-
-                // Sits after the first MASCOT_AFTER_TODO_COUNT todos, or after all of them when
-                // there are fewer. Not a ReorderableItem, so dragging a todo across it is a no-op -
-                // the reorder callback above looks items up by key and ignores anything outside
-                // manualOrderItems.
-                item(key = "mascot") {
-                    Image(
-                        painter = painterResource(Res.drawable.mascot_staying),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(MASCOT_HEIGHT)
-                    )
+                items(listEntries, key = { it.key }) { entry ->
+                    when (entry) {
+                        is ListEntry.Todo -> todoRow(entry.item)
+                        // A ReorderableItem so a dragged todo swaps with it, but without a drag
+                        // handle - the ball itself can't be picked up.
+                        ListEntry.Ball -> ReorderableItem(reorderableListState, key = entry.key) {
+                            Box(
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .padding(horizontal = AppSpacing.s)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(BiasAlignment(horizontalBias = ballHorizontalBias, verticalBias = 0f))
+                                        .size(BALL_SIZE)
+                                ) {
+                                    Image(
+                                        painter = painterResource(Res.drawable.mascot_ball),
+                                        contentDescription = null,
+                                        modifier = Modifier.requiredSize(BALL_CANVAS_SIZE)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-
-                items(manualOrderItems.drop(MASCOT_AFTER_TODO_COUNT), key = { it.id }) { todoRow(it) }
             }
         }
 
@@ -475,7 +560,7 @@ fun TodoListScreen(
             visible = showScrollToTop,
             modifier = Modifier.align(actionAlignment)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .padding(16.dp),
+                .padding(AppSpacing.l),
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
@@ -490,7 +575,7 @@ fun TodoListScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .padding(16.dp)
+                .padding(AppSpacing.l)
         )
     }
 
@@ -506,15 +591,16 @@ fun TodoListScreen(
     }
 
     shareItem?.let { item ->
+        val shareText = rememberShareText(item)
         TodoShareBottomSheet(
-            itemText = item.text,
+            shareText = shareText,
             onShareClick = {
                 val launcher = nativeShareLauncher
                 if (launcher != null) {
-                    launcher(item.text)
+                    launcher(shareText)
                 } else {
                     coroutineScope.launch {
-                        clipboard.setClipEntry(createPlainTextClipEntry(item.text))
+                        clipboard.setClipEntry(createPlainTextClipEntry(shareText))
                         snackbarHostState.showSnackbar(getString(Res.string.snackbar_copied))
                     }
                 }
@@ -525,7 +611,7 @@ fun TodoListScreen(
 }
 
 private fun TodoSortOption.displayName(): StringResource = when (this) {
-    TodoSortOption.Date -> Res.string.sort_default
+    TodoSortOption.Date -> Res.string.sort_date
     TodoSortOption.Manual -> Res.string.sort_manual
     TodoSortOption.Text -> Res.string.sort_text
 }
@@ -539,13 +625,18 @@ private fun CompletedSummaryCard(
 ) {
     // Same color as the bottom navigation bar, so the card reads as part of the app chrome
     // rather than as another todo.
-    AppCard(modifier = modifier, containerColor = NavigationBarDefaults.containerColor) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+    AppCard(modifier = modifier, containerColor = ShortNavigationBarDefaults.containerColor) {
+        // Extra padding on top of the card's own 8dp - 12dp total, same as the settings sections.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AppSpacing.xs)
+        ) {
             Text(
                 text = stringResource(Res.string.completed_summary_title),
                 style = MaterialTheme.typography.titleMedium
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.s))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -576,7 +667,9 @@ private fun SwipeableTodoRow(
     onItemClick: () -> Unit,
     onShareSwipe: () -> Unit,
     modifier: Modifier = Modifier,
-    swipeEnabled: Boolean = true
+    swipeEnabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
+    cloudSegment: CloudSegment? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -629,7 +722,7 @@ private fun SwipeableTodoRow(
         Row(
             modifier = Modifier
                 .matchParentSize()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = AppSpacing.s)
                 .background(MaterialTheme.colorScheme.surfaceVariant, appListItemCardShape()),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
@@ -653,7 +746,6 @@ private fun SwipeableTodoRow(
         }
 
         TodoItemCard(
-            id = item.id,
             text = item.text,
             isDone = item.status == TodoStatus.Done || isCompleting,
             formattedDate = rememberShortDateFormat().format(item.creationDate),
@@ -661,6 +753,7 @@ private fun SwipeableTodoRow(
             tags = item.tags,
             checklistDone = item.checklist.count { it.isDone },
             checklistTotal = item.checklist.size,
+            cloudSegment = cloudSegment,
             onToggleDone = {
                 if (item.status == TodoStatus.Active) {
                     isCompleting = true
@@ -669,8 +762,9 @@ private fun SwipeableTodoRow(
                 }
             },
             onClick = onItemClick,
+            onLongClick = onLongClick,
             modifier = Modifier
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = AppSpacing.s)
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }
                 .anchoredDraggable(
                     state = swipeState,

@@ -39,7 +39,8 @@ val ONBOARDING_TODOS = listOf(
         id = "onboarding-3",
         text = "Third todo item. If prioritized (Put to top) it goes to the top of the list",
         status = TodoStatus.Active,
-        sortOrder = 2,
+        // Prioritized, so it also leads Manual sort - matching what AddTodo does for "Put to top".
+        sortOrder = -1,
         creationDate = onboardingDate(2),
         lastEditDate = onboardingDate(2),
         priorityOrder = 1.0

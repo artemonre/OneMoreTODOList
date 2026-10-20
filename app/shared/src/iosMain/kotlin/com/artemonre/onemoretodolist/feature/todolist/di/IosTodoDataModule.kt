@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.feature.todolist.di
 
 import com.artemonre.onemoretodolist.feature.todolist.data.AppDatabase
 import com.artemonre.onemoretodolist.feature.todolist.data.RoomTodoDataSource
+import com.artemonre.onemoretodolist.feature.todolist.data.TimestampingTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.data.TopSinceTrackingTodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.data.getDatabaseBuilder
 import com.artemonre.onemoretodolist.feature.todolist.data.getRoomDatabase
@@ -15,5 +16,5 @@ fun iosTodoDataModule(): Module = module {
     // Dispatchers.IO doesn't exist on Kotlin/Native - Default runs on its own multithreaded pool.
     single { getRoomDatabase(getDatabaseBuilder(), Dispatchers.Default) }
     single { get<AppDatabase>().todoDao() }
-    single<TodoLocalDataSource> { TopSinceTrackingTodoLocalDataSource(RoomTodoDataSource(get()), get<TodoPreferences>()) }
+    single<TodoLocalDataSource> { TopSinceTrackingTodoLocalDataSource(TimestampingTodoLocalDataSource(RoomTodoDataSource(get())), get<TodoPreferences>()) }
 }

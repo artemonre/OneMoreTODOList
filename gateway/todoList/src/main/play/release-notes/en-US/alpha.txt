@@ -1,2 +1,6 @@
-- Fixed widgets visuals.
-- Fixed a crash when tapping a todo in the home-screen widget's full list.
+- Repeating todos with a reminder now wait for it instead of jumping to the top before it
+- Repeat-after-completion todos no longer come back before their reminder time
+- Repeating reminders survive a phone restart
+- Long todo details scroll instead of filling the screen
+- Checklists hold up to 10 items
+- The mascot now peeks in when you open a todo, and left their ball in your list

@@ -12,10 +12,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
-
-private val CARD_CONTENT_PADDING = 8.dp
 
 // Same elevation as ListItemCard, minus its press-driven flatten - nothing to press on a static
 // container.
@@ -37,7 +36,7 @@ fun Card(
         colors = CardDefaults.elevatedCardColors(containerColor = containerColor),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
-        Box(modifier = Modifier.padding(CARD_CONTENT_PADDING)) {
+        Box(modifier = Modifier.padding(AppSpacing.s)) {
             content()
         }
     }

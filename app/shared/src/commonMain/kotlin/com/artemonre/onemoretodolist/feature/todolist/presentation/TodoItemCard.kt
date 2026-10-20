@@ -7,12 +7,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCardContentPadding
+import com.artemonre.onemoretodolist.core.designsystem.components.CloudSegment
 import com.artemonre.onemoretodolist.core.designsystem.components.cloudTexture
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.designsystem.theme.LocalColorPalette
+import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
@@ -21,37 +24,44 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
  * A single todo item, built from the domain-agnostic [AppListItemCard] plus todo-specific
  * [TodoItemCardContent]. Feature-specific composition lives here, not in `core.designsystem`.
  *
- * [id] seeds the card's cloudTexture decoration (see CloudTexture.kt) - trying this out per user
- * request, not a finalized design. Same id draws the same texture for the lifetime of this app
- * launch (stable across recompositions); different todos get different-looking ones, and the
- * whole set reshuffles again next time the app is started.
+ * [cloudSegment] is this card's slice of the shared cloud texture (see CloudTexture.kt), drawn
+ * only with the Default palette - trying this out per user request, not a finalized design. Null
+ * draws no texture.
  */
 @Composable
 fun TodoItemCard(
-    id: String,
     text: String,
     isDone: Boolean,
     formattedDate: String,
     onToggleDone: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     attention: TopTodoAttention = TopTodoAttention.None,
     tags: List<TodoTag> = emptyList(),
     checklistDone: Int = 0,
-    checklistTotal: Int = 0
+    checklistTotal: Int = 0,
+    cloudSegment: CloudSegment? = null
 ) {
     AppListItemCard(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier,
         containerColor = attention.containerColor()
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .cloudTexture(
-                    seed = id.hashCode(),
-                    color = MaterialTheme.colorScheme.outline,
-                    isDarkTheme = MaterialTheme.colorScheme.surface.luminance() <= 0.5f
+                .then(
+                    if (cloudSegment != null && LocalColorPalette.current == ColorPaletteOption.Default) {
+                        Modifier.cloudTexture(
+                            cloudSegment = cloudSegment,
+                            color = MaterialTheme.colorScheme.background,
+                            bleed = AppListItemCardContentPadding
+                        )
+                    } else {
+                        Modifier
+                    }
                 )
         ) {
             TodoItemCardContent(
@@ -80,15 +90,15 @@ internal fun TopTodoAttention.containerColor(): Color? = when (this) {
 private fun TodoItemCardPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoItemCard(
-            id = "preview-1",
             text = "Buy groceries",
             isDone = false,
             formattedDate = "24 Aug 2026",
             onToggleDone = {},
             onClick = {},
+            cloudSegment = CloudSegment(cloudIndex = 0, segment = 2),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = AppSpacing.s)
         )
     }
 }
@@ -98,16 +108,16 @@ private fun TodoItemCardPreview() {
 private fun TodoItemCardAttentionPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         TodoItemCard(
-            id = "preview-2",
             text = "Water the plants",
             isDone = false,
             formattedDate = "24 Aug 2026",
             onToggleDone = {},
             onClick = {},
+            cloudSegment = CloudSegment(cloudIndex = 0, segment = 2),
             attention = TopTodoAttention.Error,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = AppSpacing.s)
         )
     }
 }

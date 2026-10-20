@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OneMoreTODOList</string>
+    <string name="app_name">TODO it later</string>
     <string name="todo_widget_label">Todo List</string>
     <string name="todo_widget_description">Shows your active todos and lets you quickly add or check off items</string>
     <string name="todo_widget_compact_label">Todo List (Compact)</string>

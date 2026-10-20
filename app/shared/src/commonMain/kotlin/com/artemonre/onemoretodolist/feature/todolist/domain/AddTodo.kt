@@ -30,6 +30,7 @@ class AddTodo(
         tags: List<TodoTag> = emptyList()
     ): TodoItem {
         val currentTodos = dataSource.observeTodos().first()
+        val now = Clock.System.now()
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val newItem = TodoItem(
             id = Uuid.random().toString(),
@@ -39,9 +40,10 @@ class AddTodo(
             sortOrder = if (isPrioritized) topSortOrder(currentTodos) else (currentTodos.maxOfOrNull { it.sortOrder } ?: -1) + 1,
             creationDate = today,
             lastEditDate = today,
+            createdAt = now,
             priorityOrder = if (isPrioritized) topPriorityOrder(currentTodos) else null,
             recurrence = recurrence,
-            recurrenceAnchorInstant = Clock.System.now().takeIf { recurrence?.type == RecurrenceType.Every },
+            recurrenceAnchorInstant = now.takeIf { recurrence?.type == RecurrenceType.Every },
             dueDate = dueDate,
             dueTime = dueTime,
             dueTimeMode = dueTimeMode,

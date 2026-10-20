@@ -15,7 +15,7 @@ android {
     }
     buildTypes {
         debug {
-            resValue("string", "app_name", "OneMoreTODOList-dev")
+            resValue("string", "app_name", "TODO it later-dev")
         }
     }
     // Local JVM unit tests (src/test) cover plain Kotlin logic only - anything that reaches into
@@ -77,6 +77,93 @@ play {
     // instead of failing the build when defaultConfig's versionCode has already been used.
     resolutionStrategy.set(ResolutionStrategy.AUTO)
 }
+
+// Release guardrails - every task that uploads a build to Play (publish*Bundle/Apk/Apps,
+// promote*Artifact) first runs verifyReleaseReady, which fails unless:
+// - the current branch is release/v<versionName> and has no uncommitted changes to tracked files
+//   (a release is always cut on its own branch, never straight from develop or master)
+// - no v<versionName> tag exists yet (catches a forgotten versionName bump)
+// - release-notes/v<versionName>.md exists and carries an "Approved: yes" line - added only after
+//   the notes were reviewed and accepted - and, for every Play locale (en-US, ru-RU, sr), its
+//   Play notes section matches that locale's alpha.txt exactly and fits Play's 500-character
+//   limit. Sections are "## Play notes (ru-RU)" / "## Play notes (sr)"; a "## Play notes" heading
+//   with no locale in its parentheses (e.g. "(alpha.txt candidate)") is the en-US one.
+// Listing/products/subscriptions tasks aren't tied to a build version, so they're not gated.
+val verifyReleaseReady = tasks.register("verifyReleaseReady") {
+    group = "publishing"
+    description = "Fails unless this checkout is in a state that's allowed to publish to Play."
+    // Locals rather than script-level vals - the configuration cache can't serialize a doLast that
+    // reaches back into the build script object.
+    val releaseVersionName = android.defaultConfig.versionName.orEmpty()
+    val releaseBranch = providers.exec { commandLine("git", "rev-parse", "--abbrev-ref", "HEAD") }
+        .standardOutput.asText.map { it.trim() }
+    val trackedChanges = providers.exec { commandLine("git", "status", "--porcelain", "--untracked-files=no") }
+        .standardOutput.asText.map { it.trim() }
+    val existingReleaseTag = providers.exec { commandLine("git", "tag", "--list", "v$releaseVersionName") }
+        .standardOutput.asText.map { it.trim() }
+    val releaseNotesDraft = rootProject.layout.projectDirectory.file("release-notes/v$releaseVersionName.md")
+    val playReleaseNotes = listOf("en-US", "ru-RU", "sr")
+        .associateWith { layout.projectDirectory.file("src/main/play/release-notes/$it/alpha.txt") }
+    doLast {
+        val problems = buildList {
+            val expectedBranch = "release/v$releaseVersionName"
+            if (releaseBranch.get() != expectedBranch) {
+                add("Publish only from $expectedBranch - current branch is ${releaseBranch.get()}.")
+            }
+            if (trackedChanges.get().isNotEmpty()) {
+                add("Commit or discard tracked changes first:\n${trackedChanges.get()}")
+            }
+            if (existingReleaseTag.get().isNotEmpty()) {
+                add("Tag v$releaseVersionName already exists - bump versionName for a new release.")
+            }
+            val draftFile = releaseNotesDraft.asFile
+            if (!draftFile.isFile) {
+                add("Missing ${draftFile.path} - draft the release notes and get them reviewed first.")
+            } else {
+                val draft = draftFile.readText()
+                if (draft.lines().none { it.trim().equals("Approved: yes", ignoreCase = true) }) {
+                    add("Release notes v$releaseVersionName aren't approved yet (no \"Approved: yes\" line).")
+                }
+                val draftLines = draft.replace("\r\n", "\n").lines()
+                fun localeOf(heading: String): String =
+                    heading.substringAfter('(', "").substringBefore(')').trim()
+                        .takeIf { it in playReleaseNotes.keys } ?: "en-US"
+                playReleaseNotes.forEach { (locale, playFile) ->
+                    val headingIndex = draftLines.indexOfFirst {
+                        it.trim().startsWith("## Play notes") && localeOf(it) == locale
+                    }
+                    if (headingIndex == -1) {
+                        add("${draftFile.name} has no Play notes section for $locale.")
+                        return@forEach
+                    }
+                    val approvedPlayNotes = draftLines.drop(headingIndex + 1)
+                        .takeWhile { !it.trim().startsWith("## ") }
+                        .joinToString("\n").trim()
+                    val alphaFile = playFile.asFile
+                    if (!alphaFile.isFile) {
+                        add("Missing ${alphaFile.path}.")
+                        return@forEach
+                    }
+                    val publishedPlayNotes = alphaFile.readText().replace("\r\n", "\n").trim()
+                    if (approvedPlayNotes != publishedPlayNotes) {
+                        add("$locale/alpha.txt doesn't match the approved $locale Play notes section of ${draftFile.name}.")
+                    }
+                    if (publishedPlayNotes.length > 500) {
+                        add("$locale/alpha.txt is ${publishedPlayNotes.length} characters - Play allows 500.")
+                    }
+                }
+            }
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException("Not ready to publish:\n- " + problems.joinToString("\n- "))
+        }
+    }
+}
+
+tasks.matching { task ->
+    listOf("Bundle", "Apk", "Apps").any { task.name.startsWith("publish") && task.name.endsWith(it) } ||
+        (task.name.startsWith("promote") && task.name.endsWith("Artifact"))
+}.configureEach { dependsOn(verifyReleaseReady) }
 
 dependencies {
     implementation(libs.compose.material3)

@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.core.designsystem.components.material
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,29 +12,29 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCardContentPadding
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
-
-// Matches CardDefaults.elevatedShape's corner radius (Material3's default "medium" shape) so
-// content never sits visually clipped by the rounded corners.
-private val CARD_CONTENT_PADDING = 12.dp
 
 /**
  * A stock Material3 [ElevatedCard] - default shape/elevation/colors from
  * [androidx.compose.material3.CardDefaults], no custom shadow or press animation. Domain-agnostic:
  * takes only an [onClick] and arbitrary [content], so any feature can use it for a clickable list
  * row without this module knowing what that row represents.
+ *
+ * The onClick ElevatedCard overload has no long-click, so the click lives on the content instead -
+ * the card clips it, so the ripple still fills the card. Nothing visible is lost: an elevated
+ * card's pressed elevation equals its resting one.
  */
 @Composable
 fun ListItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     containerColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     ElevatedCard(
-        onClick = onClick,
         modifier = modifier,
         colors = if (containerColor != null) {
             CardDefaults.elevatedCardColors(containerColor = containerColor, contentColor = contentColorFor(containerColor))
@@ -41,7 +42,11 @@ fun ListItemCard(
             CardDefaults.elevatedCardColors()
         }
     ) {
-        Box(modifier = Modifier.padding(CARD_CONTENT_PADDING)) {
+        Box(
+            modifier = Modifier
+                .combinedClickable(onLongClick = onLongClick, onClick = onClick)
+                .padding(AppListItemCardContentPadding)
+        ) {
             content()
         }
     }

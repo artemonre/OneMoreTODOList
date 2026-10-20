@@ -5,8 +5,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.artemonre.onemoretodolist.core.designsystem.components.material.ListItemCard as MaterialListItemCard
 import com.artemonre.onemoretodolist.core.designsystem.components.paper.ListItemCard as PaperListItemCard
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
+
+// The padding every list-item card style puts around its content - shared so content-level
+// decorations (like the todo cards' cloud texture) can reach the card's real edges.
+val AppListItemCardContentPadding = AppSpacing.s
 
 /**
  * Renders a clickable list-item card for the current [LocalUiStyle], falling back to the plain
@@ -20,11 +25,12 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 fun AppListItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     containerColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material -> MaterialListItemCard(onClick, modifier, containerColor, content)
-        UiStyleOption.Paper -> PaperListItemCard(onClick, modifier, containerColor, content)
+        UiStyleOption.Material -> MaterialListItemCard(onClick, modifier, onLongClick, containerColor, content)
+        UiStyleOption.Paper -> PaperListItemCard(onClick, modifier, onLongClick, containerColor, content)
     }
 }

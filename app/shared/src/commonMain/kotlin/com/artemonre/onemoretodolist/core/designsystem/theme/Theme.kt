@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.luminance
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
@@ -32,22 +33,23 @@ fun AppTheme(
     // Falls back to the palette scheme if dynamic color isn't actually available (unsupported
     // platform/OS version) even though the preference is set - e.g. after downgrading Android, or
     // restoring settings on a different platform.
-    val colorScheme = if (themeConfig.useDynamicColor) {
-        dynamicColorScheme(useDarkTheme) ?: paletteColorScheme
-    } else {
-        paletteColorScheme
-    }
+    val dynamicScheme = if (themeConfig.useDynamicColor) dynamicColorScheme(useDarkTheme) else null
+    val colorScheme = dynamicScheme ?: paletteColorScheme
 
     CompositionLocalProvider(
         LocalAppIcons provides themeConfig.iconSet.toAppIcons(),
         LocalActionPlacement provides themeConfig.actionPlacement,
         LocalUiStyle provides themeConfig.uiStyle,
+        LocalColorPalette provides themeConfig.palette.takeIf { dynamicScheme == null },
         LocalAccentSwatches provides if (useDarkTheme) DarkAccentSwatches else LightAccentSwatches
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = appTypography(themeConfig.font.toFontFamily())
         ) {
+            // Driven by the rendered background color rather than useDarkTheme so it stays correct
+            // across dynamic color and custom palettes too.
+            ConfigureSystemBarIcons(darkIcons = colorScheme.background.luminance() > 0.5f)
             if (paintBackground) {
                 AppBackground(style = themeConfig.background, content = content)
             } else {
