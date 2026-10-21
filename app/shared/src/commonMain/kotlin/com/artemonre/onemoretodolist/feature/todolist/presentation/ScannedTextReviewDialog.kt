@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Merge
@@ -54,34 +55,41 @@ import onemoretodolist.app.shared.generated.resources.scan_review_merge_line
 import onemoretodolist.app.shared.generated.resources.scan_review_mode_separate
 import onemoretodolist.app.shared.generated.resources.scan_review_mode_single
 import onemoretodolist.app.shared.generated.resources.scan_review_remove_line
+import onemoretodolist.app.shared.generated.resources.scan_review_split_line
 import onemoretodolist.app.shared.generated.resources.scan_review_title
 import onemoretodolist.app.shared.generated.resources.scan_review_todo_text
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-// Separate: every line becomes its own todo. Single: the first line is the todo's text and the
+// Separate: every row becomes its own todo. Single: the first row is the todo's text and the
 // rest become its checklist.
 enum class ScannedTextMode { Separate, Single }
 
-// Ids keep each row's text field (and its focus) stable while rows are removed or added.
-private data class ScannedLine(val id: String, val text: String)
+// Ids keep each row's text field (and its focus) stable while rows are removed or added. parts are
+// the lines a joined row was built from - more than one means it can still be split back apart.
+// Editing the text makes it one part, since the old lines no longer match it.
+private data class ScannedLine(val id: String, val text: String, val parts: List<String> = listOf(text))
 
 // The edit step between recognizing a photo's text and saving it - OCR output is rarely clean, so
-// every line can be fixed, merged into the one above, removed or added to first. Discard/back
-// (onDismiss) is a step back, not an exit - the caller reopens the camera for another try. Separate saves straight away; Single hands
-// over to TodoFormFullScreenDialog (prefilled) so tags, due time and recurrence can still be set.
-// Blank lines are dropped either way.
+// every row can be fixed, merged into the one above, split back into its lines, removed or added
+// to first. Rows start as paragraphs - the wrapped-line guess can be wrong either way, hence both
+// merge and split. Discard/back (onDismiss) is a step back, not an exit - the caller reopens the
+// camera for another try. Separate saves straight away; Single hands over to
+// TodoFormFullScreenDialog (prefilled) so tags, due time and recurrence can still be set. Blank
+// rows are dropped either way.
 @OptIn(ExperimentalUuidApi::class)
 @Composable
 fun ScannedTextReviewDialog(
-    lines: List<String>,
+    paragraphs: List<ScannedParagraph>,
     onConfirmSeparate: (lines: List<String>) -> Unit,
     onContinueAsSingle: (text: String, checklist: List<String>) -> Unit,
     onDismiss: () -> Unit
 ) {
     var mode by remember { mutableStateOf(ScannedTextMode.Separate) }
-    var rows by remember { mutableStateOf(lines.map { ScannedLine(id = Uuid.random().toString(), text = it) }) }
+    var rows by remember {
+        mutableStateOf(paragraphs.map { ScannedLine(id = Uuid.random().toString(), text = it.text, parts = it.lines) })
+    }
     var justAddedId by remember { mutableStateOf<String?>(null) }
     val nonBlankLines = rows.map { it.text.trim() }.filter { it.isNotEmpty() }
 
@@ -137,13 +145,23 @@ fun ScannedTextReviewDialog(
                     ChecklistItemTextField(
                         value = row.text,
                         onValueChange = { newText ->
-                            rows = rows.map { if (it.id == row.id) it.copy(text = newText) else it }
+                            rows = rows.map { if (it.id == row.id) ScannedLine(it.id, newText) else it }
                         },
                         placeholder = stringResource(Res.string.scan_review_line_placeholder),
                         modifier = Modifier
                             .weight(1f)
-                            .focusRequester(focusRequester)
+                            .focusRequester(focusRequester),
+                        // A paragraph can run long - wrapped, it stays readable without scrolling sideways.
+                        singleLine = false
                     )
+                    if (row.parts.size > 1) {
+                        IconButton(onClick = { rows = rows.splitAt(index) }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.CallSplit,
+                                contentDescription = stringResource(Res.string.scan_review_split_line)
+                            )
+                        }
+                    }
                     // OCR often breaks one sentence over several lines - join it back onto the
                     // line above. The first row has nothing above it, so it keeps an empty slot of
                     // the same size to stay aligned with the rest.
@@ -211,17 +229,28 @@ fun ScannedTextReviewDialog(
     }
 }
 
-// Appends the row at index to the one above it (single space between, whatever whitespace either
-// side had) and removes it - the merged row keeps the upper row's id, so its field stays put.
+// Appends the row at index to the one above it (joined like wrapped lines - see joinWrappedLines)
+// and removes it - the merged row keeps the upper row's id, so its field stays put, and both rows'
+// parts, so a split undoes the merge.
 private fun List<ScannedLine>.mergedIntoPrevious(index: Int): List<ScannedLine> {
     val previous = this[index - 1]
     val merged = previous.copy(
-        text = listOf(previous.text.trim(), this[index].text.trim()).filter { it.isNotEmpty() }.joinToString(" ")
+        text = joinWrappedLines(listOf(previous.text, this[index].text)),
+        parts = previous.parts + this[index].parts
     )
     return toMutableList().apply {
         this[index - 1] = merged
         removeAt(index)
     }
+}
+
+// Replaces the row at index with one row per part - the first keeps the row's id.
+@OptIn(ExperimentalUuidApi::class)
+private fun List<ScannedLine>.splitAt(index: Int): List<ScannedLine> {
+    val split = this[index].parts.mapIndexed { partIndex, part ->
+        ScannedLine(id = if (partIndex == 0) this[index].id else Uuid.random().toString(), text = part)
+    }
+    return take(index) + split + drop(index + 1)
 }
 
 private fun ScannedTextMode.displayName(): StringResource = when (this) {
@@ -234,7 +263,11 @@ private fun ScannedTextMode.displayName(): StringResource = when (this) {
 private fun ScannedTextReviewDialogPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         ScannedTextReviewDialog(
-            lines = listOf("Groceries", "Milk", "Bread", "Eggs"),
+            paragraphs = listOf(
+                ScannedParagraph(listOf("Pick up the parcel at the post office", "before it closes on Friday")),
+                ScannedParagraph(listOf("Milk")),
+                ScannedParagraph(listOf("Bread"))
+            ),
             onConfirmSeparate = {},
             onContinueAsSingle = { _, _ -> },
             onDismiss = {}

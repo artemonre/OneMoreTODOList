@@ -185,6 +185,16 @@
     <string name="photo_capture_script_latin">Latin text</string>
     <string name="photo_capture_script_cyrillic">Cyrillic text</string>
     <string name="photo_capture_camera_permission_needed">Allow camera access to take a photo, or pick one from the gallery.</string>
+    <string name="photo_capture_printed_only_hint">Reads printed text — handwriting isn't recognized yet</string>
+    <string name="photo_crop_hint">Drag the frame around the text you need</string>
+    <string name="photo_crop_back">Back</string>
+    <string name="photo_crop_recognize">Recognize text</string>
+    <string name="photo_script_suggest_cyrillic_title">Looks like Cyrillic text</string>
+    <string name="photo_script_suggest_latin_title">Looks like Latin text</string>
+    <string name="photo_script_suggest_message">Switch the recognition mode and read the photo again?</string>
+    <string name="photo_script_suggest_switch_cyrillic">Yes, switch to Cyrillic</string>
+    <string name="photo_script_suggest_switch_latin">Yes, switch to Latin</string>
+    <string name="photo_script_suggest_keep">No, it\'s fine</string>
     <string name="snackbar_no_text_found">No text found in the photo</string>
     <string name="scan_review_title">Scanned text</string>
     <string name="scan_review_mode_separate">Separate todos</string>
@@ -193,6 +203,7 @@
     <string name="scan_review_line_placeholder">Line</string>
     <string name="scan_review_add_line">Add line</string>
     <string name="scan_review_merge_line">Merge with line above</string>
+    <string name="scan_review_split_line">Split into lines</string>
     <string name="scan_review_remove_line">Remove line</string>
     <string name="scan_review_back">Back</string>
     <string name="scan_review_continue">Continue</string>

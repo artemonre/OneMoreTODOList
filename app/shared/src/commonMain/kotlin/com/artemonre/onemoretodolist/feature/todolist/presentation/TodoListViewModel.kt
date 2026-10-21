@@ -132,10 +132,10 @@ class TodoListViewModel(
             }
             is TodoListAction.OnTextRecognized -> viewModelScope.launch {
                 _events.send(
-                    if (action.lines.isEmpty()) {
+                    if (action.paragraphs.isEmpty()) {
                         TodoListEvent.ShowSnackbar(Res.string.snackbar_no_text_found)
                     } else {
-                        TodoListEvent.ShowScannedTextReview(action.lines)
+                        TodoListEvent.ShowScannedTextReview(action.paragraphs)
                     }
                 )
             }

@@ -197,18 +197,18 @@ class TodoListViewModelTest {
     }
 
     @Test
-    fun `OnTextRecognized opens the review for lines and shows a snackbar for no text`() = runTest(testDispatcher) {
+    fun `OnTextRecognized opens the review for paragraphs and shows a snackbar for no text`() = runTest(testDispatcher) {
         val viewModel = todoListViewModel(FakeTodoLocalDataSource(initialTodos = emptyList()))
         val events = mutableListOf<TodoListEvent>()
         backgroundScope.launch { viewModel.events.collect { events += it } }
 
-        viewModel.onAction(TodoListAction.OnTextRecognized(listOf("Milk")))
+        viewModel.onAction(TodoListAction.OnTextRecognized(listOf(ScannedParagraph(listOf("Milk")))))
         viewModel.onAction(TodoListAction.OnTextRecognized(emptyList()))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(
             listOf(
-                TodoListEvent.ShowScannedTextReview(listOf("Milk")),
+                TodoListEvent.ShowScannedTextReview(listOf(ScannedParagraph(listOf("Milk")))),
                 TodoListEvent.ShowSnackbar(Res.string.snackbar_no_text_found)
             ),
             events

@@ -182,7 +182,7 @@ fun TodoListRoot(
     // todo from ScannedTextReviewDialog.
     var addTodoDraftChecklist by remember { mutableStateOf(emptyList<ChecklistItem>()) }
     var showPhotoCapture by remember { mutableStateOf(false) }
-    var scannedLines by remember { mutableStateOf<List<String>?>(null) }
+    var scannedParagraphs by remember { mutableStateOf<List<ScannedParagraph>?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -196,7 +196,7 @@ fun TodoListRoot(
             }
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
             TodoListEvent.ShowPhotoCapture -> showPhotoCapture = true
-            is TodoListEvent.ShowScannedTextReview -> scannedLines = event.lines
+            is TodoListEvent.ShowScannedTextReview -> scannedParagraphs = event.paragraphs
             is TodoListEvent.ShowSnackbar -> {
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(message = getString(event.message), duration = SnackbarDuration.Short)
@@ -261,30 +261,30 @@ fun TodoListRoot(
 
     if (showPhotoCapture) {
         PhotoTextCaptureDialog(
-            onTextRecognized = { lines ->
+            onTextRecognized = { paragraphs ->
                 showPhotoCapture = false
-                viewModel.onAction(TodoListAction.OnTextRecognized(lines))
+                viewModel.onAction(TodoListAction.OnTextRecognized(paragraphs))
             },
             onDismiss = { showPhotoCapture = false }
         )
     }
 
-    scannedLines?.let { lines ->
+    scannedParagraphs?.let { paragraphs ->
         ScannedTextReviewDialog(
-            lines = lines,
+            paragraphs = paragraphs,
             onConfirmSeparate = { confirmedLines ->
                 viewModel.onAction(TodoListAction.OnConfirmAddScannedTodos(confirmedLines))
-                scannedLines = null
+                scannedParagraphs = null
             },
             onContinueAsSingle = { text, checklist ->
-                scannedLines = null
+                scannedParagraphs = null
                 addTodoDraftText = text
                 addTodoDraftChecklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
                 showAddTodoFullScreenDialog = true
             },
             // Back/Discard steps back to the camera for another shot rather than leaving the flow.
             onDismiss = {
-                scannedLines = null
+                scannedParagraphs = null
                 showPhotoCapture = true
             }
         )

@@ -176,6 +176,16 @@
     <string name="photo_capture_script_latin">Текст на латинице</string>
     <string name="photo_capture_script_cyrillic">Текст на кириллице</string>
     <string name="photo_capture_camera_permission_needed">Разреши доступ к камере, чтобы сделать фото, или выбери снимок из галереи.</string>
+    <string name="photo_capture_printed_only_hint">Распознаётся только печатный текст — рукописный пока нет</string>
+    <string name="photo_crop_hint">Обведи рамкой нужный текст</string>
+    <string name="photo_crop_back">Назад</string>
+    <string name="photo_crop_recognize">Распознать текст</string>
+    <string name="photo_script_suggest_cyrillic_title">Похоже на кириллицу</string>
+    <string name="photo_script_suggest_latin_title">Похоже на латиницу</string>
+    <string name="photo_script_suggest_message">Сменить режим распознавания и прочитать фото заново?</string>
+    <string name="photo_script_suggest_switch_cyrillic">Да, распознать кириллицу</string>
+    <string name="photo_script_suggest_switch_latin">Да, распознать латиницу</string>
+    <string name="photo_script_suggest_keep">Нет, всё в порядке</string>
     <string name="snackbar_no_text_found">На фото не найден текст</string>
     <string name="scan_review_title">Распознанный текст</string>
     <string name="scan_review_mode_separate">Отдельные задачи</string>
@@ -184,6 +194,7 @@
     <string name="scan_review_line_placeholder">Строка</string>
     <string name="scan_review_add_line">Добавить строку</string>
     <string name="scan_review_merge_line">Объединить со строкой выше</string>
+    <string name="scan_review_split_line">Разбить на строки</string>
     <string name="scan_review_remove_line">Удалить строку</string>
     <string name="scan_review_back">Назад</string>
     <string name="scan_review_continue">Продолжить</string>
