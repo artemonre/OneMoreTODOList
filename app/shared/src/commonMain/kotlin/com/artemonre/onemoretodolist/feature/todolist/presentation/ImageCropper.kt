@@ -37,7 +37,9 @@ private const val SCRIM_ALPHA = 0.5f
 private enum class CropHandle { TopLeft, TopRight, BottomLeft, BottomRight, Left, Top, Right, Bottom, Move }
 
 /**
- * Shows [image] fitted into the available space with a draggable crop frame over it. [cropRect] is
+ * Shows [image] fitted into the available space with a draggable crop frame over it. The image is
+ * inset by the handles' touch radius, so a frame at the image's edge can still be grabbed from
+ * outside it - give this no extra padding of its own for that. [cropRect] is
  * in the image's own pixels, so the caller can cut the original out directly - the on-screen
  * scaling stays internal.
  */
@@ -59,7 +61,9 @@ fun ImageCropper(
             // only reported after the touch slop, already several dp away from the corner.
             awaitEachGesture {
                 val down = awaitFirstDown()
-                val fit = ImageFit(image, size.width.toFloat(), size.height.toFloat())
+                val fit = ImageFit(image, size.width.toFloat(), size.height.toFloat(), HANDLE_TOUCH_RADIUS.toPx())
+                // Too small to even show the image - nothing to drag.
+                if (fit.scale <= 0f) return@awaitEachGesture
                 val grabbed = hitTest(fit.toScreen(currentCropRect), down.position, HANDLE_TOUCH_RADIUS.toPx())
                     ?: return@awaitEachGesture
                 down.consume()
@@ -79,7 +83,7 @@ fun ImageCropper(
             }
         }
     ) {
-        val fit = ImageFit(image, size.width, size.height)
+        val fit = ImageFit(image, size.width, size.height, HANDLE_TOUCH_RADIUS.toPx())
         drawImage(
             image = image,
             dstOffset = IntOffset(fit.offset.x.roundToInt(), fit.offset.y.roundToInt()),
@@ -97,9 +101,10 @@ fun ImageCropper(
     }
 }
 
-// How the image sits on screen: scaled to fit (never cropped) and centered.
-private class ImageFit(image: ImageBitmap, width: Float, height: Float) {
-    val scale = min(width / image.width, height / image.height)
+// How the image sits on screen: scaled to fit (never cropped) inside inset on every side, and
+// centered.
+private class ImageFit(image: ImageBitmap, width: Float, height: Float, inset: Float) {
+    val scale = min((width - 2 * inset) / image.width, (height - 2 * inset) / image.height).coerceAtLeast(0f)
     val offset = Offset((width - image.width * scale) / 2, (height - image.height * scale) / 2)
 
     fun toScreen(rect: Rect): Rect = Rect(

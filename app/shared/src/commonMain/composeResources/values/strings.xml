@@ -189,6 +189,11 @@
     <string name="photo_crop_hint">Drag the frame around the text you need</string>
     <string name="photo_crop_back">Back</string>
     <string name="photo_crop_recognize">Recognize text</string>
+    <string name="photo_no_text_title">No text found</string>
+    <string name="photo_no_text_message">Printed text photographed straight on reads best. Try framing the text more tightly, or take a new photo.</string>
+    <string name="photo_no_text_adjust_frame">Adjust frame</string>
+    <string name="photo_no_text_new_photo">New photo</string>
+    <string name="photo_no_text_close">Close</string>
     <string name="photo_script_suggest_cyrillic_title">Looks like Cyrillic text</string>
     <string name="photo_script_suggest_latin_title">Looks like Latin text</string>
     <string name="photo_script_suggest_message">Switch the recognition mode and read the photo again?</string>

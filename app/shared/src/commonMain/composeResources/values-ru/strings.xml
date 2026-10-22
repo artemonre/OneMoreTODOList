@@ -180,6 +180,11 @@
     <string name="photo_crop_hint">Обведи рамкой нужный текст</string>
     <string name="photo_crop_back">Назад</string>
     <string name="photo_crop_recognize">Распознать текст</string>
+    <string name="photo_no_text_title">Текст не найден</string>
+    <string name="photo_no_text_message">Лучше всего распознаётся печатный текст, снятый прямо. Попробуй точнее обвести текст рамкой или сделай новое фото.</string>
+    <string name="photo_no_text_adjust_frame">Поправить рамку</string>
+    <string name="photo_no_text_new_photo">Новое фото</string>
+    <string name="photo_no_text_close">Закрыть</string>
     <string name="photo_script_suggest_cyrillic_title">Похоже на кириллицу</string>
     <string name="photo_script_suggest_latin_title">Похоже на латиницу</string>
     <string name="photo_script_suggest_message">Сменить режим распознавания и прочитать фото заново?</string>

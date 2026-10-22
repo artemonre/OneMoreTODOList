@@ -177,6 +177,11 @@
     <string name="photo_crop_hint">Uokviri tekst koji ti treba</string>
     <string name="photo_crop_back">Nazad</string>
     <string name="photo_crop_recognize">Prepoznaj tekst</string>
+    <string name="photo_no_text_title">Tekst nije pronađen</string>
+    <string name="photo_no_text_message">Najbolje se prepoznaje štampani tekst snimljen spreda. Probaj da preciznije uokviriš tekst ili napravi novu fotografiju.</string>
+    <string name="photo_no_text_adjust_frame">Ispravi okvir</string>
+    <string name="photo_no_text_new_photo">Nova fotografija</string>
+    <string name="photo_no_text_close">Zatvori</string>
     <string name="photo_script_suggest_cyrillic_title">Izgleda kao ćirilica</string>
     <string name="photo_script_suggest_latin_title">Izgleda kao latinica</string>
     <string name="photo_script_suggest_message">Promeniti režim prepoznavanja i ponovo pročitati fotografiju?</string>

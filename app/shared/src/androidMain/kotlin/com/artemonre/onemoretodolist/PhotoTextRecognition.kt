@@ -3,8 +3,11 @@ package com.artemonre.onemoretodolist
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.PointF
 import android.graphics.Rect
 import android.media.ExifInterface
 import android.net.Uri
@@ -22,6 +25,7 @@ import java.io.FileNotFoundException
 import java.io.InputStream
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +70,14 @@ private const val DARK_BACKGROUND_LUMA = 128
 private const val DARK_AREA_SAMPLE_FACTOR = 8
 private const val DARK_AREA_WINDOW_DIVISOR = 16
 
+// A line cut out for Tesseract keeps this much of its surroundings on every side, in line heights -
+// Tesseract misreads letters that touch the image edge.
+private const val LINE_STRIP_MARGIN = 0.25f
+
+// Share of a line strip's pixels taken as its darkest and its lightest end when telling light text
+// from dark - text strokes take up more than this, specks and glare spots less.
+private const val LINE_STRIP_TAIL_SHARE = 0.05f
+
 // Russian + Serbian (Cyrillic) - tessdata_fast models bundled under androidMain/assets/tessdata.
 private val CYRILLIC_LANGUAGES = listOf("rus", "srp")
 // Tesseract can only read models from real files, not from inside the APK, so they're copied out
@@ -74,16 +86,22 @@ private val CYRILLIC_LANGUAGES = listOf("rus", "srp")
 private const val TESSERACT_DATA_DIR = "tesseract-fast-1"
 private val tessdataMutex = Mutex()
 
-// Blocks top to bottom, each with its own lines in reading order. Text too small for ML Kit gets
-// one more pass on an upscaled copy.
-internal suspend fun TextRecognizer.recognizeBlocks(bitmap: Bitmap): List<List<RecognizedLine>> {
+// Blocks top to bottom, each with its own lines in reading order.
+internal suspend fun TextRecognizer.recognizeBlocks(bitmap: Bitmap): List<List<RecognizedLine>> =
+    read(bitmap).blocks.toRecognizedLines()
+
+// ML Kit's read and the image its boxes are measured in. Text too small for ML Kit gets one more
+// pass on an upscaled copy, which then becomes that image.
+private class MlKitRead(val image: Bitmap, val blocks: List<Text.TextBlock>)
+
+private suspend fun TextRecognizer.read(bitmap: Bitmap): MlKitRead {
     val blocks = recognizeTextBlocks(bitmap)
     val lineHeight = blocks.flatMap { it.lines }.mapNotNull { it.boundingBox?.height() }.median()
-    if (lineHeight == null || lineHeight >= MLKIT_MIN_LINE_HEIGHT_PX) return blocks.toRecognizedLines()
+    if (lineHeight == null || lineHeight >= MLKIT_MIN_LINE_HEIGHT_PX) return MlKitRead(bitmap, blocks)
     val upscaled = withContext(Dispatchers.Default) {
         bitmap.scaledBy(MLKIT_TARGET_LINE_HEIGHT_PX.toFloat() / lineHeight)
     }
-    return recognizeTextBlocks(upscaled).toRecognizedLines()
+    return MlKitRead(upscaled, recognizeTextBlocks(upscaled))
 }
 
 private suspend fun TextRecognizer.recognizeTextBlocks(bitmap: Bitmap): List<Text.TextBlock> =
@@ -108,49 +126,105 @@ private fun List<Text.TextBlock>.toRecognizedLines(): List<List<RecognizedLine>>
     }
 }
 
+// A Cyrillic read, plus ML Kit's own (Latin) read of the same photo - made on the way anyway, and
+// it tells whether the text was Latin after all (see looksLikeMisreadLatin).
+internal class CyrillicRead(val blocks: List<List<RecognizedLine>>, val latinReadLines: List<String>)
+
+// ML Kit finds the text and Tesseract reads it. ML Kit's text finder is trained on real photos -
+// glare, colored and dark backgrounds, pictures around the text - and its line boxes are right
+// whatever the script, even when its Latin model garbles the letters. Each of its lines is cut out
+// level, made dark-on-light and handed to Tesseract alone, which reads one clean line far better
+// than it finds lines in a busy photo itself. When ML Kit finds nothing, Tesseract still gets the
+// whole photo. Returned in ML Kit's blocks and line boxes - same shape as recognizeBlocks.
+internal suspend fun recognizeCyrillicBlocks(
+    context: Context,
+    recognizer: TextRecognizer,
+    bitmap: Bitmap
+): CyrillicRead {
+    val dataPath = ensureTessdata(context)
+    val layout = recognizer.read(bitmap)
+    val latinReadLines = layout.blocks.flatMap { block -> block.lines.map { it.text } }
+    val blocks = withContext(Dispatchers.Default) {
+        withTesseract(dataPath) { tess ->
+            if (layout.blocks.isEmpty()) {
+                tess.readWholePage(bitmap)
+            } else {
+                tess.pageSegMode = TessBaseAPI.PageSegMode.PSM_SINGLE_LINE
+                layout.blocks.map { block ->
+                    block.lines.mapNotNull { line -> tess.readLine(layout.image, line) }
+                }
+            }
+        }
+    }
+    return CyrillicRead(blocks, latinReadLines)
+}
+
 // A fresh TessBaseAPI per photo - it isn't thread-safe, and one run is short-lived enough that
 // keeping an instance around isn't worth it. A failed init (missing/corrupt model) reads as "no
 // text found", same as an ML Kit failure.
-// Returned as Tesseract's blocks, each with its lines - same shape as recognizeBlocks. Not its
-// paragraphs: those often cut a wrapped sentence after its first line. Its blocks sometimes do too,
-// which toScannedParagraphs makes up for by reading on into a block sitting right underneath.
-internal suspend fun recognizeCyrillicBlocks(context: Context, bitmap: Bitmap): List<List<RecognizedLine>> {
-    val dataPath = ensureTessdata(context)
-    return withContext(Dispatchers.Default) {
-        val tess = TessBaseAPI()
-        try {
-            if (!tess.init(dataPath.absolutePath, CYRILLIC_LANGUAGES.joinToString("+"))) return@withContext emptyList()
-            // A photo of a note is rarely one tidy block - let Tesseract find the layout itself.
-            tess.pageSegMode = TessBaseAPI.PageSegMode.PSM_AUTO
-            tess.setVariable("thresholding_method", TESSERACT_THRESHOLDING_SAUVOLA)
-            tess.setVariable("user_defined_dpi", TESSERACT_DPI)
-            // Light-on-dark text (a dark card, a sign) turns dark-on-light first - Tesseract's layout
-            // analysis otherwise takes such an area for a picture and skips it.
-            val prepared = bitmap.withDarkAreasInverted()
-            tess.setImage(prepared)
-            // A layout-only pass first, to measure how tall the text actually is.
-            val lineHeight = tess.textlines.let { lines ->
-                try {
-                    lines.boxRects.map { it.height() }.median()
-                } finally {
-                    lines.recycle()
-                }
-            }
-            if (lineHeight != null) {
-                val scale = TESSERACT_TARGET_LINE_HEIGHT_PX.toFloat() / lineHeight
-                if (scale !in (1 - TESSERACT_SCALE_TOLERANCE)..(1 + TESSERACT_SCALE_TOLERANCE)) {
-                    tess.setImage(prepared.scaledBy(scale))
-                }
-            }
-            // Runs the recognition itself - the iterator below only walks its result.
-            if (tess.getUTF8Text().isNullOrBlank()) return@withContext emptyList()
-            tess.blocks()
-        } finally {
-            tess.recycle()
-        }
+private fun withTesseract(
+    dataPath: File,
+    read: (TessBaseAPI) -> List<List<RecognizedLine>>
+): List<List<RecognizedLine>> {
+    val tess = TessBaseAPI()
+    try {
+        if (!tess.init(dataPath.absolutePath, CYRILLIC_LANGUAGES.joinToString("+"))) return emptyList()
+        tess.setVariable("thresholding_method", TESSERACT_THRESHOLDING_SAUVOLA)
+        tess.setVariable("user_defined_dpi", TESSERACT_DPI)
+        return read(tess)
+    } finally {
+        tess.recycle()
     }
 }
 
+// One ML Kit line read by Tesseract, kept in ML Kit's box - or null when nothing came out of it.
+private fun TessBaseAPI.readLine(image: Bitmap, line: Text.Line): RecognizedLine? {
+    val box = line.boundingBox ?: return null
+    val corners = line.cornerPoints?.takeIf { it.size == 4 }?.map { PointF(it.x.toFloat(), it.y.toFloat()) }
+        ?: listOf(
+            PointF(box.left.toFloat(), box.top.toFloat()),
+            PointF(box.right.toFloat(), box.top.toFloat()),
+            PointF(box.right.toFloat(), box.bottom.toFloat()),
+            PointF(box.left.toFloat(), box.bottom.toFloat())
+        )
+    val strip = image.lineStrip(corners) ?: return null
+    setImage(strip)
+    val text = getUTF8Text()?.trim()
+    if (text.isNullOrEmpty()) return null
+    return RecognizedLine(text, left = box.left, top = box.top, right = box.right, bottom = box.bottom)
+}
+
+// The fallback when ML Kit found no text at all: Tesseract finds the layout itself, returned as
+// its blocks, each with its lines.
+private fun TessBaseAPI.readWholePage(bitmap: Bitmap): List<List<RecognizedLine>> {
+    // A photo of a note is rarely one tidy block.
+    pageSegMode = TessBaseAPI.PageSegMode.PSM_AUTO
+    // Light-on-dark text (a dark card, a sign) turns dark-on-light first - Tesseract's layout
+    // analysis otherwise takes such an area for a picture and skips it.
+    val prepared = bitmap.withDarkAreasInverted()
+    setImage(prepared)
+    // A layout-only pass first, to measure how tall the text actually is.
+    val lineHeight = textlines.let { lines ->
+        try {
+            lines.boxRects.map { it.height() }.median()
+        } finally {
+            lines.recycle()
+        }
+    }
+    if (lineHeight != null) {
+        val scale = TESSERACT_TARGET_LINE_HEIGHT_PX.toFloat() / lineHeight
+        if (scale !in (1 - TESSERACT_SCALE_TOLERANCE)..(1 + TESSERACT_SCALE_TOLERANCE)) {
+            setImage(prepared.scaledBy(scale))
+        }
+    }
+    // Runs the recognition itself - the iterator below only walks its result.
+    if (getUTF8Text().isNullOrBlank()) return emptyList()
+    return blocks()
+}
+
+// Not Tesseract's paragraphs: those often cut a wrapped sentence after its first line. Its blocks
+// sometimes do too, which toScannedParagraphs makes up for by reading on into a block sitting
+// right underneath.
 private fun TessBaseAPI.blocks(): List<List<RecognizedLine>> {
     val iterator = resultIterator ?: return emptyList()
     try {
@@ -262,6 +336,79 @@ private fun Bitmap.scaledBy(scale: Float): Bitmap {
         true
     )
 }
+
+// One text line cut out of the photo as a level grayscale strip, dark text on a light background:
+// the line's four corners (top-left, top-right, bottom-right, bottom-left, tilted with the text as
+// ML Kit gives them) mapped onto a straight rectangle, with LINE_STRIP_MARGIN all round, scaled to
+// Tesseract's preferred line height. Null for a degenerate box.
+private fun Bitmap.lineStrip(corners: List<PointF>): Bitmap? {
+    val (topLeft, topRight, bottomRight, bottomLeft) = corners
+    val lineWidth = hypot(topRight.x - topLeft.x, topRight.y - topLeft.y)
+    val lineHeight = hypot(bottomLeft.x - topLeft.x, bottomLeft.y - topLeft.y)
+    if (lineWidth < 1f || lineHeight < 1f) return null
+    val margin = lineHeight * LINE_STRIP_MARGIN
+    // Unit steps along the line and down across it, to push each corner out by the margin.
+    val alongX = (topRight.x - topLeft.x) / lineWidth
+    val alongY = (topRight.y - topLeft.y) / lineWidth
+    val acrossX = (bottomLeft.x - topLeft.x) / lineHeight
+    val acrossY = (bottomLeft.y - topLeft.y) / lineHeight
+    fun PointF.pushed(along: Float, across: Float): List<Float> = listOf(
+        x + (alongX * along + acrossX * across) * margin,
+        y + (alongY * along + acrossY * across) * margin
+    )
+    val source = (
+        topLeft.pushed(-1f, -1f) + topRight.pushed(1f, -1f) +
+            bottomRight.pushed(1f, 1f) + bottomLeft.pushed(-1f, 1f)
+        ).toFloatArray()
+
+    val scale = TESSERACT_TARGET_LINE_HEIGHT_PX / lineHeight
+    val stripWidth = ((lineWidth + 2 * margin) * scale).roundToInt().coerceIn(1, MAX_IMAGE_SIDE_PX)
+    val stripHeight = ((lineHeight + 2 * margin) * scale).roundToInt().coerceAtLeast(1)
+    val target = floatArrayOf(
+        0f, 0f,
+        stripWidth.toFloat(), 0f,
+        stripWidth.toFloat(), stripHeight.toFloat(),
+        0f, stripHeight.toFloat()
+    )
+    val strip = Bitmap.createBitmap(stripWidth, stripHeight, Bitmap.Config.ARGB_8888)
+    val matrix = Matrix().apply { setPolyToPoly(source, 0, target, 0, 4) }
+    Canvas(strip).drawBitmap(this, matrix, Paint(Paint.FILTER_BITMAP_FLAG))
+    return strip.toDarkOnLightGray()
+}
+
+// The strip in grayscale, inverted when its text is lighter than its background. The background is
+// the strip's typical (median) brightness - text is the minority - and the text sits on whichever
+// side of it reaches further: a long bright tail is light text, a long dark tail dark text. Parts
+// past the photo's edge (left transparent) are filled with the background.
+private fun Bitmap.toDarkOnLightGray(): Bitmap {
+    val pixels = IntArray(width * height)
+    getPixels(pixels, 0, width, 0, 0, width, height)
+    val histogram = IntArray(256)
+    pixels.forEach { pixel -> if (pixel ushr 24 != 0) histogram[pixel.luma()]++ }
+    val dark = histogram.percentile(LINE_STRIP_TAIL_SHARE)
+    val background = histogram.percentile(0.5f)
+    val light = histogram.percentile(1f - LINE_STRIP_TAIL_SHARE)
+    val isLightText = light - background > background - dark
+    for (index in pixels.indices) {
+        val luma = if (pixels[index] ushr 24 == 0) background else pixels[index].luma()
+        pixels[index] = grayPixel(if (isLightText) 255 - luma else luma)
+    }
+    setPixels(pixels, 0, width, 0, 0, width, height)
+    return this
+}
+
+// The brightness below which this share of the counted pixels falls.
+private fun IntArray.percentile(share: Float): Int {
+    val target = sum() * share
+    var counted = 0
+    for (luma in indices) {
+        counted += this[luma]
+        if (counted >= target) return luma
+    }
+    return lastIndex
+}
+
+private fun grayPixel(luma: Int): Int = (0xFF shl 24) or (luma shl 16) or (luma shl 8) or luma
 
 // A copy with every dark-background area inverted, so all text ends up dark on light - or this
 // same bitmap when nothing is dark. Each pixel is judged by the average brightness around it, not

@@ -106,6 +106,11 @@ import onemoretodolist.app.shared.generated.resources.photo_capture_take_photo
 import onemoretodolist.app.shared.generated.resources.photo_crop_back
 import onemoretodolist.app.shared.generated.resources.photo_crop_hint
 import onemoretodolist.app.shared.generated.resources.photo_crop_recognize
+import onemoretodolist.app.shared.generated.resources.photo_no_text_adjust_frame
+import onemoretodolist.app.shared.generated.resources.photo_no_text_close
+import onemoretodolist.app.shared.generated.resources.photo_no_text_message
+import onemoretodolist.app.shared.generated.resources.photo_no_text_new_photo
+import onemoretodolist.app.shared.generated.resources.photo_no_text_title
 import onemoretodolist.app.shared.generated.resources.photo_script_suggest_cyrillic_title
 import onemoretodolist.app.shared.generated.resources.photo_script_suggest_keep
 import onemoretodolist.app.shared.generated.resources.photo_script_suggest_latin_title
@@ -157,6 +162,8 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
     }
     // A read that looks like the other script's - waiting for the user to switch or keep it.
     var scriptSuggestion by remember { mutableStateOf<ScriptSuggestion?>(null) }
+    // A read that came back empty - the photo stays, so the user can reframe it or take another.
+    var isNoTextFoundShown by remember { mutableStateOf(false) }
     var surfaceRequest by remember { mutableStateOf<SurfaceRequest?>(null) }
 
     val recognizer = remember { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
@@ -226,6 +233,11 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
         }
     }
 
+    // An empty read stays here instead of closing the capture, so the photo isn't lost.
+    val deliver: (List<ScannedParagraph>) -> Unit = { paragraphs ->
+        if (paragraphs.isEmpty()) isNoTextFoundShown = true else currentOnTextRecognized(paragraphs)
+    }
+
     // Runs one recognition pass on the cropped photo and hands the result back - unless it looks
     // like the other script's text, and offerScriptSwitch allows asking about that first (once
     // per photo: the read after a switch is handed back as it is).
@@ -234,11 +246,16 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
             isProcessing = true
             val readAs = script
             val cropped = withContext(Dispatchers.Default) { bitmap.cropped(cropRect.toAndroidRect(bitmap)) }
+            // ML Kit's own read, when the Cyrillic one made it on the way.
+            var latinReadLines = emptyList<String>()
             // Copying Tesseract's models out on first use can still fail - same "no text" outcome.
             val paragraphs = try {
                 when (readAs) {
                     PhotoTextScript.Latin -> recognizer.recognizeBlocks(cropped)
-                    PhotoTextScript.Cyrillic -> recognizeCyrillicBlocks(context, cropped)
+                    PhotoTextScript.Cyrillic -> recognizeCyrillicBlocks(context, recognizer, cropped).let { read ->
+                        latinReadLines = read.latinReadLines
+                        read.blocks
+                    }
                 }.toScannedParagraphs()
             } catch (e: IOException) {
                 emptyList()
@@ -249,17 +266,15 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
             } else {
                 when (readAs) {
                     PhotoTextScript.Latin -> PhotoTextScript.Cyrillic.takeIf { looksLikeMisreadCyrillic(lines) }
-                    // Tesseract's output alone can't tell - a quick ML Kit read of the same crop does.
-                    PhotoTextScript.Cyrillic -> PhotoTextScript.Latin.takeIf {
-                        looksLikeMisreadLatin(lines, recognizer.recognizeBlocks(cropped).flatten().map { it.text })
-                    }
+                    // Tesseract's output alone can't tell - ML Kit's read of the same crop does.
+                    PhotoTextScript.Cyrillic -> PhotoTextScript.Latin.takeIf { looksLikeMisreadLatin(lines, latinReadLines) }
                 }
             }
             isProcessing = false
             if (suggested != null) {
                 scriptSuggestion = ScriptSuggestion(suggested, paragraphs)
             } else {
-                currentOnTextRecognized(paragraphs)
+                deliver(paragraphs)
             }
         }
     }
@@ -291,7 +306,20 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
                     },
                     onKeep = {
                         scriptSuggestion = null
-                        currentOnTextRecognized(suggestion.paragraphs)
+                        deliver(suggestion.paragraphs)
+                    }
+                )
+            }
+            if (isNoTextFoundShown) {
+                NoTextFoundDialog(
+                    onAdjustFrame = { isNoTextFoundShown = false },
+                    onNewPhoto = {
+                        isNoTextFoundShown = false
+                        photo = null
+                    },
+                    onClose = {
+                        isNoTextFoundShown = false
+                        requestDismiss()
                     }
                 )
             }
@@ -429,24 +457,26 @@ private fun PhotoCropScreen(
     BackHandler(enabled = !isProcessing, onBack = onBack)
     val image = remember(photo) { photo.asImageBitmap() }
     Box(modifier = Modifier.fillMaxSize()) {
+        // No side padding around the cropper itself - it keeps its own margin around the photo, where
+        // the frame's handles can be grabbed from outside. The texts and buttons get the usual one.
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(AppSpacing.l),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.l)
+                .padding(vertical = AppSpacing.l),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = stringResource(Res.string.photo_crop_hint),
                 style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = AppSpacing.l)
             )
             ImageCropper(
                 image = image,
                 cropRect = cropRect,
                 onCropRectChange = onCropRectChange,
-                // The frame starts around the whole photo, so its corners sit at the screen's sides -
+                // The frame starts around the whole photo, so its corners sit near the screen's sides -
                 // kept out of the back-gesture zones there, or grabbing them swipes back instead.
                 modifier = Modifier
                     .weight(1f)
@@ -454,7 +484,9 @@ private fun PhotoCropScreen(
                     .windowInsetsPadding(WindowInsets.systemGestures.only(WindowInsetsSides.Horizontal))
             )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppSpacing.l),
                 horizontalArrangement = Arrangement.spacedBy(AppSpacing.s, Alignment.End)
             ) {
                 TextButton(onClick = onBack, enabled = !isProcessing) {
@@ -505,6 +537,32 @@ private fun ScriptSuggestionDialog(suggested: PhotoTextScript, onSwitch: () -> U
         dismissButton = {
             TextButton(onClick = onKeep) {
                 Text(stringResource(Res.string.photo_script_suggest_keep))
+            }
+        }
+    )
+}
+
+// Both engines are built for printed text shot straight on - the message says so, since that's
+// the usual reason for an empty read. Dismissing it stays on the crop screen, same as adjusting.
+@Composable
+private fun NoTextFoundDialog(onAdjustFrame: () -> Unit, onNewPhoto: () -> Unit, onClose: () -> Unit) {
+    MaterialAlertDialog(
+        onDismissRequest = onAdjustFrame,
+        title = { Text(stringResource(Res.string.photo_no_text_title)) },
+        text = { Text(stringResource(Res.string.photo_no_text_message)) },
+        confirmButton = {
+            Button(onClick = onAdjustFrame) {
+                Text(stringResource(Res.string.photo_no_text_adjust_frame))
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onClose) {
+                    Text(stringResource(Res.string.photo_no_text_close))
+                }
+                TextButton(onClick = onNewPhoto) {
+                    Text(stringResource(Res.string.photo_no_text_new_photo))
+                }
             }
         }
     )
