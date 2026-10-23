@@ -176,6 +176,46 @@
     <string name="onboarding_todo_4">Fourth todo item. Swipe left to edit or delete</string>
     <string name="onboarding_todo_5">Fifth todo item. Swipe right to share</string>
 
+    <string name="photo_capture_take_photo">Take photo</string>
+    <string name="photo_capture_pick_from_gallery">Pick from gallery</string>
+    <string name="photo_capture_close">Close</string>
+    <!-- The scripts' own letters - deliberately the same in every language. -->
+    <string name="photo_capture_script_latin_label">ABC</string>
+    <string name="photo_capture_script_cyrillic_label">АБВ</string>
+    <string name="photo_capture_script_latin">Latin text</string>
+    <string name="photo_capture_script_cyrillic">Cyrillic text</string>
+    <string name="photo_capture_camera_permission_needed">Allow camera access to take a photo, or pick one from the gallery.</string>
+    <string name="photo_capture_printed_only_hint">Reads printed text — handwriting isn't recognized yet</string>
+    <string name="photo_crop_hint">Drag the frame around the text you need</string>
+    <string name="photo_crop_back">Back</string>
+    <string name="photo_crop_recognize">Recognize text</string>
+    <string name="photo_no_text_title">No text found</string>
+    <string name="photo_no_text_message">Printed text photographed straight on reads best. Try framing the text more tightly, or take a new photo.</string>
+    <string name="photo_no_text_adjust_frame">Adjust frame</string>
+    <string name="photo_no_text_new_photo">New photo</string>
+    <string name="photo_no_text_close">Close</string>
+    <string name="photo_script_suggest_cyrillic_title">Looks like Cyrillic text</string>
+    <string name="photo_script_suggest_latin_title">Looks like Latin text</string>
+    <string name="photo_script_suggest_message">Switch the recognition mode and read the photo again?</string>
+    <string name="photo_script_suggest_switch_cyrillic">Yes, switch to Cyrillic</string>
+    <string name="photo_script_suggest_switch_latin">Yes, switch to Latin</string>
+    <string name="photo_script_suggest_keep">No, it\'s fine</string>
+    <string name="snackbar_no_text_found">No text found in the photo</string>
+    <string name="scan_review_title">Scanned text</string>
+    <string name="scan_review_mode_separate">Separate todos</string>
+    <string name="scan_review_mode_single">One todo</string>
+    <string name="scan_review_todo_text">Todo</string>
+    <string name="scan_review_line_placeholder">Line</string>
+    <string name="scan_review_add_line">Add line</string>
+    <string name="scan_review_merge_line">Merge with line above</string>
+    <string name="scan_review_split_line">Split into lines</string>
+    <string name="scan_review_remove_line">Remove line</string>
+    <string name="scan_review_back">Back</string>
+    <string name="scan_review_continue">Continue</string>
+    <plurals name="scan_review_add_todos">
+        <item quantity="one">Add %1$d todo</item>
+        <item quantity="other">Add %1$d todos</item>
+    </plurals>
     <string name="settings_backup">Backup</string>
     <string name="settings_backup_description">Save your todos to a file to keep them safe or move them to another device.</string>
     <string name="backup_tab_file">File</string>

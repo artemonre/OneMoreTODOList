@@ -92,7 +92,7 @@ private val TAG_COLOR_SELECTED_BORDER = 2.dp
 private val CHECKLIST_FIELD_PADDING = AppSpacing.xs
 // How much of surfaceContainer (the palette's main blue) shows through behind each checklist row -
 // just enough to group checkbox, text and remove button without it reading as a filled box.
-private const val CHECKLIST_ROW_BACKGROUND_ALPHA = 0.12f
+internal const val CHECKLIST_ROW_BACKGROUND_ALPHA = 0.12f
 
 // The tags a todo carries, as removable colored chips, plus an "Add tag" chip that opens
 // AddTagDialog. Only the full-screen form shows this - see TodoFormBody's showTags.
@@ -355,19 +355,21 @@ internal fun TodoFormChecklistSection(
 }
 
 // A bare field for checklist lines: no container, border or underline, just 4dp of inner padding -
-// the row around it (checkbox, text, remove button) carries the background instead.
+// the row around it (checkbox, text, remove button) carries the background instead. Also used for
+// ScannedTextReviewDialog's lines, which share the checklist row look.
 @Composable
-private fun ChecklistItemTextField(
+internal fun ChecklistItemTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true
 ) {
     val textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface)
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        singleLine = true,
+        singleLine = singleLine,
         textStyle = textStyle,
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),

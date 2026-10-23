@@ -83,6 +83,7 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
@@ -261,6 +262,9 @@ fun TodoFormBody(
     // Only used when editingItem == null - lets a caller (TodoFormFullScreenDialog, handed a draft
     // from TodoFormBottomSheet's "More settings") seed the field without pretending it's an edit.
     initialText: String = "",
+    // Same add-mode-only seeding as initialText - used by the photo -> todo flow, which hands over
+    // the scanned lines after the first as checklist items.
+    initialChecklist: List<ChecklistItem> = emptyList(),
     onTextChange: (String) -> Unit = {},
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
@@ -277,7 +281,7 @@ fun TodoFormBody(
     }
     var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
     var tags by remember { mutableStateOf(editingItem?.tags.orEmpty()) }
-    var checklist by remember { mutableStateOf(editingItem?.checklist.orEmpty()) }
+    var checklist by remember { mutableStateOf(editingItem?.checklist ?: initialChecklist) }
     var repeatEnabled by remember { mutableStateOf(editingItem?.recurrence != null) }
     var recurrenceType by remember { mutableStateOf(editingItem?.recurrence?.type ?: RecurrenceType.Every) }
     // A counter (not free text) so this is always a valid positive interval - no parsing/validation needed.
@@ -728,7 +732,7 @@ fun TodoFormBody(
                         )
                     }
                     Spacer(Modifier.height(AppSpacing.s))
-                    RecurrenceSegmentedRow(
+                    EnumSegmentedRow(
                         options = RecurrenceUnit.entries,
                         selected = recurrenceUnit,
                         onSelected = { recurrenceUnit = it },
@@ -920,11 +924,11 @@ private fun RecurrenceUnit.pluralResource(): PluralStringResource = when (this) 
     RecurrenceUnit.Year -> Res.plurals.recurrence_unit_year
 }
 
-// One row of segmented buttons for a whole enum's worth of options - currently just RecurrenceUnit,
-// kept generic in case another enum picker needs the same look later.
+// One row of segmented buttons for a whole enum's worth of options - RecurrenceUnit here, and
+// ScannedTextReviewDialog's Separate/One-todo mode.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun <T> RecurrenceSegmentedRow(
+internal fun <T> EnumSegmentedRow(
     options: List<T>,
     selected: T,
     onSelected: (T) -> Unit,
