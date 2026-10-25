@@ -58,6 +58,11 @@
     <string name="checklist_remove_item">Удалить пункт</string>
     <string name="checklist_progress">%1$d/%2$d</string>
     <string name="checklist_progress_description">Выполнено пунктов: %1$d из %2$d</string>
+
+    <string name="card_reminder_today">Сегодня %1$s</string>
+    <string name="card_reminder_tomorrow">Завтра %1$s</string>
+    <string name="card_reminder_date">%1$s %2$s</string>
+    <string name="card_next_reminder_description">Следующее напоминание: %1$s</string>
     <string name="form_add">Добавить</string>
     <string name="form_cancel">Отмена</string>
 
@@ -81,6 +86,7 @@
     <string name="snackbar_switched_to_manual_sort">Включена ручная сортировка</string>
     <string name="snackbar_reorder_hint">Включи ручную сортировку, чтобы менять порядок задач</string>
     <string name="detail_attention_info">Инфо:\nС этой задачей ничего не делали уже %1$d дн. Возможно, её стоит изменить или заменить</string>
+    <string name="detail_reminder_info">Напоминание установлено на %1$s в %2$s</string>
     <string name="share_title">Поделиться</string>
     <string name="share_make_note">Сделать заметку</string>
     <string name="share_coming_soon">Скоро</string>

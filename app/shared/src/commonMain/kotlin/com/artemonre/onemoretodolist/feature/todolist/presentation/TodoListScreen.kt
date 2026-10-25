@@ -753,6 +753,7 @@ private fun SwipeableTodoRow(
             tags = item.tags,
             checklistDone = item.checklist.count { it.isDone },
             checklistTotal = item.checklist.size,
+            nextReminder = item.nextReminder,
             cloudSegment = cloudSegment,
             onToggleDone = {
                 if (item.status == TodoStatus.Active) {

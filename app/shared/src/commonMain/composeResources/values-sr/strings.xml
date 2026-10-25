@@ -55,6 +55,11 @@
     <string name="checklist_remove_item">Ukloni stavku</string>
     <string name="checklist_progress">%1$d/%2$d</string>
     <string name="checklist_progress_description">Završeno stavki: %1$d od %2$d</string>
+
+    <string name="card_reminder_today">Danas %1$s</string>
+    <string name="card_reminder_tomorrow">Sutra %1$s</string>
+    <string name="card_reminder_date">%1$s %2$s</string>
+    <string name="card_next_reminder_description">Sledeći podsetnik: %1$s</string>
     <string name="form_add">Dodaj</string>
     <string name="form_cancel">Otkaži</string>
 
@@ -78,6 +83,7 @@
     <string name="snackbar_switched_to_manual_sort">Uključeno je ručno sortiranje</string>
     <string name="snackbar_reorder_hint">Uključi ručno sortiranje da bi menjao redosled zadataka</string>
     <string name="detail_attention_info">Info:\nOvaj zadatak nije diran već %1$d dana, možda bi trebalo da ga izmeniš ili zameniš</string>
+    <string name="detail_reminder_info">Podsetnik je zakazan za %1$s u %2$s</string>
     <string name="share_title">Podeli</string>
     <string name="share_make_note">Napravi belešku</string>
     <string name="share_coming_soon">Uskoro</string>

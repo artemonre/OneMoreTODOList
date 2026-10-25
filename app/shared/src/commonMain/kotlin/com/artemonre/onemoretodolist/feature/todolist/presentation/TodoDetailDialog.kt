@@ -51,9 +51,12 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
 import com.artemonre.onemoretodolist.hasNativeCopyConfirmation
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.action_close
 import onemoretodolist.app.shared.generated.resources.detail_attention_info
+import onemoretodolist.app.shared.generated.resources.detail_reminder_info
 import onemoretodolist.app.shared.generated.resources.mascot_head_leaning_on_fence
 import org.jetbrains.compose.resources.stringResource
 
@@ -152,6 +155,20 @@ fun TodoDetailDialog(
                         }
                     }
                 )
+                // The closest reminder, same as the card's bottom-left label but spelled out in full.
+                item.nextReminder?.let { instant ->
+                    val at = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+                    Text(
+                        text = stringResource(
+                            Res.string.detail_reminder_info,
+                            rememberShortDateFormat().format(at.date),
+                            dueTimeFormat.format(at.time)
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = AppSpacing.s)
+                    )
+                }
                 // The one place checklist items get ticked off outside the edit form - each row is a
                 // single toggleable target, checkbox and text together.
                 if (item.checklist.isNotEmpty()) {

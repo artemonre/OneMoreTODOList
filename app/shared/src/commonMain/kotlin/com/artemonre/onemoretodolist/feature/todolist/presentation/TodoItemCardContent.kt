@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,7 +39,18 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TagColor
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
+import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.card_next_reminder_description
+import onemoretodolist.app.shared.generated.resources.card_reminder_date
+import onemoretodolist.app.shared.generated.resources.card_reminder_today
+import onemoretodolist.app.shared.generated.resources.card_reminder_tomorrow
 import onemoretodolist.app.shared.generated.resources.checklist_progress
 import onemoretodolist.app.shared.generated.resources.checklist_progress_description
 import org.jetbrains.compose.resources.stringResource
@@ -49,8 +61,9 @@ internal const val STRIKETHROUGH_ANIMATION_DURATION_MS = 320
 
 /**
  * A todo item's content - an optional single line of tag chips on top, then checkbox and text
- * centered in a row, with the formatted date (and checklist progress, if the todo has a checklist)
- * pinned to the bottom-end with a small offset. Placed inside [com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCard]
+ * centered in a row, with the formatted date (and checklist progress, if the
+ * todo has a checklist) pinned to the bottom-end and the next reminder, if any, to the bottom-start,
+ * both with a small offset. Placed inside [com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCard]
  * by [TodoItemCard]; this layout stays the same across every UI style, only the surrounding card
  * container and the checkbox's own look (via [AppCheckToggle]) are allowed to differ per style.
  */
@@ -63,7 +76,8 @@ fun TodoItemCardContent(
     modifier: Modifier = Modifier,
     tags: List<TodoTag> = emptyList(),
     checklistDone: Int = 0,
-    checklistTotal: Int = 0
+    checklistTotal: Int = 0,
+    nextReminder: Instant? = null
 ) {
     val density = LocalDensity.current
     val textStyle = MaterialTheme.typography.bodyLarge
@@ -130,6 +144,31 @@ fun TodoItemCardContent(
                     }
                 }
             }
+            // The closest reminder, mirroring the date on the opposite corner.
+            nextReminder?.let { instant ->
+                val label = reminderLabel(instant)
+                val description = stringResource(Res.string.card_next_reminder_description, label)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .offset(x = -AppSpacing.xs, y = AppSpacing.xs)
+                        .clearAndSetSemantics { contentDescription = description }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Notifications,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(CARD_ICON_SIZE)
+                    )
+                    Spacer(Modifier.width(AppSpacing.xs))
+                    Text(
+                        text = label,
+                        style = dateStyle,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -146,7 +185,7 @@ fun TodoItemCardContent(
                             imageVector = Icons.Filled.Checklist,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(CHECKLIST_ICON_SIZE)
+                            modifier = Modifier.size(CARD_ICON_SIZE)
                         )
                         Spacer(Modifier.width(AppSpacing.xs))
                         Text(
@@ -167,7 +206,22 @@ fun TodoItemCardContent(
     }
 }
 
-private val CHECKLIST_ICON_SIZE = 12.dp
+private val CARD_ICON_SIZE = 12.dp
+
+// "Today 10:00", "Tomorrow 10:00", or the date for anything further out.
+@Composable
+private fun reminderLabel(instant: Instant): String {
+    val shortDateFormat = rememberShortDateFormat()
+    val zone = TimeZone.currentSystemDefault()
+    val at = instant.toLocalDateTime(zone)
+    val today = Clock.System.todayIn(zone)
+    val time = dueTimeFormat.format(at.time)
+    return when (at.date) {
+        today -> stringResource(Res.string.card_reminder_today, time)
+        today.plus(1, DateTimeUnit.DAY) -> stringResource(Res.string.card_reminder_tomorrow, time)
+        else -> stringResource(Res.string.card_reminder_date, shortDateFormat.format(at.date), time)
+    }
+}
 
 @Preview(widthDp = 360, heightDp = 96)
 @Composable
@@ -180,7 +234,8 @@ private fun TodoItemCardContentWithTagsPreview() {
             onToggleDone = {},
             tags = listOf(TodoTag("Travel", TagColor.Teal), TodoTag("Home", TagColor.Orange)),
             checklistDone = 2,
-            checklistTotal = 5
+            checklistTotal = 5,
+            nextReminder = Clock.System.now()
         )
     }
 }
