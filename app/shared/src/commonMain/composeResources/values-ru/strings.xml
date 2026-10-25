@@ -2,6 +2,8 @@
 <resources>
     <string name="recurrence_every">Повторяется раз в %1$s</string>
     <string name="recurrence_after_completion">Повторяется через %1$s после выполнения</string>
+    <string name="recurrence_every_with_reminder">Напоминание %1$s в %2$s, затем раз в %3$s в то же время</string>
+    <string name="recurrence_after_completion_with_reminder">Напоминание %1$s в %2$s. Когда выполнишь, снова через %3$s в то же время</string>
 
     <plurals name="recurrence_unit_day">
         <item quantity="one">%1$d день</item>

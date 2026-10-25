@@ -3,6 +3,8 @@
 <resources>
     <string name="recurrence_every">Ponavlja se jednom u %1$s</string>
     <string name="recurrence_after_completion">Ponavlja se %1$s nakon završetka</string>
+    <string name="recurrence_every_with_reminder">Podsetnik %1$s u %2$s, zatim jednom u %3$s u isto vreme</string>
+    <string name="recurrence_after_completion_with_reminder">Podsetnik %1$s u %2$s. Kad ga završiš, ponovo za %3$s u isto vreme</string>
 
     <plurals name="recurrence_unit_day">
         <item quantity="one">%1$d dan</item>

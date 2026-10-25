@@ -7,6 +7,10 @@
          https://github.com/JetBrains/compose-multiplatform/issues/4675. -->
     <string name="recurrence_every">Repeats every %1$s</string>
     <string name="recurrence_after_completion">Repeats %1$s after completion</string>
+    <!-- The same, when a reminder is set too: %1$s is its date, %2$s its time, %3$s the count+unit
+         phrase from the plurals below. -->
+    <string name="recurrence_every_with_reminder">Reminder on %1$s at %2$s, then every %3$s at the same time</string>
+    <string name="recurrence_after_completion_with_reminder">Reminder on %1$s at %2$s. Once you complete it, again %3$s later at the same time</string>
 
     <plurals name="recurrence_unit_day">
         <item quantity="one">%1$d day</item>
