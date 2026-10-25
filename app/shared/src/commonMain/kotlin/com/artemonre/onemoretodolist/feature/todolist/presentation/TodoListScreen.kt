@@ -110,7 +110,9 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_this_wee
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
 import onemoretodolist.app.shared.generated.resources.mascot_sitting
+import onemoretodolist.app.shared.generated.resources.mascot_sitting_monochrome
 import onemoretodolist.app.shared.generated.resources.mascot_ball
+import onemoretodolist.app.shared.generated.resources.mascot_ball_monochrome
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_date
 import onemoretodolist.app.shared.generated.resources.sort_manual
@@ -507,7 +509,7 @@ fun TodoListScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = painterResource(Res.drawable.mascot_sitting),
+                            painter = painterResource(mascotDrawable(Res.drawable.mascot_sitting, Res.drawable.mascot_sitting_monochrome)),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -544,7 +546,7 @@ fun TodoListScreen(
                                         .size(BALL_SIZE)
                                 ) {
                                     Image(
-                                        painter = painterResource(Res.drawable.mascot_ball),
+                                        painter = painterResource(mascotDrawable(Res.drawable.mascot_ball, Res.drawable.mascot_ball_monochrome)),
                                         contentDescription = null,
                                         modifier = Modifier.requiredSize(BALL_CANVAS_SIZE)
                                     )

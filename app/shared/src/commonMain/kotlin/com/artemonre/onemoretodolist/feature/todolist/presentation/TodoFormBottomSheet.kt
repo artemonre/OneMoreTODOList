@@ -151,6 +151,7 @@ import onemoretodolist.app.shared.generated.resources.form_time
 import onemoretodolist.app.shared.generated.resources.form_title_add
 import onemoretodolist.app.shared.generated.resources.form_title_edit
 import onemoretodolist.app.shared.generated.resources.mascot_put_paws_on_fence
+import onemoretodolist.app.shared.generated.resources.mascot_put_paws_on_fence_monochrome
 import onemoretodolist.app.shared.generated.resources.recurrence_after_completion
 import onemoretodolist.app.shared.generated.resources.recurrence_after_completion_with_reminder
 import onemoretodolist.app.shared.generated.resources.recurrence_day
@@ -196,7 +197,13 @@ fun TodoFormBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
         onExpanded = { isSheetExpanded = true },
-        topDecoration = { PeekingMascot(Res.drawable.mascot_put_paws_on_fence, MASCOT_SIZE, MASCOT_EARS_FRACTION) },
+        topDecoration = {
+            PeekingMascot(
+                mascotDrawable(Res.drawable.mascot_put_paws_on_fence, Res.drawable.mascot_put_paws_on_fence_monochrome),
+                MASCOT_SIZE,
+                MASCOT_EARS_FRACTION
+            )
+        },
         topDecorationOverhang = MASCOT_OVERHANG
     ) {
         Row(

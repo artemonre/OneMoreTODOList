@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.times
+import com.artemonre.onemoretodolist.core.designsystem.theme.LocalColorPalette
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -31,6 +32,14 @@ fun PeekingMascot(drawable: DrawableResource, size: Dp, earsFraction: Float, mod
             .size(size)
     )
 }
+
+/**
+ * [monochrome] while dynamic color is on, [colored] otherwise - dynamic color can land on any hue,
+ * which the colored drawings might clash with, while their grayscale versions go with anything.
+ */
+@Composable
+fun mascotDrawable(colored: DrawableResource, monochrome: DrawableResource): DrawableResource =
+    if (LocalColorPalette.current == null) monochrome else colored
 
 /** How far a [PeekingMascot] sticks out above the card when the card's edge sits at [fenceFraction]. */
 fun peekingMascotOverhang(size: Dp, earsFraction: Float, fenceFraction: Float): Dp =

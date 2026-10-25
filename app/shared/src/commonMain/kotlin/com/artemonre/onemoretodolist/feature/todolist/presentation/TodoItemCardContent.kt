@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -85,6 +86,9 @@ fun TodoItemCardContent(
     val textRowHeight = with(density) { textStyle.lineHeight.toDp() * 2 }
     val dateHeight = with(density) { dateStyle.lineHeight.toDp() }
     val dateSpacing = AppSpacing.xs
+    // The date, reminder and checklist labels - a dimmed version of whatever content color the card
+    // picked for its own background, so they stay readable on an attention-colored card too.
+    val secondaryColor = LocalContentColor.current.copy(alpha = SECONDARY_CONTENT_ALPHA)
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (tags.isNotEmpty()) {
@@ -158,14 +162,14 @@ fun TodoItemCardContent(
                     Icon(
                         imageVector = Icons.Filled.Notifications,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.outline,
+                        tint = secondaryColor,
                         modifier = Modifier.size(CARD_ICON_SIZE)
                     )
                     Spacer(Modifier.width(AppSpacing.xs))
                     Text(
                         text = label,
                         style = dateStyle,
-                        color = MaterialTheme.colorScheme.outline
+                        color = secondaryColor
                     )
                 }
             }
@@ -184,14 +188,14 @@ fun TodoItemCardContent(
                         Icon(
                             imageVector = Icons.Filled.Checklist,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.outline,
+                            tint = secondaryColor,
                             modifier = Modifier.size(CARD_ICON_SIZE)
                         )
                         Spacer(Modifier.width(AppSpacing.xs))
                         Text(
                             text = stringResource(Res.string.checklist_progress, checklistDone, checklistTotal),
                             style = dateStyle,
-                            color = MaterialTheme.colorScheme.outline
+                            color = secondaryColor
                         )
                     }
                     Spacer(Modifier.width(AppSpacing.s))
@@ -199,7 +203,7 @@ fun TodoItemCardContent(
                 Text(
                     text = formattedDate,
                     style = dateStyle,
-                    color = MaterialTheme.colorScheme.outline
+                    color = secondaryColor
                 )
             }
         }
@@ -207,6 +211,7 @@ fun TodoItemCardContent(
 }
 
 private val CARD_ICON_SIZE = 12.dp
+private const val SECONDARY_CONTENT_ALPHA = 0.7f
 
 // "Today 10:00", "Tomorrow 10:00", or the date for anything further out.
 @Composable
