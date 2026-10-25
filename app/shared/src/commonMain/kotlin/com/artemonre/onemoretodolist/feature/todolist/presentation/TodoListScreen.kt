@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -111,8 +110,8 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
 import onemoretodolist.app.shared.generated.resources.mascot_sitting
 import onemoretodolist.app.shared.generated.resources.mascot_sitting_monochrome
-import onemoretodolist.app.shared.generated.resources.mascot_ball
 import onemoretodolist.app.shared.generated.resources.mascot_ball_monochrome
+import onemoretodolist.app.shared.generated.resources.mascot_ball
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_date
 import onemoretodolist.app.shared.generated.resources.sort_manual
@@ -140,10 +139,8 @@ private val MASCOT_HEIGHT = 160.dp
 // Half of ButtonDefaults.ContentPadding (24dp/8dp), snapped to the spacing scale.
 private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.xs)
 private const val BALL_AFTER_TODO_COUNT = 5
+// The ball drawings have no margin around the ball, so this is the ball's own size.
 private val BALL_SIZE = 36.dp
-// The ball only fills a bit over half of its square canvas, so the canvas is drawn this much bigger
-// than BALL_SIZE (and overflows it) for the ball itself to come out at BALL_SIZE.
-private val BALL_CANVAS_SIZE = 64.dp
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
 
@@ -540,17 +537,15 @@ fun TodoListScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = AppSpacing.s)
                             ) {
-                                Box(
+                                Image(
+                                    painter = painterResource(
+                                        mascotDrawable(Res.drawable.mascot_ball, Res.drawable.mascot_ball_monochrome)
+                                    ),
+                                    contentDescription = null,
                                     modifier = Modifier
                                         .align(BiasAlignment(horizontalBias = ballHorizontalBias, verticalBias = 0f))
                                         .size(BALL_SIZE)
-                                ) {
-                                    Image(
-                                        painter = painterResource(mascotDrawable(Res.drawable.mascot_ball, Res.drawable.mascot_ball_monochrome)),
-                                        contentDescription = null,
-                                        modifier = Modifier.requiredSize(BALL_CANVAS_SIZE)
-                                    )
-                                }
+                                )
                             }
                         }
                     }
