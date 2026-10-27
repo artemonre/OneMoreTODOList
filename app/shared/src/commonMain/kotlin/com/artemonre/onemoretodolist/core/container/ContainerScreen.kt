@@ -57,7 +57,7 @@ import org.koin.core.parameter.parametersOf
 // offset up from the screen's bottom edge by the nav bar's height minus this much, which centers
 // it on the nav bar's top edge so it straddles the bar instead of sitting flush inside or fully
 // above it.
-private val FAB_NAV_BAR_OVERLAP = 28.dp
+internal val FAB_NAV_BAR_OVERLAP = 28.dp
 
 // The outgoing screen exits to the left while the incoming one enters from the right - used when
 // switching to a tab positioned to the right of the current one.

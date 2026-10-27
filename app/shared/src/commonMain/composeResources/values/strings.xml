@@ -36,7 +36,7 @@
     <string name="completed_summary_today">Today %1$d</string>
     <string name="completed_summary_this_week">This week %1$d</string>
     <string name="completed_summary_this_month">This month %1$d</string>
-    <string name="todo_list_empty_completed">No completed todos yet</string>
+    <string name="todo_list_empty_completed">Completed todos land here.\nTick one off on the Active list to see it.</string>
 
     <!-- Tags and checklist - form sections, tag picker dialog, and the card's progress label. -->
     <string name="tags_title">Tags</string>
@@ -78,6 +78,12 @@
 
     <!-- Todo list -->
     <string name="todo_list_empty_active">You completed all your tasks!\nAdd more whenever you need to — no rush.</string>
+    <string name="todo_list_empty_completed_not_archived">Todos you complete in the app are deleted right away, so they don't land here.</string>
+    <string name="todo_list_keep_completed">Keep completed todos</string>
+    <string name="todo_list_tip_hold_add">Hold + to add todos from a photo of printed text</string>
+    <string name="todo_list_tip_widget">Add the widget to see your todos and add new ones right from the home screen</string>
+    <string name="todo_list_tip_more_settings">In the quick add form, tap More settings for tags, a checklist and more</string>
+    <string name="todo_list_add_widget">Add widget</string>
     <string name="sort_date">By date</string>
     <string name="sort_manual">Manual</string>
     <string name="sort_text">Alphabetical</string>

@@ -36,7 +36,7 @@
     <string name="completed_summary_today">Сегодня %1$d</string>
     <string name="completed_summary_this_week">За неделю %1$d</string>
     <string name="completed_summary_this_month">За месяц %1$d</string>
-    <string name="todo_list_empty_completed">Выполненных задач пока нет</string>
+    <string name="todo_list_empty_completed">Здесь появляются выполненные задачи.\nОтметь любую в списке активных, чтобы она оказалась здесь.</string>
 
     <string name="tags_title">Теги</string>
     <string name="tag_add">Добавить тег</string>
@@ -73,6 +73,12 @@
     <string name="fab_open_menu">Открыть меню</string>
 
     <string name="todo_list_empty_active">Все задачи выполнены!\nДобавляй новые, когда понадобится, — без спешки.</string>
+    <string name="todo_list_empty_completed_not_archived">Задачи, выполненные в приложении, сразу удаляются, поэтому сюда они не попадают.</string>
+    <string name="todo_list_keep_completed">Сохранять выполненные</string>
+    <string name="todo_list_tip_hold_add">Удерживай +, чтобы добавить задачи с фото печатного текста</string>
+    <string name="todo_list_tip_widget">Добавь виджет, чтобы видеть задачи и добавлять новые прямо с главного экрана</string>
+    <string name="todo_list_tip_more_settings">В форме быстрого добавления нажми «Больше настроек» — там теги, чек-лист и другое</string>
+    <string name="todo_list_add_widget">Добавить виджет</string>
     <string name="sort_date">По дате</string>
     <string name="sort_manual">Вручную</string>
     <string name="sort_text">По алфавиту</string>

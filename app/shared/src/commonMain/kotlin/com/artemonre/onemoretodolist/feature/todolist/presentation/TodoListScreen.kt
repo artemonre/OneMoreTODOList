@@ -74,6 +74,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.core.container.FAB_NAV_BAR_OVERLAP
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
@@ -120,6 +121,12 @@ import onemoretodolist.app.shared.generated.resources.todo_filter_active
 import onemoretodolist.app.shared.generated.resources.todo_filter_done
 import onemoretodolist.app.shared.generated.resources.todo_list_empty_active
 import onemoretodolist.app.shared.generated.resources.todo_list_empty_completed
+import onemoretodolist.app.shared.generated.resources.todo_list_add_widget
+import onemoretodolist.app.shared.generated.resources.todo_list_empty_completed_not_archived
+import onemoretodolist.app.shared.generated.resources.todo_list_keep_completed
+import onemoretodolist.app.shared.generated.resources.todo_list_tip_hold_add
+import onemoretodolist.app.shared.generated.resources.todo_list_tip_more_settings
+import onemoretodolist.app.shared.generated.resources.todo_list_tip_widget
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
@@ -141,6 +148,9 @@ private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.
 private const val BALL_AFTER_TODO_COUNT = 5
 // The ball drawings have no margin around the ball, so this is the ball's own size.
 private val BALL_SIZE = 36.dp
+// The + straddles the nav bar's top edge, reaching FAB_NAV_BAR_OVERLAP up into this screen - the
+// hold-+ tip clears that plus a small gap.
+private val HOLD_ADD_TIP_BOTTOM_PADDING = FAB_NAV_BAR_OVERLAP + AppSpacing.s
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
 
@@ -514,14 +524,40 @@ fun TodoListScreen(
                         )
                         Spacer(modifier = Modifier.height(AppSpacing.l))
                         Text(
-                            text = if (state.filter == TodoListFilter.Done) {
-                                stringResource(Res.string.todo_list_empty_completed)
-                            } else {
-                                stringResource(Res.string.todo_list_empty_active)
+                            text = when {
+                                state.filter == TodoListFilter.Active -> stringResource(Res.string.todo_list_empty_active)
+                                state.archiveCompletedTodos -> stringResource(Res.string.todo_list_empty_completed)
+                                // Completing deletes, so this list only ever fills from the widget,
+                                // which always archives - without this it just looks broken.
+                                else -> stringResource(Res.string.todo_list_empty_completed_not_archived)
                             },
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center
                         )
+                        val tip = state.emptyStateTip.takeIf { state.filter == TodoListFilter.Active }
+                        if (state.filter == TodoListFilter.Done && !state.archiveCompletedTodos) {
+                            Spacer(modifier = Modifier.height(AppSpacing.l))
+                            FilledTonalButton(onClick = { onAction(TodoListAction.OnKeepCompletedTodosClick) }) {
+                                Text(stringResource(Res.string.todo_list_keep_completed))
+                            }
+                        } else if (tip == EmptyStateTip.AddWidget || tip == EmptyStateTip.MoreSettings) {
+                            Spacer(modifier = Modifier.height(AppSpacing.l))
+                            EmptyStateTipText(
+                                text = stringResource(
+                                    if (tip == EmptyStateTip.AddWidget) {
+                                        Res.string.todo_list_tip_widget
+                                    } else {
+                                        Res.string.todo_list_tip_more_settings
+                                    }
+                                )
+                            )
+                            if (tip == EmptyStateTip.AddWidget && state.canPinWidget) {
+                                Spacer(modifier = Modifier.height(AppSpacing.m))
+                                FilledTonalButton(onClick = { onAction(TodoListAction.OnAddWidgetClick) }) {
+                                    Text(stringResource(Res.string.todo_list_add_widget))
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -550,6 +586,29 @@ fun TodoListScreen(
                         }
                     }
                 }
+            }
+        }
+
+        // Right above the + it's about, with the ball to draw the eye to it - not with the other
+        // tips under the mascot, where it would be far from the button it explains.
+        if (state.items.isEmpty() &&
+            state.filter == TodoListFilter.Active &&
+            state.emptyStateTip == EmptyStateTip.HoldAddButton
+        ) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                    .padding(start = AppSpacing.l, end = AppSpacing.l, bottom = HOLD_ADD_TIP_BOTTOM_PADDING),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(mascotDrawable(Res.drawable.mascot_ball, Res.drawable.mascot_ball_monochrome)),
+                    contentDescription = null,
+                    modifier = Modifier.size(BALL_SIZE)
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.s))
+                EmptyStateTipText(text = stringResource(Res.string.todo_list_tip_hold_add))
             }
         }
 
@@ -605,6 +664,18 @@ fun TodoListScreen(
             onDismiss = { shareItem = null }
         )
     }
+}
+
+// Quieter than the empty-state line above it - a hint, not the message.
+@Composable
+private fun EmptyStateTipText(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier.fillMaxWidth(),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
 }
 
 private fun TodoSortOption.displayName(): StringResource = when (this) {

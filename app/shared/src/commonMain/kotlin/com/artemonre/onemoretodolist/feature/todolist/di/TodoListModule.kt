@@ -7,6 +7,8 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.ApplyDueRecurrences
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.HandleDueTodoFired
+import com.artemonre.onemoretodolist.feature.todolist.domain.HomeScreenWidget
+import com.artemonre.onemoretodolist.feature.todolist.domain.NoHomeScreenWidget
 import com.artemonre.onemoretodolist.feature.todolist.domain.NoOpDueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.ObserveActiveTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.OnboardingTexts
@@ -37,6 +39,8 @@ val todoListModule = module {
     // Default no-op - overridden by androidDueTimeModule's real AlarmManager-backed scheduler on
     // Android, same override pattern androidTodoDataModule already uses for TodoPreferences.
     single<DueTimeScheduler> { NoOpDueTimeScheduler() }
+    // Same override pattern - a gateway that ships a home screen widget binds its own.
+    single<HomeScreenWidget> { NoHomeScreenWidget }
     singleOf(::HandleDueTodoFired)
     singleOf(::SnoozeTodo)
     singleOf(::EditTodo)
