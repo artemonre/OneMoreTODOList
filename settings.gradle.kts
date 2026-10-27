@@ -40,6 +40,7 @@ plugins {
 include(":app:desktopApp")
 include(":app:shared")
 include(":app:webApp")
+include(":baselineprofile")
 include(":core")
 include(":gateway:todoList")
 include(":server")
