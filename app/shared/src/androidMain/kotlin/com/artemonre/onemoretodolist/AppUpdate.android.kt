@@ -22,16 +22,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
-import com.google.android.play.core.install.InstallException
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.google.android.play.core.ktx.requestAppUpdateInfo
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.settings_update
 import onemoretodolist.app.shared.generated.resources.update_required_body
 import onemoretodolist.app.shared.generated.resources.update_required_title
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.compose.resources.stringResource
 import org.koin.core.context.GlobalContext
 
@@ -54,25 +55,29 @@ private fun isPlayStoreAvailable(context: Context): Boolean =
         false
     }
 
+// Play Core fails this Task for more than InstallException (e.g. ERROR_APP_NOT_OWNED whenever the
+// app wasn't installed via Play): when Play Store is installed but its update service can't be
+// bound - Play's own Pre-launch report emulators hit this - it fails with an internal, obfuscated
+// RuntimeException ("Failed to bind to the service.") that no specific catch can name. The ktx
+// requestAppUpdateInfo() rethrows all of those, and anything escaping here crashes the whole app
+// on startup, since this check runs inside MandatoryAppUpdateGate, which wraps all of App(). So
+// the failure listener takes every Task failure instead: we can't determine update status, so
+// fail safe - null, i.e. no update.
+private suspend fun requestAppUpdateInfoOrNull(context: Context): AppUpdateInfo? =
+    suspendCancellableCoroutine { continuation ->
+        AppUpdateManagerFactory.create(context).appUpdateInfo
+            .addOnSuccessListener { appUpdateInfo -> continuation.resume(appUpdateInfo) }
+            .addOnFailureListener { continuation.resume(null) }
+    }
+
 // Reads the Context Koin already binds in TodoListApplication.onCreate() (androidContext(...))
 // instead of threading Context through this expect/actual's signature, same pattern as
 // AppVersion.android.kt.
-//
-// requestAppUpdateInfo() can also throw InstallException on a Play Core failure that does reach
-// this call directly - most notably ERROR_APP_NOT_OWNED, which fires whenever the app wasn't
-// installed via Play (Play's own Pre-launch report test devices hit this on every release, and it
-// also fires for anyone sideloading a build). Left uncaught, this crashed the whole app on
-// startup, since this check runs inside MandatoryAppUpdateGate, which wraps all of App(). Any
-// failure here means we can't determine update status, so fail safe: no update.
 actual suspend fun isAppUpdateAvailable(): Boolean {
     val context = GlobalContext.get().get<Context>()
     if (!isPlayStoreAvailable(context)) return false
-    return try {
-        val appUpdateInfo = AppUpdateManagerFactory.create(context).requestAppUpdateInfo()
-        appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
-    } catch (e: InstallException) {
-        false
-    }
+    return requestAppUpdateInfoOrNull(context)
+        ?.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
 }
 
 // Priority 5 (set via `--update-priority` on `publishBundle`, see
@@ -81,13 +86,9 @@ actual suspend fun isAppUpdateAvailable(): Boolean {
 actual suspend fun isAppUpdateMandatory(): Boolean {
     val context = GlobalContext.get().get<Context>()
     if (!isPlayStoreAvailable(context)) return false
-    return try {
-        val appUpdateInfo = AppUpdateManagerFactory.create(context).requestAppUpdateInfo()
-        appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
-            appUpdateInfo.updatePriority() >= MANDATORY_UPDATE_MIN_PRIORITY
-    } catch (e: InstallException) {
-        false
-    }
+    val appUpdateInfo = requestAppUpdateInfoOrNull(context) ?: return false
+    return appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
+        appUpdateInfo.updatePriority() >= MANDATORY_UPDATE_MIN_PRIORITY
 }
 
 @Composable
@@ -115,8 +116,8 @@ actual fun rememberAppUpdateLauncher(): (() -> Unit)? {
                         )
                     }
                 }
-                // Same InstallException (e.g. ERROR_APP_NOT_OWNED) as isAppUpdateAvailable() can
-                // fail this Task too - same fail-safe response, just leave the user where they are.
+                // Same failures as requestAppUpdateInfoOrNull() can fail this Task too - same
+                // fail-safe response, just leave the user where they are.
                 .addOnFailureListener { }
         }
     }

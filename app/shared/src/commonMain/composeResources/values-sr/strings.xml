@@ -3,6 +3,8 @@
 <resources>
     <string name="recurrence_every">Ponavlja se jednom u %1$s</string>
     <string name="recurrence_after_completion">Ponavlja se %1$s nakon završetka</string>
+    <string name="recurrence_every_with_reminder">Podsetnik %1$s u %2$s, zatim jednom u %3$s u isto vreme</string>
+    <string name="recurrence_after_completion_with_reminder">Podsetnik %1$s u %2$s. Kad ga završiš, ponovo za %3$s u isto vreme</string>
 
     <plurals name="recurrence_unit_day">
         <item quantity="one">%1$d dan</item>
@@ -31,7 +33,7 @@
     <string name="completed_summary_today">Danas %1$d</string>
     <string name="completed_summary_this_week">Ove nedelje %1$d</string>
     <string name="completed_summary_this_month">Ovog meseca %1$d</string>
-    <string name="todo_list_empty_completed">Još nema završenih zadataka</string>
+    <string name="todo_list_empty_completed">Ovde se pojavljuju završeni zadaci.\nOznači bilo koji na listi aktivnih da se nađe ovde.</string>
 
     <string name="tags_title">Oznake</string>
     <string name="tag_add">Dodaj oznaku</string>
@@ -53,6 +55,11 @@
     <string name="checklist_remove_item">Ukloni stavku</string>
     <string name="checklist_progress">%1$d/%2$d</string>
     <string name="checklist_progress_description">Završeno stavki: %1$d od %2$d</string>
+
+    <string name="card_reminder_today">Danas %1$s</string>
+    <string name="card_reminder_tomorrow">Sutra %1$s</string>
+    <string name="card_reminder_date">%1$s %2$s</string>
+    <string name="card_next_reminder_description">Sledeći podsetnik: %1$s</string>
     <string name="form_add">Dodaj</string>
     <string name="form_cancel">Otkaži</string>
 
@@ -63,6 +70,12 @@
     <string name="fab_open_menu">Otvori meni</string>
 
     <string name="todo_list_empty_active">Svi zadaci su završeni!\nDodaj nove kad god zatreba — bez žurbe.</string>
+    <string name="todo_list_empty_completed_not_archived">Zadaci koje završiš u aplikaciji odmah se brišu, pa ne stižu ovde.</string>
+    <string name="todo_list_keep_completed">Čuvaj završene zadatke</string>
+    <string name="todo_list_tip_hold_add">Drži + da dodaš zadatke sa fotografije štampanog teksta</string>
+    <string name="todo_list_tip_widget">Dodaj vidžet da vidiš zadatke i dodaješ nove direktno sa početnog ekrana</string>
+    <string name="todo_list_tip_more_settings">U formi za brzo dodavanje dodirni „Više podešavanja” — tamo su oznake, kontrolna lista i još toga</string>
+    <string name="todo_list_add_widget">Dodaj vidžet</string>
     <string name="sort_date">Po datumu</string>
     <string name="sort_manual">Ručno</string>
     <string name="sort_text">Po abecedi</string>
@@ -76,6 +89,7 @@
     <string name="snackbar_switched_to_manual_sort">Uključeno je ručno sortiranje</string>
     <string name="snackbar_reorder_hint">Uključi ručno sortiranje da bi menjao redosled zadataka</string>
     <string name="detail_attention_info">Info:\nOvaj zadatak nije diran već %1$d dana, možda bi trebalo da ga izmeniš ili zameniš</string>
+    <string name="detail_reminder_info">Podsetnik je zakazan za %1$s u %2$s</string>
     <string name="share_title">Podeli</string>
     <string name="share_make_note">Napravi belešku</string>
     <string name="share_coming_soon">Uskoro</string>

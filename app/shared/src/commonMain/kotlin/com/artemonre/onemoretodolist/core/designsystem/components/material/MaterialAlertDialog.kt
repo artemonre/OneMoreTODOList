@@ -76,8 +76,12 @@ fun MaterialAlertDialog(
     // topDecorationOverhang, and whatever's taller than that overlaps onto the card.
     topDecoration: @Composable (() -> Unit)? = null,
     topDecorationOverhang: Dp = 0.dp,
+    // Drawn centered below the card, in a strip bottomDecorationHeight tall that's kept free for it.
+    bottomDecoration: @Composable (() -> Unit)? = null,
+    bottomDecorationHeight: Dp = 0.dp,
     properties: DialogProperties = DialogProperties()
 ) {
+    val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
     BasicAlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
@@ -87,7 +91,7 @@ fun MaterialAlertDialog(
         // a decoration - the decoration itself opts out of it via wrapContentSize.
         Box(propagateMinConstraints = true) {
             Surface(
-                modifier = Modifier.padding(top = topDecorationOverhang),
+                modifier = Modifier.padding(top = topDecorationOverhang, bottom = bottomDecorationHeight),
                 shape = AlertDialogDefaults.shape,
                 color = AlertDialogDefaults.containerColor,
                 tonalElevation = AlertDialogDefaults.TonalElevation
@@ -151,7 +155,6 @@ fun MaterialAlertDialog(
                 // doesn't gain a second "close" for accessibility.
                 // matchParentSize so it follows the card's width instead of widening the dialog.
                 if (properties.dismissOnClickOutside) {
-                    val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
                     Box(
                         Modifier
                             .matchParentSize()
@@ -161,6 +164,23 @@ fun MaterialAlertDialog(
                     )
                 }
                 Box(Modifier.wrapContentSize(Alignment.TopCenter)) { it() }
+            }
+            // Same outside-tap handling for the strip below the card.
+            bottomDecoration?.let {
+                if (properties.dismissOnClickOutside) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .wrapContentHeight(Alignment.Bottom)
+                            .height(bottomDecorationHeight)
+                            .pointerInput(Unit) { detectTapGestures { currentOnDismissRequest() } }
+                    )
+                }
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .wrapContentSize(Alignment.BottomCenter)
+                ) { it() }
             }
         }
     }

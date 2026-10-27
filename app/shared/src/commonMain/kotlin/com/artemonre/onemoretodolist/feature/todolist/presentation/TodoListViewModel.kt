@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
+import com.artemonre.onemoretodolist.feature.todolist.domain.HomeScreenWidget
+import com.artemonre.onemoretodolist.feature.todolist.domain.NoHomeScreenWidget
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
@@ -14,6 +16,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.UpdateTopSince
 import com.artemonre.onemoretodolist.feature.todolist.domain.knownTags
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
+import com.artemonre.onemoretodolist.isPhotoTextCaptureSupported
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +43,8 @@ import onemoretodolist.app.shared.generated.resources.snackbar_todo_deleted
 
 private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
 
+private data class PickedTip(val tip: EmptyStateTip, val canPinWidget: Boolean)
+
 class TodoListViewModel(
     private val todoLocalDataSource: TodoLocalDataSource,
     private val addTodoUseCase: AddTodo,
@@ -47,7 +52,8 @@ class TodoListViewModel(
     private val toggleTodoDoneUseCase: ToggleTodoDone,
     private val todoPreferences: TodoPreferences,
     private val updateTopSince: UpdateTopSince,
-    private val dueTimeScheduler: DueTimeScheduler
+    private val dueTimeScheduler: DueTimeScheduler,
+    private val homeScreenWidget: HomeScreenWidget = NoHomeScreenWidget
 ) : ViewModel() {
 
     private val todos = todoLocalDataSource.observeTodos()
@@ -56,7 +62,20 @@ class TodoListViewModel(
     // Not persisted - the list always opens on Active, unlike sortOption.
     private val filter = MutableStateFlow(TodoListFilter.Active)
 
-    val state = combine(todos, todoPreferences.sortOption, filter) { todos, sortOption, filter ->
+    // Picked once in init, so it stays the same tip for as long as the app is open.
+    private val emptyStateTip = MutableStateFlow<PickedTip?>(null)
+
+    init {
+        viewModelScope.launch { emptyStateTip.value = pickEmptyStateTip() }
+    }
+
+    val state = combine(
+        todos,
+        todoPreferences.sortOption,
+        filter,
+        todoPreferences.archiveCompletedTodos,
+        emptyStateTip
+    ) { todos, sortOption, filter, archiveCompletedTodos, emptyStateTip ->
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         // ISO week - Monday is day 1, so this is always this week's Monday, even on a Sunday.
         val startOfWeek = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
@@ -83,7 +102,10 @@ class TodoListViewModel(
             doneTodayCount = todos.count { it.completionDate == today },
             doneThisWeekCount = todos.count { it.completionDate != null && it.completionDate >= startOfWeek },
             doneThisMonthCount = todos.count { it.completionDate != null && it.completionDate >= startOfMonth },
-            knownTags = todos.knownTags()
+            knownTags = todos.knownTags(),
+            archiveCompletedTodos = archiveCompletedTodos,
+            emptyStateTip = emptyStateTip?.tip,
+            canPinWidget = emptyStateTip?.canPinWidget == true
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_STOP_TIMEOUT_MILLIS), TodoListState())
 
@@ -140,7 +162,22 @@ class TodoListViewModel(
                 )
             }
             is TodoListAction.OnConfirmAddScannedTodos -> addScannedTodos(action.lines)
+            is TodoListAction.OnKeepCompletedTodosClick -> viewModelScope.launch {
+                todoPreferences.setArchiveCompletedTodos(true)
+            }
+            is TodoListAction.OnAddWidgetClick -> viewModelScope.launch { homeScreenWidget.requestPin() }
         }
+    }
+
+    // Only tips that apply here: the photo capture behind a long-press on +, the widget while none
+    // is placed yet, and the full form behind the quick-add sheet's "More settings".
+    private suspend fun pickEmptyStateTip(): PickedTip {
+        val tips = buildList {
+            if (isPhotoTextCaptureSupported) add(EmptyStateTip.HoldAddButton)
+            if (homeScreenWidget.shouldSuggest()) add(EmptyStateTip.AddWidget)
+            add(EmptyStateTip.MoreSettings)
+        }
+        return PickedTip(tips.random(), homeScreenWidget.canRequestPin())
     }
 
     private fun addTodo(draft: TodoDraft) {

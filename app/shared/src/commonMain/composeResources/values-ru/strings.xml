@@ -2,6 +2,8 @@
 <resources>
     <string name="recurrence_every">Повторяется раз в %1$s</string>
     <string name="recurrence_after_completion">Повторяется через %1$s после выполнения</string>
+    <string name="recurrence_every_with_reminder">Напоминание %1$s в %2$s, затем раз в %3$s в то же время</string>
+    <string name="recurrence_after_completion_with_reminder">Напоминание %1$s в %2$s. Когда выполнишь, снова через %3$s в то же время</string>
 
     <plurals name="recurrence_unit_day">
         <item quantity="one">%1$d день</item>
@@ -34,7 +36,7 @@
     <string name="completed_summary_today">Сегодня %1$d</string>
     <string name="completed_summary_this_week">За неделю %1$d</string>
     <string name="completed_summary_this_month">За месяц %1$d</string>
-    <string name="todo_list_empty_completed">Выполненных задач пока нет</string>
+    <string name="todo_list_empty_completed">Здесь появляются выполненные задачи.\nОтметь любую в списке активных, чтобы она оказалась здесь.</string>
 
     <string name="tags_title">Теги</string>
     <string name="tag_add">Добавить тег</string>
@@ -56,6 +58,11 @@
     <string name="checklist_remove_item">Удалить пункт</string>
     <string name="checklist_progress">%1$d/%2$d</string>
     <string name="checklist_progress_description">Выполнено пунктов: %1$d из %2$d</string>
+
+    <string name="card_reminder_today">Сегодня %1$s</string>
+    <string name="card_reminder_tomorrow">Завтра %1$s</string>
+    <string name="card_reminder_date">%1$s %2$s</string>
+    <string name="card_next_reminder_description">Следующее напоминание: %1$s</string>
     <string name="form_add">Добавить</string>
     <string name="form_cancel">Отмена</string>
 
@@ -66,6 +73,12 @@
     <string name="fab_open_menu">Открыть меню</string>
 
     <string name="todo_list_empty_active">Все задачи выполнены!\nДобавляй новые, когда понадобится, — без спешки.</string>
+    <string name="todo_list_empty_completed_not_archived">Задачи, выполненные в приложении, сразу удаляются, поэтому сюда они не попадают.</string>
+    <string name="todo_list_keep_completed">Сохранять выполненные</string>
+    <string name="todo_list_tip_hold_add">Удерживай +, чтобы добавить задачи с фото печатного текста</string>
+    <string name="todo_list_tip_widget">Добавь виджет, чтобы видеть задачи и добавлять новые прямо с главного экрана</string>
+    <string name="todo_list_tip_more_settings">В форме быстрого добавления нажми «Больше настроек» — там теги, чек-лист и другое</string>
+    <string name="todo_list_add_widget">Добавить виджет</string>
     <string name="sort_date">По дате</string>
     <string name="sort_manual">Вручную</string>
     <string name="sort_text">По алфавиту</string>
@@ -79,6 +92,7 @@
     <string name="snackbar_switched_to_manual_sort">Включена ручная сортировка</string>
     <string name="snackbar_reorder_hint">Включи ручную сортировку, чтобы менять порядок задач</string>
     <string name="detail_attention_info">Инфо:\nС этой задачей ничего не делали уже %1$d дн. Возможно, её стоит изменить или заменить</string>
+    <string name="detail_reminder_info">Напоминание установлено на %1$s в %2$s</string>
     <string name="share_title">Поделиться</string>
     <string name="share_make_note">Сделать заметку</string>
     <string name="share_coming_soon">Скоро</string>

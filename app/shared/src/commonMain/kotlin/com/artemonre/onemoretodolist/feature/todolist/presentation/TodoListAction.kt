@@ -19,4 +19,6 @@ sealed interface TodoListAction {
     data object OnCapturePhotoClick : TodoListAction
     data class OnTextRecognized(val paragraphs: List<ScannedParagraph>) : TodoListAction
     data class OnConfirmAddScannedTodos(val lines: List<String>) : TodoListAction
+    data object OnKeepCompletedTodosClick : TodoListAction
+    data object OnAddWidgetClick : TodoListAction
 }

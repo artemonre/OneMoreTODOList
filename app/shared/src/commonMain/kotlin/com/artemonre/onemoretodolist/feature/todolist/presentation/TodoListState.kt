@@ -7,6 +7,10 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 // completed-only view. Independent of TodoSortOption, which only orders the Active view.
 enum class TodoListFilter { Active, Done }
 
+// The one extra hint the empty Active list shows - picked once per launch, among the ones that
+// apply on this device (see TodoListViewModel.pickEmptyStateTip).
+enum class EmptyStateTip { HoldAddButton, AddWidget, MoreSettings }
+
 data class TodoListState(
     val items: List<TodoItemUi> = emptyList(),
     val sortOption: TodoSortOption = TodoSortOption.Date,
@@ -25,5 +29,10 @@ data class TodoListState(
     val doneThisWeekCount: Int = 0,
     val doneThisMonthCount: Int = 0,
     // Every tag in use on any todo - the form suggests these, reusing their color.
-    val knownTags: List<TodoTag> = emptyList()
+    val knownTags: List<TodoTag> = emptyList(),
+    // When off, completing a todo in the app deletes it - the empty Done list explains that.
+    val archiveCompletedTodos: Boolean = true,
+    val emptyStateTip: EmptyStateTip? = null,
+    // Whether the AddWidget tip can offer a button that places the widget right away.
+    val canPinWidget: Boolean = false
 )

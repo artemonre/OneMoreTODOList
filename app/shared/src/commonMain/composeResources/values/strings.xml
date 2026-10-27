@@ -7,6 +7,10 @@
          https://github.com/JetBrains/compose-multiplatform/issues/4675. -->
     <string name="recurrence_every">Repeats every %1$s</string>
     <string name="recurrence_after_completion">Repeats %1$s after completion</string>
+    <!-- The same, when a reminder is set too: %1$s is its date, %2$s its time, %3$s the count+unit
+         phrase from the plurals below. -->
+    <string name="recurrence_every_with_reminder">Reminder on %1$s at %2$s, then every %3$s at the same time</string>
+    <string name="recurrence_after_completion_with_reminder">Reminder on %1$s at %2$s. Once you complete it, again %3$s later at the same time</string>
 
     <plurals name="recurrence_unit_day">
         <item quantity="one">%1$d day</item>
@@ -32,7 +36,7 @@
     <string name="completed_summary_today">Today %1$d</string>
     <string name="completed_summary_this_week">This week %1$d</string>
     <string name="completed_summary_this_month">This month %1$d</string>
-    <string name="todo_list_empty_completed">No completed todos yet</string>
+    <string name="todo_list_empty_completed">Completed todos land here.\nTick one off on the Active list to see it.</string>
 
     <!-- Tags and checklist - form sections, tag picker dialog, and the card's progress label. -->
     <string name="tags_title">Tags</string>
@@ -55,6 +59,13 @@
     <string name="checklist_remove_item">Remove item</string>
     <string name="checklist_progress">%1$d/%2$d</string>
     <string name="checklist_progress_description">%1$d of %2$d checklist items done</string>
+
+    <!-- Todo card: the next-reminder label. %1$s in the reminder
+         labels is the time ("10:00"); card_reminder_date's %1$s is the date, %2$s the time. -->
+    <string name="card_reminder_today">Today %1$s</string>
+    <string name="card_reminder_tomorrow">Tomorrow %1$s</string>
+    <string name="card_reminder_date">%1$s %2$s</string>
+    <string name="card_next_reminder_description">Next reminder: %1$s</string>
     <string name="form_add">Add</string>
     <string name="form_cancel">Cancel</string>
 
@@ -67,6 +78,12 @@
 
     <!-- Todo list -->
     <string name="todo_list_empty_active">You completed all your tasks!\nAdd more whenever you need to — no rush.</string>
+    <string name="todo_list_empty_completed_not_archived">Todos you complete in the app are deleted right away, so they don't land here.</string>
+    <string name="todo_list_keep_completed">Keep completed todos</string>
+    <string name="todo_list_tip_hold_add">Hold + to add todos from a photo of printed text</string>
+    <string name="todo_list_tip_widget">Add the widget to see your todos and add new ones right from the home screen</string>
+    <string name="todo_list_tip_more_settings">In the quick add form, tap More settings for tags, a checklist and more</string>
+    <string name="todo_list_add_widget">Add widget</string>
     <string name="sort_date">By date</string>
     <string name="sort_manual">Manual</string>
     <string name="sort_text">Alphabetical</string>
@@ -80,6 +97,8 @@
     <string name="snackbar_switched_to_manual_sort">Switched to Manual sort</string>
     <string name="snackbar_reorder_hint">Switch to Manual sort to reorder todos</string>
     <string name="detail_attention_info">Info:\nThis todo wasn't interacted with in %1$d days, maybe you should change or replace it</string>
+    <!-- %1$s is the date ("26 Oct 2026"), %2$s the time ("10:00"). -->
+    <string name="detail_reminder_info">Reminder set for %1$s at %2$s</string>
     <string name="share_title">Share</string>
     <string name="share_make_note">Make a note</string>
     <string name="share_coming_soon">Coming soon</string>
