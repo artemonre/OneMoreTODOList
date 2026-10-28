@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -75,6 +74,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.analytics.ShareMethod
+import com.artemonre.onemoretodolist.analytics.TodoForm
+import com.artemonre.onemoretodolist.core.container.FAB_NAV_BAR_OVERLAP
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
@@ -88,10 +90,14 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.LocalAppIcons
 import com.artemonre.onemoretodolist.core.presentation.ObserveAsEvents
 import com.artemonre.onemoretodolist.core.theme.domain.ActionPlacement
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.PhotoTextCaptureDialog
 import com.artemonre.onemoretodolist.createPlainTextClipEntry
+import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoSortOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.rememberNativeShareLauncher
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlinx.coroutines.delay
@@ -105,7 +111,9 @@ import onemoretodolist.app.shared.generated.resources.completed_summary_this_mon
 import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
 import onemoretodolist.app.shared.generated.resources.completed_summary_today
-import onemoretodolist.app.shared.generated.resources.mascot_aussie
+import onemoretodolist.app.shared.generated.resources.mascot_sitting
+import onemoretodolist.app.shared.generated.resources.mascot_sitting_monochrome
+import onemoretodolist.app.shared.generated.resources.mascot_ball_monochrome
 import onemoretodolist.app.shared.generated.resources.mascot_ball
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_date
@@ -115,6 +123,12 @@ import onemoretodolist.app.shared.generated.resources.todo_filter_active
 import onemoretodolist.app.shared.generated.resources.todo_filter_done
 import onemoretodolist.app.shared.generated.resources.todo_list_empty_active
 import onemoretodolist.app.shared.generated.resources.todo_list_empty_completed
+import onemoretodolist.app.shared.generated.resources.todo_list_add_widget
+import onemoretodolist.app.shared.generated.resources.todo_list_empty_completed_not_archived
+import onemoretodolist.app.shared.generated.resources.todo_list_keep_completed
+import onemoretodolist.app.shared.generated.resources.todo_list_tip_hold_add
+import onemoretodolist.app.shared.generated.resources.todo_list_tip_more_settings
+import onemoretodolist.app.shared.generated.resources.todo_list_tip_widget
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
@@ -134,10 +148,11 @@ private val MASCOT_HEIGHT = 160.dp
 // Half of ButtonDefaults.ContentPadding (24dp/8dp), snapped to the spacing scale.
 private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.xs)
 private const val BALL_AFTER_TODO_COUNT = 5
+// The ball drawings have no margin around the ball, so this is the ball's own size.
 private val BALL_SIZE = 36.dp
-// The ball only fills a bit over half of its square canvas, so the canvas is drawn this much bigger
-// than BALL_SIZE (and overflows it) for the ball itself to come out at BALL_SIZE.
-private val BALL_CANVAS_SIZE = 64.dp
+// The + straddles the nav bar's top edge, reaching FAB_NAV_BAR_OVERLAP up into this screen - the
+// hold-+ tip clears that plus a small gap.
+private val HOLD_ADD_TIP_BOTTOM_PADDING = FAB_NAV_BAR_OVERLAP + AppSpacing.s
 
 private enum class SwipeAnchor { Closed, Open, ShareTrigger }
 
@@ -161,6 +176,7 @@ private sealed interface ListEntry {
 private fun List<TodoItemUi>.withBall(): List<ListEntry> =
     take(BALL_AFTER_TODO_COUNT).map(ListEntry::Todo) + ListEntry.Ball + drop(BALL_AFTER_TODO_COUNT).map(ListEntry::Todo)
 
+@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun TodoListRoot(
     viewModel: TodoListViewModel = koinViewModel()
@@ -173,6 +189,11 @@ fun TodoListRoot(
     // cleared whenever the full-screen dialog is opened directly, so that path never inherits a
     // stale draft left over from an earlier "More settings" hop.
     var addTodoDraftText by remember { mutableStateOf("") }
+    // Same idea for the checklist - only ever non-empty when a scanned photo is continued as one
+    // todo from ScannedTextReviewDialog.
+    var addTodoDraftChecklist by remember { mutableStateOf(emptyList<ChecklistItem>()) }
+    var showPhotoCapture by remember { mutableStateOf(false) }
+    var scannedParagraphs by remember { mutableStateOf<List<ScannedParagraph>?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -181,9 +202,17 @@ fun TodoListRoot(
             TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
             TodoListEvent.ShowAddTodoFullScreenDialog -> {
                 addTodoDraftText = ""
+                addTodoDraftChecklist = emptyList()
                 showAddTodoFullScreenDialog = true
             }
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
+            TodoListEvent.ShowPhotoCapture -> showPhotoCapture = true
+            is TodoListEvent.ShowScannedTextReview -> scannedParagraphs = event.paragraphs
+            is TodoListEvent.ShowSnackbar -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(message = getString(event.message), duration = SnackbarDuration.Short)
+                }
+            }
             is TodoListEvent.ShowUndoSnackbar -> {
                 coroutineScope.launch {
                     val result = snackbarHostState.showSnackbar(
@@ -214,13 +243,15 @@ fun TodoListRoot(
         TodoFormBottomSheet(
             editingItem = null,
             onConfirm = { draft ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft))
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft, TodoForm.QuickSheet))
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
             onMoreSettingsClick = { draftText ->
+                viewModel.onAction(TodoListAction.OnAddFormExpanded)
                 showAddTodoSheet = false
                 addTodoDraftText = draftText
+                addTodoDraftChecklist = emptyList()
                 showAddTodoFullScreenDialog = true
             }
         )
@@ -230,12 +261,46 @@ fun TodoListRoot(
         TodoFormFullScreenDialog(
             editingItem = null,
             onConfirm = { draft ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft))
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft, TodoForm.FullForm))
                 showAddTodoFullScreenDialog = false
             },
             onDismiss = { showAddTodoFullScreenDialog = false },
             initialText = addTodoDraftText,
+            initialChecklist = addTodoDraftChecklist,
             knownTags = state.knownTags
+        )
+    }
+
+    if (showPhotoCapture) {
+        PhotoTextCaptureDialog(
+            onTextRecognized = { paragraphs ->
+                showPhotoCapture = false
+                viewModel.onAction(TodoListAction.OnTextRecognized(paragraphs))
+            },
+            onDismiss = { showPhotoCapture = false }
+        )
+    }
+
+    scannedParagraphs?.let { paragraphs ->
+        ScannedTextReviewDialog(
+            paragraphs = paragraphs,
+            onConfirmSeparate = { confirmedLines ->
+                viewModel.onAction(TodoListAction.OnConfirmAddScannedTodos(confirmedLines))
+                scannedParagraphs = null
+            },
+            onContinueAsSingle = { text, checklist ->
+                viewModel.onAction(TodoListAction.OnScannedTextContinuedAsSingle)
+                scannedParagraphs = null
+                addTodoDraftText = text
+                addTodoDraftChecklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
+                showAddTodoFullScreenDialog = true
+            },
+            // Back/Discard steps back to the camera for another shot rather than leaving the flow.
+            onDismiss = {
+                viewModel.onAction(TodoListAction.OnScannedTextRetaken)
+                scannedParagraphs = null
+                showPhotoCapture = true
+            }
         )
     }
 
@@ -318,6 +383,11 @@ fun TodoListScreen(
                 swapped.filterIsInstance<ListEntry.Todo>().map { it.item }.withBall()
             }
         }
+    }
+
+    // Every tip renders exactly while the Active list is empty - under the mascot, or above the +.
+    if (state.items.isEmpty() && state.filter == TodoListFilter.Active && state.emptyStateTip != null) {
+        LaunchedEffect(state.emptyStateTip) { onAction(TodoListAction.OnEmptyStateTipShown) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -433,7 +503,10 @@ fun TodoListScreen(
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                         onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
                         onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
-                        onItemClick = { detailItemId = item.id },
+                        onItemClick = {
+                            detailItemId = item.id
+                            onAction(TodoListAction.OnTodoDetailsOpened)
+                        },
                         onShareSwipe = { shareItem = item },
                         // Only where long-press would otherwise do nothing - when reorder is on,
                         // the drag handle above owns long-press.
@@ -456,7 +529,7 @@ fun TodoListScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = painterResource(Res.drawable.mascot_aussie),
+                            painter = painterResource(mascotDrawable(Res.drawable.mascot_sitting, Res.drawable.mascot_sitting_monochrome)),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -464,14 +537,40 @@ fun TodoListScreen(
                         )
                         Spacer(modifier = Modifier.height(AppSpacing.l))
                         Text(
-                            text = if (state.filter == TodoListFilter.Done) {
-                                stringResource(Res.string.todo_list_empty_completed)
-                            } else {
-                                stringResource(Res.string.todo_list_empty_active)
+                            text = when {
+                                state.filter == TodoListFilter.Active -> stringResource(Res.string.todo_list_empty_active)
+                                state.archiveCompletedTodos -> stringResource(Res.string.todo_list_empty_completed)
+                                // Completing deletes, so this list only ever fills from the widget,
+                                // which always archives - without this it just looks broken.
+                                else -> stringResource(Res.string.todo_list_empty_completed_not_archived)
                             },
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center
                         )
+                        val tip = state.emptyStateTip.takeIf { state.filter == TodoListFilter.Active }
+                        if (state.filter == TodoListFilter.Done && !state.archiveCompletedTodos) {
+                            Spacer(modifier = Modifier.height(AppSpacing.l))
+                            FilledTonalButton(onClick = { onAction(TodoListAction.OnKeepCompletedTodosClick) }) {
+                                Text(stringResource(Res.string.todo_list_keep_completed))
+                            }
+                        } else if (tip == EmptyStateTip.AddWidget || tip == EmptyStateTip.MoreSettings) {
+                            Spacer(modifier = Modifier.height(AppSpacing.l))
+                            EmptyStateTipText(
+                                text = stringResource(
+                                    if (tip == EmptyStateTip.AddWidget) {
+                                        Res.string.todo_list_tip_widget
+                                    } else {
+                                        Res.string.todo_list_tip_more_settings
+                                    }
+                                )
+                            )
+                            if (tip == EmptyStateTip.AddWidget && state.canPinWidget) {
+                                Spacer(modifier = Modifier.height(AppSpacing.m))
+                                FilledTonalButton(onClick = { onAction(TodoListAction.OnAddWidgetClick) }) {
+                                    Text(stringResource(Res.string.todo_list_add_widget))
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -487,21 +586,42 @@ fun TodoListScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = AppSpacing.s)
                             ) {
-                                Box(
+                                Image(
+                                    painter = painterResource(
+                                        mascotDrawable(Res.drawable.mascot_ball, Res.drawable.mascot_ball_monochrome)
+                                    ),
+                                    contentDescription = null,
                                     modifier = Modifier
                                         .align(BiasAlignment(horizontalBias = ballHorizontalBias, verticalBias = 0f))
                                         .size(BALL_SIZE)
-                                ) {
-                                    Image(
-                                        painter = painterResource(Res.drawable.mascot_ball),
-                                        contentDescription = null,
-                                        modifier = Modifier.requiredSize(BALL_CANVAS_SIZE)
-                                    )
-                                }
+                                )
                             }
                         }
                     }
                 }
+            }
+        }
+
+        // Right above the + it's about, with the ball to draw the eye to it - not with the other
+        // tips under the mascot, where it would be far from the button it explains.
+        if (state.items.isEmpty() &&
+            state.filter == TodoListFilter.Active &&
+            state.emptyStateTip == EmptyStateTip.HoldAddButton
+        ) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                    .padding(start = AppSpacing.l, end = AppSpacing.l, bottom = HOLD_ADD_TIP_BOTTOM_PADDING),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(mascotDrawable(Res.drawable.mascot_ball, Res.drawable.mascot_ball_monochrome)),
+                    contentDescription = null,
+                    modifier = Modifier.size(BALL_SIZE)
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.s))
+                EmptyStateTipText(text = stringResource(Res.string.todo_list_tip_hold_add))
             }
         }
 
@@ -547,9 +667,11 @@ fun TodoListScreen(
                 val launcher = nativeShareLauncher
                 if (launcher != null) {
                     launcher(shareText)
+                    onAction(TodoListAction.OnTodoShared(ShareMethod.Native))
                 } else {
                     coroutineScope.launch {
                         clipboard.setClipEntry(createPlainTextClipEntry(shareText))
+                        onAction(TodoListAction.OnTodoShared(ShareMethod.Copied))
                         snackbarHostState.showSnackbar(getString(Res.string.snackbar_copied))
                     }
                 }
@@ -557,6 +679,18 @@ fun TodoListScreen(
             onDismiss = { shareItem = null }
         )
     }
+}
+
+// Quieter than the empty-state line above it - a hint, not the message.
+@Composable
+private fun EmptyStateTipText(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier.fillMaxWidth(),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
 }
 
 private fun TodoSortOption.displayName(): StringResource = when (this) {
@@ -702,6 +836,7 @@ private fun SwipeableTodoRow(
             tags = item.tags,
             checklistDone = item.checklist.count { it.isDone },
             checklistTotal = item.checklist.size,
+            nextReminder = item.nextReminder,
             cloudSegment = cloudSegment,
             onToggleDone = {
                 if (item.status == TodoStatus.Active) {

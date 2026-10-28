@@ -19,6 +19,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.ColorPaletteOption
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
+import kotlin.time.Instant
 
 /**
  * A single todo item, built from the domain-agnostic [AppListItemCard] plus todo-specific
@@ -41,6 +42,7 @@ fun TodoItemCard(
     tags: List<TodoTag> = emptyList(),
     checklistDone: Int = 0,
     checklistTotal: Int = 0,
+    nextReminder: Instant? = null,
     cloudSegment: CloudSegment? = null
 ) {
     AppListItemCard(
@@ -71,7 +73,8 @@ fun TodoItemCard(
                 onToggleDone = onToggleDone,
                 tags = tags,
                 checklistDone = checklistDone,
-                checklistTotal = checklistTotal
+                checklistTotal = checklistTotal,
+                nextReminder = nextReminder
             )
         }
     }

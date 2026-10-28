@@ -16,6 +16,9 @@ import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
+import com.artemonre.onemoretodolist.analytics.AppPermission
+import com.artemonre.onemoretodolist.analytics.captureIfKoinRunning
 
 // SCHEDULE_EXACT_ALARM is only a distinct, user-grantable permission from Android 12 (API 31)
 // onward - below that, exact alarms are freely available, so there's nothing to request.
@@ -25,6 +28,8 @@ actual fun rememberExactAlarmPermissionState(): ExactAlarmPermissionState? {
     val context = LocalContext.current
     val alarmManager = remember(context) { context.getSystemService<AlarmManager>() }
     var isGranted by remember(context) { mutableStateOf(alarmManager?.canScheduleExactAlarms() == true) }
+    // Sent to Settings by request() - the answer is read when the app resumes.
+    var isAwaitingSettingsResult by remember { mutableStateOf(false) }
 
     // The grant itself happens in system Settings, not in this app - refresh on resume so the
     // button/description update as soon as the user comes back, instead of staying stale until
@@ -34,6 +39,10 @@ actual fun rememberExactAlarmPermissionState(): ExactAlarmPermissionState? {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 isGranted = alarmManager?.canScheduleExactAlarms() == true
+                if (isAwaitingSettingsResult) {
+                    isAwaitingSettingsResult = false
+                    captureIfKoinRunning(AnalyticsEvents.permissionResult(AppPermission.ExactAlarm, isGranted))
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -48,6 +57,7 @@ actual fun rememberExactAlarmPermissionState(): ExactAlarmPermissionState? {
                 val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
                     data = Uri.fromParts("package", context.packageName, null)
                 }
+                isAwaitingSettingsResult = true
                 context.startActivity(intent)
             }
         }

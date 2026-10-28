@@ -1,0 +1,4 @@
+- Pretvori fotografiju štampanog teksta u zadatke: drži + i izaberi „Fotografiši belešku” - radi i bez interneta
+- Sada vidiš datum i vreme sledećeg podsetnika na kartici zadatka
+- Pojednostavili smo podešavanje redovnih podsetnika
+- Anonimna statistika nam pomaže da znamo šta da poboljšamo - bez tvojih tekstova

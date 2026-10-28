@@ -1,6 +1,9 @@
 package com.artemonre.onemoretodolist
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import com.artemonre.onemoretodolist.analytics.ReportTodosSummary
+import com.artemonre.onemoretodolist.analytics.analyticsModule
 import com.artemonre.onemoretodolist.core.container.ContainerRoot
 import com.artemonre.onemoretodolist.core.container.NavigationTab
 import com.artemonre.onemoretodolist.core.container.di.containerModule
@@ -13,6 +16,7 @@ import com.artemonre.onemoretodolist.feature.settings.navigation.settingsTab
 import com.artemonre.onemoretodolist.feature.sync.di.syncModule
 import com.artemonre.onemoretodolist.feature.todolist.di.todoListModule
 import org.koin.compose.KoinApplication
+import org.koin.compose.koinInject
 import org.koin.core.module.Module
 import org.koin.dsl.koinConfiguration
 
@@ -20,7 +24,16 @@ import org.koin.dsl.koinConfiguration
 // KoinApplication start and by any platform entry point (e.g. an Android Application subclass)
 // that needs to start Koin eagerly before App() ever composes.
 fun appKoinModules(platformModules: List<Module>): List<Module> =
-    listOf(todoListModule, themeModule, settingsModule, containerModule, backupModule, networkModule, syncModule) + platformModules
+    listOf(
+        analyticsModule,
+        todoListModule,
+        themeModule,
+        settingsModule,
+        containerModule,
+        backupModule,
+        networkModule,
+        syncModule
+    ) + platformModules
 
 @Composable
 fun App(platformModules: List<Module>, contentTabs: List<NavigationTab>) {
@@ -29,6 +42,9 @@ fun App(platformModules: List<Module>, contentTabs: List<NavigationTab>) {
             modules(appKoinModules(platformModules))
         }
     ) {
+        // Here and not in an Application: this is where the app's UI actually opens.
+        val reportTodosSummary = koinInject<ReportTodosSummary>()
+        LaunchedEffect(Unit) { reportTodosSummary() }
         AppTheme {
             MandatoryAppUpdateGate {
                 // Settings is a whole-app concern, always the last tab whatever the entry point

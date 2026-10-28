@@ -3,6 +3,8 @@
 <resources>
     <string name="recurrence_every">Ponavlja se jednom u %1$s</string>
     <string name="recurrence_after_completion">Ponavlja se %1$s nakon završetka</string>
+    <string name="recurrence_every_with_reminder">Podsetnik %1$s u %2$s, zatim jednom u %3$s u isto vreme</string>
+    <string name="recurrence_after_completion_with_reminder">Podsetnik %1$s u %2$s. Kad ga završiš, ponovo za %3$s u isto vreme</string>
 
     <plurals name="recurrence_unit_day">
         <item quantity="one">%1$d dan</item>
@@ -31,7 +33,7 @@
     <string name="completed_summary_today">Danas %1$d</string>
     <string name="completed_summary_this_week">Ove nedelje %1$d</string>
     <string name="completed_summary_this_month">Ovog meseca %1$d</string>
-    <string name="todo_list_empty_completed">Još nema završenih zadataka</string>
+    <string name="todo_list_empty_completed">Ovde se pojavljuju završeni zadaci.\nOznači bilo koji na listi aktivnih da se nađe ovde.</string>
 
     <string name="tags_title">Oznake</string>
     <string name="tag_add">Dodaj oznaku</string>
@@ -53,6 +55,11 @@
     <string name="checklist_remove_item">Ukloni stavku</string>
     <string name="checklist_progress">%1$d/%2$d</string>
     <string name="checklist_progress_description">Završeno stavki: %1$d od %2$d</string>
+
+    <string name="card_reminder_today">Danas %1$s</string>
+    <string name="card_reminder_tomorrow">Sutra %1$s</string>
+    <string name="card_reminder_date">%1$s %2$s</string>
+    <string name="card_next_reminder_description">Sledeći podsetnik: %1$s</string>
     <string name="form_add">Dodaj</string>
     <string name="form_cancel">Otkaži</string>
 
@@ -63,6 +70,12 @@
     <string name="fab_open_menu">Otvori meni</string>
 
     <string name="todo_list_empty_active">Svi zadaci su završeni!\nDodaj nove kad god zatreba — bez žurbe.</string>
+    <string name="todo_list_empty_completed_not_archived">Zadaci koje završiš u aplikaciji odmah se brišu, pa ne stižu ovde.</string>
+    <string name="todo_list_keep_completed">Čuvaj završene zadatke</string>
+    <string name="todo_list_tip_hold_add">Drži + da dodaš zadatke sa fotografije štampanog teksta</string>
+    <string name="todo_list_tip_widget">Dodaj vidžet da vidiš zadatke i dodaješ nove direktno sa početnog ekrana</string>
+    <string name="todo_list_tip_more_settings">U formi za brzo dodavanje dodirni „Više podešavanja” — tamo su oznake, kontrolna lista i još toga</string>
+    <string name="todo_list_add_widget">Dodaj vidžet</string>
     <string name="sort_date">Po datumu</string>
     <string name="sort_manual">Ručno</string>
     <string name="sort_text">Po abecedi</string>
@@ -74,8 +87,9 @@
     <string name="snackbar_todo_deleted">Zadatak je obrisan</string>
     <string name="snackbar_todo_completed">Zadatak je završen</string>
     <string name="snackbar_switched_to_manual_sort">Uključeno je ručno sortiranje</string>
-    <string name="snackbar_reorder_hint">Uključite ručno sortiranje da biste menjali redosled zadataka</string>
+    <string name="snackbar_reorder_hint">Uključi ručno sortiranje da bi menjao redosled zadataka</string>
     <string name="detail_attention_info">Info:\nOvaj zadatak nije diran već %1$d dana, možda bi trebalo da ga izmeniš ili zameniš</string>
+    <string name="detail_reminder_info">Podsetnik je zakazan za %1$s u %2$s</string>
     <string name="share_title">Podeli</string>
     <string name="share_make_note">Napravi belešku</string>
     <string name="share_coming_soon">Uskoro</string>
@@ -167,6 +181,44 @@
     <string name="onboarding_todo_4">Četvrti zadatak. Prevuci ulevo da ga izmeniš ili obrišeš</string>
     <string name="onboarding_todo_5">Peti zadatak. Prevuci udesno da ga podeliš</string>
 
+    <string name="photo_capture_take_photo">Fotografiši</string>
+    <string name="photo_capture_pick_from_gallery">Izaberi iz galerije</string>
+    <string name="photo_capture_close">Zatvori</string>
+    <string name="photo_capture_script_latin">Tekst na latinici</string>
+    <string name="photo_capture_script_cyrillic">Tekst na ćirilici</string>
+    <string name="photo_capture_camera_permission_needed">Dozvoli pristup kameri da bi fotografisao, ili izaberi sliku iz galerije.</string>
+    <string name="photo_capture_printed_only_hint">Prepoznaje se samo štampani tekst — rukopis još ne</string>
+    <string name="photo_crop_hint">Uokviri tekst koji ti treba</string>
+    <string name="photo_crop_back">Nazad</string>
+    <string name="photo_crop_recognize">Prepoznaj tekst</string>
+    <string name="photo_no_text_title">Tekst nije pronađen</string>
+    <string name="photo_no_text_message">Najbolje se prepoznaje štampani tekst snimljen spreda. Probaj da preciznije uokviriš tekst ili napravi novu fotografiju.</string>
+    <string name="photo_no_text_adjust_frame">Ispravi okvir</string>
+    <string name="photo_no_text_new_photo">Nova fotografija</string>
+    <string name="photo_no_text_close">Zatvori</string>
+    <string name="photo_script_suggest_cyrillic_title">Izgleda kao ćirilica</string>
+    <string name="photo_script_suggest_latin_title">Izgleda kao latinica</string>
+    <string name="photo_script_suggest_message">Promeniti režim prepoznavanja i ponovo pročitati fotografiju?</string>
+    <string name="photo_script_suggest_switch_cyrillic">Da, prepoznaj ćirilicu</string>
+    <string name="photo_script_suggest_switch_latin">Da, prepoznaj latinicu</string>
+    <string name="photo_script_suggest_keep">Ne, u redu je</string>
+    <string name="snackbar_no_text_found">Na fotografiji nije pronađen tekst</string>
+    <string name="scan_review_title">Prepoznati tekst</string>
+    <string name="scan_review_mode_separate">Odvojeni zadaci</string>
+    <string name="scan_review_mode_single">Jedan zadatak</string>
+    <string name="scan_review_todo_text">Zadatak</string>
+    <string name="scan_review_line_placeholder">Red</string>
+    <string name="scan_review_add_line">Dodaj red</string>
+    <string name="scan_review_merge_line">Spoji sa redom iznad</string>
+    <string name="scan_review_split_line">Podeli na redove</string>
+    <string name="scan_review_remove_line">Ukloni red</string>
+    <string name="scan_review_back">Nazad</string>
+    <string name="scan_review_continue">Nastavi</string>
+    <plurals name="scan_review_add_todos">
+        <item quantity="one">Dodaj %1$d zadatak</item>
+        <item quantity="few">Dodaj %1$d zadatka</item>
+        <item quantity="other">Dodaj %1$d zadataka</item>
+    </plurals>
     <string name="settings_backup">Rezervna kopija</string>
     <string name="settings_backup_description">Sačuvaj zadatke u fajl da ih ne izgubiš ili da ih preneseš na drugi uređaj.</string>
     <string name="backup_tab_file">Fajl</string>

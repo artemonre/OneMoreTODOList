@@ -7,6 +7,6 @@ import org.koin.dsl.module
 
 val containerModule = module {
     viewModel { params ->
-        ContainerViewModel(tabs = params.get(), startTasks = getAll<AppStartTask>())
+        ContainerViewModel(tabs = params.get(), startTasks = getAll<AppStartTask>(), analytics = get())
     }
 }

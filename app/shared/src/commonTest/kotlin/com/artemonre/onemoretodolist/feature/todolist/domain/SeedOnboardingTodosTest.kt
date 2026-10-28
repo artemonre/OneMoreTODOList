@@ -30,6 +30,14 @@ class SeedOnboardingTodosTest {
     }
 
     @Test
+    fun `onboarding todos have the same order in Date and Manual sort`() {
+        assertEquals(
+            ONBOARDING_TODOS.sortedByOption(TodoSortOption.Date).map { it.id },
+            ONBOARDING_TODOS.sortedByOption(TodoSortOption.Manual).map { it.id }
+        )
+    }
+
+    @Test
     fun `does nothing when the data source already has todos`() = runTest {
         val existing = TodoItem(
             id = "existing",

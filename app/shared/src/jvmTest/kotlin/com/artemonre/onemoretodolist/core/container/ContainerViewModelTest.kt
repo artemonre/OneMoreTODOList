@@ -1,5 +1,9 @@
 package com.artemonre.onemoretodolist.core.container
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.navigation3.runtime.NavKey
+import com.artemonre.onemoretodolist.analytics.RecordingAnalytics
 import com.artemonre.onemoretodolist.core.domain.AppStartTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -11,6 +15,20 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import onemoretodolist.app.shared.generated.resources.Res
+import onemoretodolist.app.shared.generated.resources.tab_settings
+import onemoretodolist.app.shared.generated.resources.tab_todo
+import org.jetbrains.compose.resources.StringResource
+
+private data object TestRoute : NavKey
+
+private fun tab(label: StringResource) = NavigationTab(
+    label = label,
+    icon = Icons.Filled.Settings,
+    startDestination = TestRoute,
+    entries = {},
+    registerRoutes = {}
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ContainerViewModelTest {
@@ -50,5 +68,20 @@ class ContainerViewModelTest {
         viewModel.onAction(ContainerAction.OnTabSelected(1))
 
         assertEquals(1, viewModel.state.value.selectedTabIndex)
+    }
+
+    @Test
+    fun `switching tabs reports the new tab by its label key, staying on one reports nothing`() = runTest(testDispatcher) {
+        val analytics = RecordingAnalytics()
+        val viewModel = ContainerViewModel(
+            tabs = listOf(tab(Res.string.tab_todo), tab(Res.string.tab_settings)),
+            startTasks = emptyList(),
+            analytics = analytics
+        )
+
+        viewModel.onAction(ContainerAction.OnTabSelected(1))
+        viewModel.onAction(ContainerAction.OnTabSelected(1))
+
+        assertEquals(listOf("settings"), analytics.events.map { it.properties["tab"] })
     }
 }

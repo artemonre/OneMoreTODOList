@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.sentryAndroidGradle)
     alias(libs.plugins.gradlePlayPublisher)
+    alias(libs.plugins.androidxBaselineprofile)
 }
 
 android {
@@ -22,6 +23,19 @@ android {
     // the Android framework stubs gets a default value instead of a "not mocked" crash.
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+}
+
+// The Baseline Profile plugin's build types are copies of release, but a build type only compiles
+// its own src/<buildType> folder - so they'd have no initObservability() at all. They get release's
+// (with empty keys, see gateway.application), so the profile covers the same startup code as the
+// release build while nothing gets reported from a profiling run.
+androidComponents {
+    onVariants(selector().withBuildType("nonMinifiedRelease")) { variant ->
+        variant.sources.kotlin?.addStaticSourceDirectory("src/release/kotlin")
+    }
+    onVariants(selector().withBuildType("benchmarkRelease")) { variant ->
+        variant.sources.kotlin?.addStaticSourceDirectory("src/release/kotlin")
     }
 }
 
@@ -84,8 +98,10 @@ play {
 //   (a release is always cut on its own branch, never straight from develop or master)
 // - no v<versionName> tag exists yet (catches a forgotten versionName bump)
 // - release-notes/v<versionName>.md exists and carries an "Approved: yes" line - added only after
-//   the notes were reviewed and accepted - and its "## Play notes" section matches alpha.txt
-//   exactly and fits Play's 500-character limit
+//   the notes were reviewed and accepted - and, for every Play locale (en-US, ru-RU, sr), its
+//   Play notes section matches that locale's alpha.txt exactly and fits Play's 500-character
+//   limit. Sections are "## Play notes (ru-RU)" / "## Play notes (sr)"; a "## Play notes" heading
+//   with no locale in its parentheses (e.g. "(alpha.txt candidate)") is the en-US one.
 // Listing/products/subscriptions tasks aren't tied to a build version, so they're not gated.
 val verifyReleaseReady = tasks.register("verifyReleaseReady") {
     group = "publishing"
@@ -100,7 +116,8 @@ val verifyReleaseReady = tasks.register("verifyReleaseReady") {
     val existingReleaseTag = providers.exec { commandLine("git", "tag", "--list", "v$releaseVersionName") }
         .standardOutput.asText.map { it.trim() }
     val releaseNotesDraft = rootProject.layout.projectDirectory.file("release-notes/v$releaseVersionName.md")
-    val playReleaseNotes = layout.projectDirectory.file("src/main/play/release-notes/en-US/alpha.txt")
+    val playReleaseNotes = listOf("en-US", "ru-RU", "sr")
+        .associateWith { layout.projectDirectory.file("src/main/play/release-notes/$it/alpha.txt") }
     doLast {
         val problems = buildList {
             val expectedBranch = "release/v$releaseVersionName"
@@ -121,14 +138,33 @@ val verifyReleaseReady = tasks.register("verifyReleaseReady") {
                 if (draft.lines().none { it.trim().equals("Approved: yes", ignoreCase = true) }) {
                     add("Release notes v$releaseVersionName aren't approved yet (no \"Approved: yes\" line).")
                 }
-                val approvedPlayNotes = draft.substringAfter("## Play notes", missingDelimiterValue = "")
-                    .substringAfter('\n').trim()
-                val publishedPlayNotes = playReleaseNotes.asFile.readText().trim()
-                if (approvedPlayNotes != publishedPlayNotes) {
-                    add("alpha.txt doesn't match the approved \"## Play notes\" section of ${draftFile.name}.")
-                }
-                if (publishedPlayNotes.length > 500) {
-                    add("alpha.txt is ${publishedPlayNotes.length} characters - Play allows 500.")
+                val draftLines = draft.replace("\r\n", "\n").lines()
+                fun localeOf(heading: String): String =
+                    heading.substringAfter('(', "").substringBefore(')').trim()
+                        .takeIf { it in playReleaseNotes.keys } ?: "en-US"
+                playReleaseNotes.forEach { (locale, playFile) ->
+                    val headingIndex = draftLines.indexOfFirst {
+                        it.trim().startsWith("## Play notes") && localeOf(it) == locale
+                    }
+                    if (headingIndex == -1) {
+                        add("${draftFile.name} has no Play notes section for $locale.")
+                        return@forEach
+                    }
+                    val approvedPlayNotes = draftLines.drop(headingIndex + 1)
+                        .takeWhile { !it.trim().startsWith("## ") }
+                        .joinToString("\n").trim()
+                    val alphaFile = playFile.asFile
+                    if (!alphaFile.isFile) {
+                        add("Missing ${alphaFile.path}.")
+                        return@forEach
+                    }
+                    val publishedPlayNotes = alphaFile.readText().replace("\r\n", "\n").trim()
+                    if (approvedPlayNotes != publishedPlayNotes) {
+                        add("$locale/alpha.txt doesn't match the approved $locale Play notes section of ${draftFile.name}.")
+                    }
+                    if (publishedPlayNotes.length > 500) {
+                        add("$locale/alpha.txt is ${publishedPlayNotes.length} characters - Play allows 500.")
+                    }
                 }
             }
         }
@@ -150,6 +186,10 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.androidx.appfunctions)
+    // Installs the Baseline Profile generated by :baselineprofile on sideloaded builds too - Play
+    // already applies it on install from the store.
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     ksp(libs.androidx.appfunctions.compiler)
     testImplementation(libs.kotlin.testJunit)
     debugImplementation(libs.androidx.glance.preview)

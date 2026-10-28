@@ -1,10 +1,10 @@
 package com.artemonre.onemoretodolist.widget
 
 import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import com.artemonre.onemoretodolist.analytics.WidgetSize
 
 // See TodoWidgetCompactReceiver - same TodoWidget, different default placement size
 // (todo_widget_row_info.xml), so it shows as its own entry in the widget picker.
-class TodoWidgetRowReceiver : GlanceAppWidgetReceiver() {
+class TodoWidgetRowReceiver : WidgetPlacementReportingReceiver(WidgetSize.Row) {
     override val glanceAppWidget: GlanceAppWidget = TodoWidget()
 }

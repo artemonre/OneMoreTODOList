@@ -2,21 +2,20 @@ package com.artemonre.onemoretodolist
 
 import android.app.Application
 import androidx.glance.appwidget.updateAll
-import com.artemonre.onemoretodolist.analytics.initPostHog
 import com.artemonre.onemoretodolist.core.theme.di.androidThemeModule
 import com.artemonre.onemoretodolist.feature.backup.drive.di.androidDriveBackupModule
 import com.artemonre.onemoretodolist.feature.backup.drive.di.ensureDriveAutoBackupScheduled
 import com.artemonre.onemoretodolist.feature.backup.file.di.androidFileAutoBackupModule
 import com.artemonre.onemoretodolist.feature.backup.file.di.ensureFileAutoBackupScheduled
+import com.artemonre.onemoretodolist.feature.todolist.domain.HomeScreenWidget
 import com.artemonre.onemoretodolist.feature.todolist.di.androidDueTimeModule
 import com.artemonre.onemoretodolist.feature.todolist.di.androidTodoDataModule
 import com.artemonre.onemoretodolist.feature.todolist.work.WidgetRefresher
 import com.artemonre.onemoretodolist.feature.todolist.work.schedulePeriodicTodoMaintenance
 import com.artemonre.onemoretodolist.notification.PostDueNotification
 import com.artemonre.onemoretodolist.notification.createDueTodoNotificationChannel
-import com.artemonre.onemoretodolist.observability.initSentry
+import com.artemonre.onemoretodolist.widget.TodoHomeScreenWidget
 import com.artemonre.onemoretodolist.widget.TodoWidget
-import com.posthog.kmp.PostHogContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,15 +31,9 @@ import org.koin.dsl.module
 class TodoListApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        // Skipped in debug builds - avoids noise/quota burn from dev-time crashes and test data.
-        if (!BuildConfig.DEBUG) {
-            initSentry(BuildConfig.SENTRY_DSN, environment = "production")
-            initPostHog(
-                BuildConfig.POSTHOG_API_KEY,
-                PostHogContext(this@TodoListApplication),
-                platform = "android"
-            )
-        }
+        // Sentry and PostHog in release builds, nothing in debug - one version per build type, see
+        // src/release and src/debug.
+        initObservability(this@TodoListApplication)
         createDueTodoNotificationChannel(this@TodoListApplication)
         startKoin {
             androidContext(this@TodoListApplication)
@@ -71,7 +64,13 @@ class TodoListApplication : Application() {
                             // Lives here rather than androidDueTimeModule - it needs R.drawable,
                             // which only this module's own R class exposes.
                             single { PostDueNotification(this@TodoListApplication) }
-                        }
+                            // Replaces todoListModule's NoHomeScreenWidget - the widget lives in
+                            // this module, so only it can tell whether one is placed.
+                            single<HomeScreenWidget> { TodoHomeScreenWidget(this@TodoListApplication) }
+                        },
+                        // Last, so a build type's own bindings win - debug's sends analytics to
+                        // logcat instead of PostHog. See src/release and src/debug.
+                        observabilityModule
                     )
                 )
             )

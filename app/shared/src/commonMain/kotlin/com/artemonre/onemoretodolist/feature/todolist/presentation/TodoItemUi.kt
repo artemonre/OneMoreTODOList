@@ -8,7 +8,9 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
 import com.artemonre.onemoretodolist.feature.todolist.domain.daysAtTop
+import com.artemonre.onemoretodolist.feature.todolist.domain.nextAlarmInstant
 import com.artemonre.onemoretodolist.feature.todolist.domain.topTodoAttention
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
@@ -26,7 +28,10 @@ data class TodoItemUi(
     val dueTime: LocalTime? = null,
     val dueTimeMode: DueTimeMode? = null,
     val checklist: List<ChecklistItem> = emptyList(),
-    val tags: List<TodoTag> = emptyList()
+    val tags: List<TodoTag> = emptyList(),
+    // When the next notification fires - due time or snooze, whichever comes first (see
+    // nextAlarmInstant). Null means nothing is armed.
+    val nextReminder: Instant? = null
 )
 
 fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
@@ -43,5 +48,6 @@ fun TodoItem.toTodoItemUi(): TodoItemUi = TodoItemUi(
     dueTime = dueTime,
     dueTimeMode = dueTimeMode,
     checklist = checklist,
-    tags = tags
+    tags = tags,
+    nextReminder = nextAlarmInstant()
 )
