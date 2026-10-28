@@ -67,7 +67,10 @@ class TodoListApplication : Application() {
                             // Replaces todoListModule's NoHomeScreenWidget - the widget lives in
                             // this module, so only it can tell whether one is placed.
                             single<HomeScreenWidget> { TodoHomeScreenWidget(this@TodoListApplication) }
-                        }
+                        },
+                        // Last, so a build type's own bindings win - debug's sends analytics to
+                        // logcat instead of PostHog. See src/release and src/debug.
+                        observabilityModule
                     )
                 )
             )
