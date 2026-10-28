@@ -48,7 +48,7 @@ android {
         minSdk = libs.findVersion("android-minSdk").get().requiredVersion.toInt()
         targetSdk = libs.findVersion("android-targetSdk").get().requiredVersion.toInt()
         versionCode = 7
-        versionName = "1.2.1"
+        versionName = "1.3.0"
     }
 
     androidResources {
