@@ -58,6 +58,19 @@
 -keep class * extends androidx.glance.appwidget.action.ActionCallback {
     public <init>();
 }
+# Fourth instance of the same failure category: ML Kit finds its parts at runtime through
+# "com.google.firebase.components:<class>" meta-data in the merged manifest, and creates each
+# registrar (CommonComponentRegistrar, VisionCommonRegistrar, TextRegistrar) by reflection.
+# firebase-components' own consumer rule ("-keep class * implements
+# com.google.firebase.components.ComponentRegistrar", no member body) keeps the names, but R8's full
+# mode doesn't keep the no-arg constructor for a rule without members - so no registrar could be
+# created, MlKitContext.get() returned null for the text recognizer, and opening "Capture a note"
+# crashed v1.3.0 release builds at once: "NullPointerException: Attempt to read from field ... on a
+# null object reference" in TextRecognition.getClient (com.google.mlkit.vision.text.internal.zzo).
+-keep class * implements com.google.firebase.components.ComponentRegistrar {
+    public <init>();
+}
+
 # Tesseract4Android (photo -> todos, Cyrillic) ships no consumer rules of its own, yet its native
 # code looks up TessBaseAPI's fields (the native handle) and callback methods by name over JNI -
 # renamed or stripped by R8, recognition would crash with a NoSuchFieldError/NoSuchMethodError.
