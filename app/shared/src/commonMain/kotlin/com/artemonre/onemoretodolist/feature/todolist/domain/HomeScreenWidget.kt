@@ -10,11 +10,12 @@ interface HomeScreenWidget {
     // False where the launcher can't place a widget on request - the tip then only names it.
     fun canRequestPin(): Boolean
 
-    suspend fun requestPin()
+    // Whether the launcher showed its "Add widget?" dialog - not whether the user then said yes.
+    suspend fun requestPin(): Boolean
 }
 
 object NoHomeScreenWidget : HomeScreenWidget {
     override suspend fun shouldSuggest(): Boolean = false
     override fun canRequestPin(): Boolean = false
-    override suspend fun requestPin() = Unit
+    override suspend fun requestPin(): Boolean = false
 }

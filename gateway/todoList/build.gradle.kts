@@ -26,6 +26,19 @@ android {
     }
 }
 
+// The Baseline Profile plugin's build types are copies of release, but a build type only compiles
+// its own src/<buildType> folder - so they'd have no initObservability() at all. They get release's
+// (with empty keys, see gateway.application), so the profile covers the same startup code as the
+// release build while nothing gets reported from a profiling run.
+androidComponents {
+    onVariants(selector().withBuildType("nonMinifiedRelease")) { variant ->
+        variant.sources.kotlin?.addStaticSourceDirectory("src/release/kotlin")
+    }
+    onVariants(selector().withBuildType("benchmarkRelease")) { variant ->
+        variant.sources.kotlin?.addStaticSourceDirectory("src/release/kotlin")
+    }
+}
+
 // Uploads the R8/ProGuard mapping file so Sentry can de-obfuscate release crash stack traces -
 // without this, a real user's release crash shows mangled class/method names instead of readable
 // ones. The plugin reads defaults.org/defaults.project straight from this module's own

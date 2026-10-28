@@ -8,6 +8,9 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
+import com.artemonre.onemoretodolist.analytics.BackupTrigger
 import com.artemonre.onemoretodolist.feature.backup.drive.domain.BackgroundBackupOutcome
 import com.artemonre.onemoretodolist.feature.backup.drive.domain.DriveAutoBackupScheduler
 import com.artemonre.onemoretodolist.feature.backup.drive.domain.DriveBackupRepository
@@ -24,10 +27,18 @@ class DriveAutoBackupWorker(
     params: WorkerParameters
 ) : CoroutineWorker(context, params), KoinComponent {
     private val repository: DriveBackupRepository by inject()
+    private val analytics: Analytics by inject()
 
-    override suspend fun doWork(): Result = when (repository.backupWithoutUser()) {
-        BackgroundBackupOutcome.Done, BackgroundBackupOutcome.NeedsUser -> Result.success()
-        BackgroundBackupOutcome.Retry -> Result.retry()
+    override suspend fun doWork(): Result {
+        val outcome = repository.backupWithoutUser()
+        // Anything but Done is the error: needs_user or retry - WorkManager runs a retry again later.
+        analytics.capture(
+            AnalyticsEvents.driveBackupRun(BackupTrigger.Auto, error = outcome.takeIf { it != BackgroundBackupOutcome.Done })
+        )
+        return when (outcome) {
+            BackgroundBackupOutcome.Done, BackgroundBackupOutcome.NeedsUser -> Result.success()
+            BackgroundBackupOutcome.Retry -> Result.retry()
+        }
     }
 }
 

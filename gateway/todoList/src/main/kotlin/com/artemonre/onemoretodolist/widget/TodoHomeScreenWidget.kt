@@ -19,7 +19,6 @@ class TodoHomeScreenWidget(private val context: Context) : HomeScreenWidget {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported
 
-    override suspend fun requestPin() {
+    override suspend fun requestPin(): Boolean =
         glanceAppWidgetManager.requestPinGlanceAppWidget(TodoWidgetReceiver::class.java)
-    }
 }

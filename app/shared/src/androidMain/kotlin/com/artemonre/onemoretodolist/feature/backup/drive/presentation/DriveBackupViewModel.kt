@@ -4,6 +4,9 @@ import android.content.Intent
 import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
+import com.artemonre.onemoretodolist.analytics.BackupTrigger
 import com.artemonre.onemoretodolist.core.domain.DataError
 import com.artemonre.onemoretodolist.core.domain.Result
 import com.artemonre.onemoretodolist.feature.backup.domain.ImportMode
@@ -38,7 +41,8 @@ class DriveBackupViewModel(
     private val repository: DriveBackupRepository,
     private val authorizer: DriveAuthorizer,
     private val importTodos: ImportTodos,
-    private val scheduler: DriveAutoBackupScheduler
+    private val scheduler: DriveAutoBackupScheduler,
+    private val analytics: Analytics
 ) : ViewModel() {
 
     private val ui = MutableStateFlow(DriveUi())
@@ -72,6 +76,7 @@ class DriveBackupViewModel(
         } else {
             repository.setAutoBackupEnabled(false)
             scheduler.cancel()
+            analytics.capture(AnalyticsEvents.driveAutoBackupChanged(enabled = false))
         }
     }
 
@@ -80,7 +85,9 @@ class DriveBackupViewModel(
         pendingRestoreJson = null
         viewModelScope.launch {
             ui.update { it.copy(isChoosingRestoreMode = false, isBusy = true) }
-            val message = when (val result = importTodos(json, mode)) {
+            val result = importTodos(json, mode)
+            analytics.capture(AnalyticsEvents.driveRestored(mode, succeeded = result is Result.Success))
+            val message = when (result) {
                 is Result.Success -> DriveBackupMessage.Restored(result.data.importedCount)
                 is Result.Error -> DriveBackupMessage.RestoreFailed(result.error)
             }
@@ -99,6 +106,7 @@ class DriveBackupViewModel(
             scheduler.cancel()
             val token = (authorizer.authorize() as? DriveAuthorization.Granted)?.accessToken
             repository.disconnect(token)
+            analytics.capture(AnalyticsEvents.driveDisconnected())
             ui.update { it.copy(isBusy = false) }
         }
     }
@@ -108,6 +116,8 @@ class DriveBackupViewModel(
         pendingOperation = null
         viewModelScope.launch {
             val token = authorizer.tokenFromConsentResult(data)
+            // Google's consent screen is where connecting happens - a silent grant was connected before.
+            analytics.capture(AnalyticsEvents.driveConnected(succeeded = token != null))
             if (token == null) {
                 ui.update { it.copy(isBusy = false, message = DriveBackupMessage.AccessDenied) }
             } else {
@@ -138,6 +148,7 @@ class DriveBackupViewModel(
             DriveOperation.EnableAutoBackup -> {
                 repository.setAutoBackupEnabled(true)
                 scheduler.schedule()
+                analytics.capture(AnalyticsEvents.driveAutoBackupChanged(enabled = true))
                 // Back up right away too, so there's something in Drive from day one.
                 finishBackup(token)
             }
@@ -157,7 +168,9 @@ class DriveBackupViewModel(
     }
 
     private suspend fun finishBackup(token: String) {
-        val message = when (val result = repository.backup(token)) {
+        val result = repository.backup(token)
+        analytics.capture(AnalyticsEvents.driveBackupRun(BackupTrigger.Manual, error = (result as? Result.Error)?.error))
+        val message = when (result) {
             is Result.Success -> DriveBackupMessage.BackedUp
             is Result.Error -> result.error.toMessage()
         }

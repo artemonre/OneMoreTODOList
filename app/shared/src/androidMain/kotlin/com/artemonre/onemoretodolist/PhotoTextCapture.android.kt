@@ -76,6 +76,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
+import com.artemonre.onemoretodolist.analytics.PhotoInput
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.feature.todolist.presentation.FullScreenFormDialog
@@ -138,6 +141,9 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
     val currentOnTextRecognized by rememberUpdatedState(onTextRecognized)
+    val analytics = koinInject<Analytics>()
+    // Where the photo being read came from - set as each one is loaded.
+    var photoInput by remember { mutableStateOf(PhotoInput.Camera) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -213,7 +219,8 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
 
     // Loads the photo for cropping, starting with the frame around the whole of it - a failed
     // load surfaces the same way as a photo with no text, see PhotoTextCaptureDialog's contract.
-    val loadPhoto: (suspend () -> Bitmap) -> Unit = { loadImage ->
+    val loadPhoto: (PhotoInput, suspend () -> Bitmap) -> Unit = { input, loadImage ->
+        photoInput = input
         coroutineScope.launch {
             isProcessing = true
             val loaded = try {
@@ -225,6 +232,7 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
             }
             isProcessing = false
             if (loaded == null) {
+                analytics.capture(AnalyticsEvents.photoTextRecognized(input, script, textFound = false))
                 currentOnTextRecognized(emptyList())
             } else {
                 cropRect = Rect(0f, 0f, loaded.width.toFloat(), loaded.height.toFloat())
@@ -234,7 +242,12 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
     }
 
     // An empty read stays here instead of closing the capture, so the photo isn't lost.
+    // script is the one that produced this read - a switch from the suggestion dialog has already
+    // been applied by the time the read after it gets here.
     val deliver: (List<ScannedParagraph>) -> Unit = { paragraphs ->
+        analytics.capture(
+            AnalyticsEvents.photoTextRecognized(photoInput, script, textFound = paragraphs.isNotEmpty())
+        )
         if (paragraphs.isEmpty()) isNoTextFoundShown = true else currentOnTextRecognized(paragraphs)
     }
 
@@ -282,7 +295,7 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
-        if (uri != null) loadPhoto { loadGalleryBitmap(context, uri) }
+        if (uri != null) loadPhoto(PhotoInput.Gallery) { loadGalleryBitmap(context, uri) }
     }
 
     FullScreenFormDialog(onDismiss = onDismiss) { requestDismiss ->
@@ -424,7 +437,7 @@ actual fun PhotoTextCaptureDialog(onTextRecognized: (paragraphs: List<ScannedPar
                             )
                         }
                         FilledIconButton(
-                            onClick = { loadPhoto { imageCapture.takeUprightBitmap() } },
+                            onClick = { loadPhoto(PhotoInput.Camera) { imageCapture.takeUprightBitmap() } },
                             enabled = hasCameraPermission && !isProcessing,
                             modifier = Modifier.size(SHUTTER_BUTTON_SIZE)
                         ) {

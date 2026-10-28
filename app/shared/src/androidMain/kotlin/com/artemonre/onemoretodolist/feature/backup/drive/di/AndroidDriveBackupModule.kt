@@ -20,7 +20,7 @@ fun androidDriveBackupModule(context: Context): Module = module {
     single { KtorDriveDataSource(get()) }
     single<DriveBackupRepository> { GoogleDriveBackupRepository(get(), get(), get(), get()) }
     single<DriveAutoBackupScheduler> { WorkManagerDriveAutoBackupScheduler(context) }
-    viewModel { DriveBackupViewModel(get(), get(), get(), get()) }
+    viewModel { DriveBackupViewModel(get(), get(), get(), get(), get()) }
 }
 
 // WorkManager's own database isn't part of Auto Backup (it lives in no_backup), so on a restored
