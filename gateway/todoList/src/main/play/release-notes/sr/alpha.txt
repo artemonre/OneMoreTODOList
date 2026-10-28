@@ -1,6 +1,4 @@
-- Ponavljajući zadaci s podsetnikom više ne skaču na vrh pre njega
-- Zadaci koji se ponavljaju nakon završetka više ne stižu pre podsetnika
-- Ponavljajući podsetnici ostaju i posle restarta telefona
-- Dugi zadaci se skroluju umesto da zauzmu ceo ekran
-- Kontrolna lista može imati do 10 stavki
-- Kuca sada viri kad otvoriš zadatak i ostavila je lopticu u tvojoj listi
+- Pretvori fotografiju štampanog teksta u zadatke: drži + i izaberi „Fotografiši belešku” - radi i bez interneta
+- Sada vidiš datum i vreme sledećeg podsetnika na kartici zadatka
+- Pojednostavili smo podešavanje redovnih podsetnika
+- Anonimna statistika nam pomaže da znamo šta da poboljšamo - bez tvojih tekstova
