@@ -2,6 +2,8 @@ package com.artemonre.onemoretodolist.feature.backup.file.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
 import com.artemonre.onemoretodolist.core.domain.Result
 import com.artemonre.onemoretodolist.feature.backup.file.domain.FileAutoBackupRepository
 import com.artemonre.onemoretodolist.feature.backup.file.domain.FileAutoBackupScheduler
@@ -19,7 +21,8 @@ private data class FileUi(val isBusy: Boolean = false, val failed: Boolean = fal
 
 class FileAutoBackupViewModel(
     private val repository: FileAutoBackupRepository,
-    private val scheduler: FileAutoBackupScheduler
+    private val scheduler: FileAutoBackupScheduler,
+    private val analytics: Analytics
 ) : ViewModel() {
 
     private val ui = MutableStateFlow(FileUi())
@@ -41,6 +44,7 @@ class FileAutoBackupViewModel(
             val failed = when (repository.enable(fileUri)) {
                 is Result.Success -> {
                     scheduler.schedule()
+                    analytics.capture(AnalyticsEvents.fileAutoBackupChanged(enabled = true))
                     false
                 }
                 is Result.Error -> {
@@ -55,6 +59,7 @@ class FileAutoBackupViewModel(
     fun disable() {
         scheduler.cancel()
         repository.disable()
+        analytics.capture(AnalyticsEvents.fileAutoBackupChanged(enabled = false))
         ui.update { FileUi() }
     }
 }

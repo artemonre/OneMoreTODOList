@@ -1,3 +1,4 @@
+import com.android.build.api.variant.BuildConfigField
 import java.util.Properties
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.support.uppercaseFirstChar
@@ -48,8 +49,6 @@ android {
         targetSdk = libs.findVersion("android-targetSdk").get().requiredVersion.toInt()
         versionCode = 7
         versionName = "1.2.1"
-        buildConfigField("String", "SENTRY_DSN", "\"${sentryProperties.getProperty("dsn", "")}\"")
-        buildConfigField("String", "POSTHOG_API_KEY", "\"${posthogProperties.getProperty("apiKey", "")}\"")
     }
 
     androidResources {
@@ -128,6 +127,19 @@ kotlin {
 // following defaultConfig's - debug builds are never uploaded anywhere, so there's nothing for it
 // to track.
 androidComponents {
+    // The real keys go into the release build only. Every other build type - debug, and the
+    // Baseline Profile plugin's copies of release (nonMinifiedRelease, benchmarkRelease) - gets
+    // empty ones, which initSentry()/initPostHog() treat as "disabled". Same fields everywhere, so
+    // the same code compiles in every variant; only what's in them differs. Each gateway starts
+    // Sentry/PostHog from its own initObservability(): the real one in src/release, a no-op in
+    // src/debug (see gateway/todoList).
+    onVariants { variant ->
+        val isRelease = variant.buildType == "release"
+        val sentryDsn = if (isRelease) sentryProperties.getProperty("dsn", "") else ""
+        val posthogApiKey = if (isRelease) posthogProperties.getProperty("apiKey", "") else ""
+        variant.buildConfigFields?.put("SENTRY_DSN", BuildConfigField("String", "\"$sentryDsn\"", null))
+        variant.buildConfigFields?.put("POSTHOG_API_KEY", BuildConfigField("String", "\"$posthogApiKey\"", null))
+    }
     onVariants(selector().withBuildType("debug")) { variant ->
         variant.outputs.forEach { output ->
             output.versionCode.set(1)

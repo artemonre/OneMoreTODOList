@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
+import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
@@ -32,11 +33,19 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.artemonre.onemoretodolist.EXTRA_OPENED_FROM
 import com.artemonre.onemoretodolist.MainActivity
+import com.artemonre.onemoretodolist.OPENED_FROM_WIDGET
 import com.artemonre.onemoretodolist.QuickAddTodoActivity
 import com.artemonre.onemoretodolist.R
 import com.artemonre.onemoretodolist.feature.todolist.domain.TopTodoAttention
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoItemUi
+
+private val openedFromKey = ActionParameters.Key<String>(EXTRA_OPENED_FROM)
+
+// Every tap that opens the app - MainActivity reports it as widget_opened_app.
+private fun openAppFromWidget() =
+    actionStartActivity<MainActivity>(actionParametersOf(openedFromKey to OPENED_FROM_WIDGET))
 
 @Composable
 fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, background: ColorProvider) {
@@ -45,7 +54,7 @@ fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, backgroun
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(background)
-                .clickable(actionStartActivity<MainActivity>())
+                .clickable(openAppFromWidget())
                 .padding(8.dp)
         ) {
             Row(
@@ -106,7 +115,7 @@ fun TodoWidgetContentCompact(activeCount: Int, colors: ColorProviders, backgroun
             Box(
                 modifier = GlanceModifier
                     .fillMaxWidth()
-                    .clickable(actionStartActivity<MainActivity>())
+                    .clickable(openAppFromWidget())
                     .padding(top = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -191,7 +200,7 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
                 modifier = GlanceModifier
                     .defaultWeight()
                     .fillMaxHeight()
-                    .clickable(actionStartActivity<MainActivity>()),
+                    .clickable(openAppFromWidget()),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
@@ -257,7 +266,7 @@ internal fun TodoWidgetRow(item: TodoItemUi) {
             modifier = GlanceModifier
                 .defaultWeight()
                 .fillMaxHeight()
-                .clickable(actionStartActivity<MainActivity>()),
+                .clickable(openAppFromWidget()),
             contentAlignment = Alignment.CenterStart
         ) {
             Text(

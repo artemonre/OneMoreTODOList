@@ -74,6 +74,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.artemonre.onemoretodolist.analytics.ShareMethod
+import com.artemonre.onemoretodolist.analytics.TodoForm
 import com.artemonre.onemoretodolist.core.container.FAB_NAV_BAR_OVERLAP
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
@@ -241,11 +243,12 @@ fun TodoListRoot(
         TodoFormBottomSheet(
             editingItem = null,
             onConfirm = { draft ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft))
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft, TodoForm.QuickSheet))
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
             onMoreSettingsClick = { draftText ->
+                viewModel.onAction(TodoListAction.OnAddFormExpanded)
                 showAddTodoSheet = false
                 addTodoDraftText = draftText
                 addTodoDraftChecklist = emptyList()
@@ -258,7 +261,7 @@ fun TodoListRoot(
         TodoFormFullScreenDialog(
             editingItem = null,
             onConfirm = { draft ->
-                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft))
+                viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft, TodoForm.FullForm))
                 showAddTodoFullScreenDialog = false
             },
             onDismiss = { showAddTodoFullScreenDialog = false },
@@ -286,6 +289,7 @@ fun TodoListRoot(
                 scannedParagraphs = null
             },
             onContinueAsSingle = { text, checklist ->
+                viewModel.onAction(TodoListAction.OnScannedTextContinuedAsSingle)
                 scannedParagraphs = null
                 addTodoDraftText = text
                 addTodoDraftChecklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
@@ -293,6 +297,7 @@ fun TodoListRoot(
             },
             // Back/Discard steps back to the camera for another shot rather than leaving the flow.
             onDismiss = {
+                viewModel.onAction(TodoListAction.OnScannedTextRetaken)
                 scannedParagraphs = null
                 showPhotoCapture = true
             }
@@ -378,6 +383,11 @@ fun TodoListScreen(
                 swapped.filterIsInstance<ListEntry.Todo>().map { it.item }.withBall()
             }
         }
+    }
+
+    // Every tip renders exactly while the Active list is empty - under the mascot, or above the +.
+    if (state.items.isEmpty() && state.filter == TodoListFilter.Active && state.emptyStateTip != null) {
+        LaunchedEffect(state.emptyStateTip) { onAction(TodoListAction.OnEmptyStateTipShown) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -493,7 +503,10 @@ fun TodoListScreen(
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                         onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
                         onDeleteClick = { onAction(TodoListAction.OnDeleteTodo(item.id)) },
-                        onItemClick = { detailItemId = item.id },
+                        onItemClick = {
+                            detailItemId = item.id
+                            onAction(TodoListAction.OnTodoDetailsOpened)
+                        },
                         onShareSwipe = { shareItem = item },
                         // Only where long-press would otherwise do nothing - when reorder is on,
                         // the drag handle above owns long-press.
@@ -654,9 +667,11 @@ fun TodoListScreen(
                 val launcher = nativeShareLauncher
                 if (launcher != null) {
                     launcher(shareText)
+                    onAction(TodoListAction.OnTodoShared(ShareMethod.Native))
                 } else {
                     coroutineScope.launch {
                         clipboard.setClipEntry(createPlainTextClipEntry(shareText))
+                        onAction(TodoListAction.OnTodoShared(ShareMethod.Copied))
                         snackbarHostState.showSnackbar(getString(Res.string.snackbar_copied))
                     }
                 }

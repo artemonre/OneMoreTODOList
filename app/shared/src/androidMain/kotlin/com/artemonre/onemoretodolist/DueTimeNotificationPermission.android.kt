@@ -21,6 +21,9 @@ import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
+import com.artemonre.onemoretodolist.analytics.AppPermission
+import com.artemonre.onemoretodolist.analytics.captureIfKoinRunning
 
 private const val PREFS_NAME = "due_time_notification_permission"
 private const val KEY_HAS_REQUESTED = "has_requested"
@@ -37,12 +40,18 @@ actual fun rememberDueTimeNotificationPermissionState(): DueTimeNotificationPerm
     // below, which returns false for both - persisted (not just remembered) because the permission
     // can have been permanently denied in a past app session, before this composable ever ran.
     var hasRequestedBefore by remember(prefs) { mutableStateOf(prefs.getBoolean(KEY_HAS_REQUESTED, false)) }
+    // Sent to the system's notification settings - its answer is read when the app resumes.
+    var isAwaitingSettingsResult by remember { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, context) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 isGranted = NotificationManagerCompat.from(context).areNotificationsEnabled()
+                if (isAwaitingSettingsResult) {
+                    isAwaitingSettingsResult = false
+                    captureIfKoinRunning(AnalyticsEvents.permissionResult(AppPermission.Notifications, isGranted))
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -51,7 +60,10 @@ actual fun rememberDueTimeNotificationPermissionState(): DueTimeNotificationPerm
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> isGranted = granted }
+    ) { granted ->
+        isGranted = granted
+        captureIfKoinRunning(AnalyticsEvents.permissionResult(AppPermission.Notifications, granted))
+    }
 
     return remember(context, activity, isGranted, hasRequestedBefore) {
         object : DueTimeNotificationPermissionState {
@@ -71,6 +83,7 @@ actual fun rememberDueTimeNotificationPermissionState(): DueTimeNotificationPerm
                     hasRequestedBefore = true
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 } else if (allowSettingsRedirect) {
+                    isAwaitingSettingsResult = true
                     context.startActivity(
                         Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)

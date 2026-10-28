@@ -3,11 +3,15 @@ package com.artemonre.onemoretodolist.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
 import com.artemonre.onemoretodolist.feature.todolist.domain.HandleDueTodoFired
+import com.artemonre.onemoretodolist.feature.todolist.domain.TodoLocalDataSource
 import com.artemonre.onemoretodolist.feature.todolist.notification.EXTRA_TODO_ID
 import com.artemonre.onemoretodolist.feature.todolist.work.WidgetRefresher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -20,6 +24,8 @@ import org.koin.core.component.inject
 // PeriodicTodoMaintenanceWorker already relies on.
 class DueTimeAlarmReceiver : BroadcastReceiver(), KoinComponent {
     private val handleDueTodoFired: HandleDueTodoFired by inject()
+    private val todoLocalDataSource: TodoLocalDataSource by inject()
+    private val analytics: Analytics by inject()
     private val postDueNotification: PostDueNotification by inject()
     private val widgetRefresher: WidgetRefresher by inject()
 
@@ -30,8 +36,11 @@ class DueTimeAlarmReceiver : BroadcastReceiver(), KoinComponent {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
+                // Read first: firing a one-shot reminder clears the todo's due fields, mode included.
+                val mode = todoLocalDataSource.observeTodos().first().firstOrNull { it.id == todoId }?.dueTimeMode
                 handleDueTodoFired(todoId)?.let { fired ->
                     postDueNotification(fired)
+                    analytics.capture(AnalyticsEvents.reminderNotified(mode))
                     widgetRefresher.refresh()
                 }
             } finally {

@@ -2,6 +2,9 @@ package com.artemonre.onemoretodolist.feature.settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
+import com.artemonre.onemoretodolist.analytics.NoOpAnalytics
 import com.artemonre.onemoretodolist.appVersionName
 import com.artemonre.onemoretodolist.core.domain.Result
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeRepository
@@ -15,7 +18,6 @@ import com.artemonre.onemoretodolist.feature.backup.domain.ImportMode
 import com.artemonre.onemoretodolist.feature.backup.domain.ImportTodos
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoPreferences
 import com.artemonre.onemoretodolist.isAppUpdateAvailable
-import com.posthog.kmp.PostHog
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,18 +33,12 @@ import kotlinx.datetime.todayIn
 private const val STATE_STOP_TIMEOUT_MILLIS = 5_000L
 private const val SETTINGS_SCREEN = "Settings"
 
-private fun captureSettingChanged(section: String, option: String) {
-    PostHog.capture(
-        event = "setting_changed",
-        properties = mapOf("screen" to SETTINGS_SCREEN, "section" to section, "option" to option)
-    )
-}
-
 class SettingsViewModel(
     private val themeRepository: ThemeRepository,
     private val todoPreferences: TodoPreferences,
     private val exportTodos: ExportTodos,
-    private val importTodos: ImportTodos
+    private val importTodos: ImportTodos,
+    private val analytics: Analytics = NoOpAnalytics
 ) : ViewModel() {
 
     private val appVersion = appVersionName()
@@ -52,6 +48,10 @@ class SettingsViewModel(
     // The picked file's contents while the Merge/Replace dialog is open - kept out of state, which
     // only needs to know that the dialog is showing.
     private var pendingImportJson: String? = null
+
+    private fun captureSettingChanged(section: String, option: String) {
+        analytics.capture(AnalyticsEvents.settingChanged(screen = SETTINGS_SCREEN, section = section, option = option))
+    }
 
     private val _events = Channel<SettingsEvent>()
     val events = _events.receiveAsFlow()
@@ -132,8 +132,11 @@ class SettingsViewModel(
             // rememberAppUpdateLauncher() instead of routing it through here.
             is SettingsAction.OnUpdateClick -> Unit
             is SettingsAction.OnExportClick -> export()
-            is SettingsAction.OnExportFinished -> backupUi.update {
-                it.copy(message = if (action.saved) BackupMessage.Exported else BackupMessage.ExportFailed)
+            is SettingsAction.OnExportFinished -> {
+                analytics.capture(AnalyticsEvents.backupExported(action.saved))
+                backupUi.update {
+                    it.copy(message = if (action.saved) BackupMessage.Exported else BackupMessage.ExportFailed)
+                }
             }
             is SettingsAction.OnImportClick -> viewModelScope.launch { _events.send(SettingsEvent.PickBackupFile) }
             is SettingsAction.OnImportFileRead -> {
@@ -166,10 +169,11 @@ class SettingsViewModel(
     private fun import(mode: ImportMode) {
         val json = pendingImportJson ?: return
         pendingImportJson = null
-        captureSettingChanged(section = "Import todos", option = mode.name)
         viewModelScope.launch {
             backupUi.update { it.copy(isChoosingImportMode = false, isBusy = true) }
-            val message = when (val result = importTodos(json, mode)) {
+            val result = importTodos(json, mode)
+            analytics.capture(AnalyticsEvents.backupImported(mode, succeeded = result is Result.Success))
+            val message = when (result) {
                 is Result.Success -> BackupMessage.Imported(result.data.importedCount)
                 is Result.Error -> BackupMessage.ImportFailed(result.error)
             }

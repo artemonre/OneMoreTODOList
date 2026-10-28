@@ -12,7 +12,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import com.artemonre.onemoretodolist.EXTRA_OPENED_FROM
 import com.artemonre.onemoretodolist.MainActivity
+import com.artemonre.onemoretodolist.OPENED_FROM_NOTIFICATION
 import com.artemonre.onemoretodolist.R
 import com.artemonre.onemoretodolist.feature.todolist.domain.SnoozeOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoItem
@@ -38,7 +40,9 @@ class PostDueNotification(private val context: Context) {
         val contentIntent = PendingIntent.getActivity(
             context,
             todo.id.hashCode(),
-            Intent(context, MainActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            Intent(context, MainActivity::class.java)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                .putExtra(EXTRA_OPENED_FROM, OPENED_FROM_NOTIFICATION),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val markDoneIntent = PendingIntent.getBroadcast(

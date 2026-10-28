@@ -151,6 +151,7 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.clientMock)
+            implementation(libs.multiplatformSettings.test)
         }
         iosMain.dependencies {
             implementation(libs.ktor.clientDarwin)

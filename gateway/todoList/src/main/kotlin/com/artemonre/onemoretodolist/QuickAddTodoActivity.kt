@@ -17,10 +17,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
+import com.artemonre.onemoretodolist.analytics.AnalyticsSource
+import com.artemonre.onemoretodolist.analytics.TodoForm
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoFormBody
 import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 import org.koin.compose.koinInject
 
 // Launched from the widget's "+" button. The manifest theme makes the window full-screen and
@@ -28,8 +33,11 @@ import org.koin.compose.koinInject
 // itself is drawn, tapping outside it dismisses. No ViewModel - TodoFormBody already owns its
 // own text/checkbox state, and this screen has exactly one action to perform.
 class QuickAddTodoActivity : ComponentActivity() {
+    private val analytics: Analytics by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) analytics.capture(AnalyticsEvents.quickAddOpened())
 
         setContent {
             val addTodo = koinInject<AddTodo>()
@@ -57,7 +65,10 @@ class QuickAddTodoActivity : ComponentActivity() {
                             onConfirm = { draft ->
                                 // Only text and "Put to top" are shown here - everything else in
                                 // the draft stays at its default, so AddTodo's defaults cover it.
-                                coroutineScope.launch { addTodo(draft.text, draft.isPrioritized, draft.recurrence) }
+                                coroutineScope.launch {
+                                    addTodo(draft.text, draft.isPrioritized, draft.recurrence)
+                                    analytics.capture(AnalyticsEvents.todoCreated(AnalyticsSource.Widget, TodoForm.QuickAdd))
+                                }
                                 finish()
                             },
                             onDismiss = { finish() },

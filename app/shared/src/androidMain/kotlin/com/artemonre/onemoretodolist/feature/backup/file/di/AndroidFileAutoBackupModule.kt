@@ -14,7 +14,7 @@ import org.koin.mp.KoinPlatform
 fun androidFileAutoBackupModule(context: Context): Module = module {
     single<FileAutoBackupRepository> { SafFileAutoBackupRepository(context, get(), get()) }
     single<FileAutoBackupScheduler> { WorkManagerFileAutoBackupScheduler(context) }
-    viewModel { FileAutoBackupViewModel(get(), get()) }
+    viewModel { FileAutoBackupViewModel(get(), get(), get()) }
 }
 
 // Same reason as ensureDriveAutoBackupScheduled: WorkManager's own database isn't restored with the

@@ -7,6 +7,11 @@ import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionService
 import androidx.appfunctions.AppFunctionServiceEntryPoint
 import androidx.appfunctions.AppFunctionStringValueConstraint
+import com.artemonre.onemoretodolist.analytics.AgentFunction
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
+import com.artemonre.onemoretodolist.analytics.AnalyticsSource
+import com.artemonre.onemoretodolist.analytics.TodoForm
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeScheduler
 import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
@@ -17,6 +22,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TodoStatus
 import com.artemonre.onemoretodolist.feature.todolist.domain.ToggleTodoDone
 import com.artemonre.onemoretodolist.feature.todolist.domain.knownTags
 import com.artemonre.onemoretodolist.feature.todolist.domain.sortedByOption
+import com.artemonre.onemoretodolist.feature.todolist.presentation.TodoListFilter
 import com.artemonre.onemoretodolist.feature.todolist.work.WidgetRefresher
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
@@ -43,6 +49,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
     private val toggleTodoDone: ToggleTodoDone by inject()
     private val dueTimeScheduler: DueTimeScheduler by inject()
     private val widgetRefresher: WidgetRefresher by inject()
+    private val analytics: Analytics by inject()
 
     /**
      * Gets the user's todos with all their details. Active todos come in the same order the user
@@ -56,7 +63,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
     suspend fun getTodoList(
         @AppFunctionStringValueConstraint(enumValues = ["ACTIVE", "DONE", "ALL"])
         status: String,
-    ): List<TodoSummary> {
+    ): List<TodoSummary> = tracked(AgentFunction.GetTodoList) {
         val todos = currentTodos()
         val active = todos.filter { it.status == TodoStatus.Active }.sortedByOption(todoPreferences.sortOption.first())
         val done = todos.filter { it.status == TodoStatus.Done }.sortedByDescending { it.completionDate }
@@ -66,7 +73,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
             "ALL" -> active + done
             else -> throw AppFunctionInvalidArgumentException("Invalid status: $status. Must be ACTIVE, DONE, or ALL.")
         }
-        return selected.map { it.toTodoSummary() }
+        selected.map { it.toTodoSummary() }
     }
 
     /**
@@ -91,7 +98,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
         recurrence: TodoRecurrence? = null,
         checklist: List<TodoChecklistItem>? = null,
         tags: List<TodoTagItem>? = null,
-    ): TodoSummary = agentInput {
+    ): TodoSummary = agentInput(AgentFunction.AddTodo) {
         if (text.isBlank()) {
             throw AppFunctionInvalidArgumentException("Todo text cannot be empty")
         }
@@ -107,6 +114,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
             tags = tags?.toTags(currentTodos().knownTags()).orEmpty()
         )
         widgetRefresher.refresh()
+        analytics.capture(AnalyticsEvents.todoCreated(AnalyticsSource.Agent, TodoForm.Agent))
         created.toTodoSummary()
     }
 
@@ -141,7 +149,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
         clearRecurrence: Boolean? = null,
         checklist: List<TodoChecklistItem>? = null,
         tags: List<TodoTagItem>? = null,
-    ): TodoSummary = agentInput {
+    ): TodoSummary = agentInput(AgentFunction.EditTodo) {
         val todos = currentTodos()
         val item = todos.firstOrNull { it.id == todoId }
             ?: throw AppFunctionElementNotFoundException("No todo found for ID: $todoId")
@@ -168,6 +176,7 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
             tags = values.tags
         ) ?: throw AppFunctionElementNotFoundException("No todo found for ID: $todoId")
         widgetRefresher.refresh()
+        analytics.capture(AnalyticsEvents.todoEdited(AnalyticsSource.Agent, item))
         updated.toTodoSummary()
     }
 
@@ -183,15 +192,16 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
      * @throws AppFunctionElementNotFoundException If no todo has this ID. If thrown, call "getTodoList" to find the correct ID.
      */
     @AppFunction(isDescribedByKDoc = true)
-    suspend fun changeTodoDoneStatus(todoId: String, isDone: Boolean): TodoSummary {
+    suspend fun changeTodoDoneStatus(todoId: String, isDone: Boolean): TodoSummary = tracked(AgentFunction.ChangeTodoDoneStatus) {
         val item = findTodo(todoId)
         if ((item.status == TodoStatus.Done) != isDone) {
             // No undo surface here, same as the widget and notification - so never the
             // archive-off "delete immediately" branch, see ToggleTodoDone.
             toggleTodoDone(todoId, allowImmediateDelete = false)
             widgetRefresher.refresh()
+            analytics.capture(AnalyticsEvents.todoToggled(AnalyticsSource.Agent, archived = true, todoBefore = item))
         }
-        return findTodo(todoId).toTodoSummary()
+        findTodo(todoId).toTodoSummary()
     }
 
     /**
@@ -204,18 +214,33 @@ abstract class BaseTodoAppFunctionService : AppFunctionService(), KoinComponent 
      * @throws AppFunctionElementNotFoundException If no todo has this ID. If thrown, call "getTodoList" to find the correct ID.
      */
     @AppFunction(isDescribedByKDoc = true)
-    suspend fun deleteTodo(todoId: String): TodoSummary {
+    suspend fun deleteTodo(todoId: String): TodoSummary = tracked(AgentFunction.DeleteTodo) {
         val item = findTodo(todoId)
         todoLocalDataSource.deleteTodo(todoId)
         dueTimeScheduler.cancel(todoId)
         widgetRefresher.refresh()
-        return item.toTodoSummary()
+        val fromFilter = if (item.status == TodoStatus.Active) TodoListFilter.Active else TodoListFilter.Done
+        analytics.capture(AnalyticsEvents.todoDeleted(AnalyticsSource.Agent, fromFilter, item))
+        item.toTodoSummary()
     }
 
-    private inline fun <T> agentInput(block: () -> T): T = try {
-        block()
-    } catch (e: InvalidAgentInputException) {
-        throw AppFunctionInvalidArgumentException(e.message)
+    // agent_function_called for every call, succeeded or not - a failure is reported, then thrown
+    // on to the agent unchanged.
+    private inline fun <T> tracked(function: AgentFunction, block: () -> T): T {
+        var succeeded = false
+        try {
+            return block().also { succeeded = true }
+        } finally {
+            analytics.capture(AnalyticsEvents.agentFunctionCalled(function, succeeded))
+        }
+    }
+
+    private inline fun <T> agentInput(function: AgentFunction, block: () -> T): T = tracked(function) {
+        try {
+            block()
+        } catch (e: InvalidAgentInputException) {
+            throw AppFunctionInvalidArgumentException(e.message)
+        }
     }
 
     private suspend fun currentTodos(): List<TodoItem> = todoLocalDataSource.observeTodos().first()

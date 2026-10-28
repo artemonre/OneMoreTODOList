@@ -26,4 +26,5 @@ captures
 node_modules/
 /release-notes/
 /ROADMAP.md
+/ANALYTICS.md
 gateway/*/release/

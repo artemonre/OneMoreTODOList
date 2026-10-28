@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
+import com.artemonre.onemoretodolist.analytics.Analytics
+import com.artemonre.onemoretodolist.analytics.AnalyticsEvents
 import com.artemonre.onemoretodolist.feature.todolist.domain.SnoozeOption
 import com.artemonre.onemoretodolist.feature.todolist.domain.SnoozeTodo
 import com.artemonre.onemoretodolist.feature.todolist.notification.EXTRA_TODO_ID
@@ -21,6 +23,7 @@ const val EXTRA_SNOOZE_OPTION = "snooze_option"
 // firing later goes through DueTimeAlarmReceiver like any other due alarm.
 class SnoozeTodoReceiver : BroadcastReceiver(), KoinComponent {
     private val snoozeTodo: SnoozeTodo by inject()
+    private val analytics: Analytics by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
         val todoId = intent.getStringExtra(EXTRA_TODO_ID) ?: return
@@ -29,6 +32,7 @@ class SnoozeTodoReceiver : BroadcastReceiver(), KoinComponent {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 snoozeTodo(todoId, option)
+                analytics.capture(AnalyticsEvents.todoSnoozed(option))
                 NotificationManagerCompat.from(context).cancel(todoId.hashCode())
             } finally {
                 pendingResult.finish()
