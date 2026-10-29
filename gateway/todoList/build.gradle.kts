@@ -13,10 +13,9 @@ android {
     namespace = "com.artemonre.onemoretodolist"
     defaultConfig {
         applicationId = "com.artemonre.onemoretodolist"
-        // A fallback only - with the Play credentials file present, every release build gets one
-        // above whatever's live on Play instead (see resolutionStrategy below). Kept at Play's
-        // latest so a release build made without credentials still installs over the Play one.
-        versionCode = 18
+        // Never bumped by hand - GPP sets the real one at build time, one above whatever's live on
+        // Play (see resolutionStrategy below). Every other variant just keeps 1.
+        versionCode = 1
         versionName = "1.3.2"
     }
     buildTypes {

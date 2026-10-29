@@ -1,7 +1,6 @@
 import com.android.build.api.variant.BuildConfigField
 import java.util.Properties
 import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -101,17 +100,6 @@ android {
         resValues = true
         buildConfig = true
     }
-
-//    applicationVariants.all {
-//        this.outputs
-//            .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
-//            .forEach { output ->
-//                val variant = this.buildType.name.uppercaseFirstChar()
-//                val flavor = this.flavorName
-//                val apkName = "todoList-$appVersionName-$appVersionCode-$flavor$variant.apk"
-//                output.outputFileName = apkName
-//            }
-//    }
 }
 
 kotlin {
@@ -120,11 +108,14 @@ kotlin {
     }
 }
 
-// versionCode isn't settable per buildType in the DSL block above (only defaultConfig/flavors
-// expose it), so debug's override goes through the variant API instead. Pinned rather than
-// following defaultConfig's - debug builds are never uploaded anywhere, so there's nothing for it
-// to track.
 androidComponents {
+    // Each gateway sets its own versionName (it's part of the product's identity, not shared), so
+    // fail loudly when one forgets instead of silently building a nameless version.
+    finalizeDsl { extension ->
+        if (extension.defaultConfig.versionName.isNullOrBlank()) {
+            throw GradleException("${project.path} must set android { defaultConfig { versionName = ... } }.")
+        }
+    }
     // The real keys go into the release build only. Every other build type - debug, and the
     // Baseline Profile plugin's copies of release (nonMinifiedRelease, benchmarkRelease) - gets
     // empty ones, which initSentry()/initPostHog() treat as "disabled". Same fields everywhere, so
@@ -137,11 +128,6 @@ androidComponents {
         val posthogApiKey = if (isRelease) posthogProperties.getProperty("apiKey", "") else ""
         variant.buildConfigFields?.put("SENTRY_DSN", BuildConfigField("String", "\"$sentryDsn\"", null))
         variant.buildConfigFields?.put("POSTHOG_API_KEY", BuildConfigField("String", "\"$posthogApiKey\"", null))
-    }
-    onVariants(selector().withBuildType("debug")) { variant ->
-        variant.outputs.forEach { output ->
-            output.versionCode.set(1)
-        }
     }
 }
 
