@@ -24,6 +24,12 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+    // The one variant that publishes to Play - see play { enabled } below for why it's opt-in.
+    playConfigs {
+        register("release") {
+            enabled.set(true)
+        }
+    }
 }
 
 // The Baseline Profile plugin's build types are copies of release, but a build type only compiles
@@ -90,6 +96,11 @@ play {
     // GPP now picks a versionCode higher than whatever's already live on Play at publish time,
     // instead of failing the build when defaultConfig's versionCode has already been used.
     resolutionStrategy.set(ResolutionStrategy.AUTO)
+    // Off for every variant by default, then back on for release only (android { playConfigs }). GPP
+    // otherwise publishes every non-debug variant, and the Baseline Profile plugin's copies of
+    // release (nonMinifiedRelease, benchmarkRelease) count - publishBundle uploaded all three for
+    // v1.3.0 and v1.3.1, and those two have no Sentry/PostHog keys (one isn't even minified).
+    enabled.set(false)
 }
 
 // Release guardrails - every task that uploads a build to Play (publish*Bundle/Apk/Apps,
