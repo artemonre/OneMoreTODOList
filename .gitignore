@@ -27,4 +27,5 @@ node_modules/
 /release-notes/
 /ROADMAP.md
 /ANALYTICS.md
+/APPFUNCTIONS.md
 gateway/*/release/
