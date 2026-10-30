@@ -209,7 +209,7 @@
     <string name="photo_script_suggest_switch_cyrillic">Да, распознать кириллицу</string>
     <string name="photo_script_suggest_switch_latin">Да, распознать латиницу</string>
     <string name="photo_script_suggest_keep">Нет, всё в порядке</string>
-    <string name="snackbar_no_text_found">На фото не найден текст</string>
+    <string name="snackbar_photo_unreadable">Не удалось открыть фото. Сделай его заново или выбери другое.</string>
     <string name="scan_review_title">Распознанный текст</string>
     <string name="scan_review_mode_separate">Отдельные задачи</string>
     <string name="scan_review_mode_single">Одна задача</string>
@@ -234,16 +234,16 @@
     <string name="backup_export_dialog_title">Сохранить резервную копию</string>
     <string name="backup_import_dialog_title">Открыть резервную копию</string>
     <string name="backup_exported">Резервная копия сохранена</string>
-    <string name="backup_export_failed">Не удалось сохранить файл резервной копии</string>
-    <string name="backup_file_unreadable">Не удалось прочитать файл</string>
+    <string name="backup_export_failed">Не удалось сохранить файл резервной копии. Проверь, что на устройстве есть свободное место, или выбери другую папку.</string>
+    <string name="backup_file_unreadable">Не удалось открыть файл. Если он хранится в облаке, сначала скачай его на устройство и попробуй снова.</string>
     <string name="backup_import_mode_title">Импорт задач</string>
     <string name="backup_import_mode_message">«Объединить» оставит самую свежую версию каждой задачи и добавит недостающие. «Заменить» полностью заменит твой список копией — задачи, которых в ней нет, будут удалены.</string>
     <string name="backup_import_merge">Объединить</string>
     <string name="backup_import_replace">Заменить</string>
     <string name="backup_import_nothing_new">Нечего импортировать — список уже актуален</string>
-    <string name="backup_import_invalid">Это не файл резервной копии, или он повреждён</string>
+    <string name="backup_import_invalid">Это не резервная копия этого приложения, или файл повреждён. Выбери файл, сохранённый кнопкой «Сохранить».</string>
     <string name="backup_import_newer_format">Эта копия создана более новой версией приложения. Обнови приложение, чтобы импортировать её.</string>
-    <string name="backup_import_storage_error">Не удалось сохранить импортированные задачи</string>
+    <string name="backup_import_storage_error">Не удалось сохранить импортированные задачи, список не изменился. Освободи место на устройстве и попробуй снова.</string>
     <plurals name="backup_imported">
         <item quantity="one">Импортирована %1$d задача</item>
         <item quantity="few">Импортировано %1$d задачи</item>
@@ -260,9 +260,9 @@
     <string name="drive_needs_reconnect">Для ежедневной копии снова нужен доступ к Google Диску. Нажми «Сохранить», чтобы подключиться.</string>
     <string name="drive_disconnect">Отключить Google Диск</string>
     <string name="drive_backed_up">Копия сохранена на Google Диске</string>
-    <string name="drive_no_backup_found">В этом аккаунте Google ещё нет резервной копии</string>
-    <string name="drive_access_denied">Доступ к Google Диску не предоставлен</string>
+    <string name="drive_no_backup_found">В этом аккаунте Google ещё нет резервной копии. Сначала сохрани копию или проверь, что выбран тот аккаунт, в который ты её сохранял.</string>
+    <string name="drive_access_denied">Доступ к Google Диску не предоставлен. Попробуй снова и разреши доступ, когда Google спросит.</string>
     <string name="drive_not_configured">Резервное копирование на Google Диск недоступно в этой версии приложения</string>
-    <string name="drive_no_internet">Нет подключения к интернету</string>
-    <string name="drive_backup_failed">Что-то пошло не так с Google Диском. Попробуй позже.</string>
+    <string name="drive_no_internet">Нет подключения к интернету. Подключись к Wi-Fi или мобильной сети и попробуй снова.</string>
+    <string name="drive_backup_failed">Не удалось связаться с Google Диском. Проверь, что на устройстве выполнен вход в Google, и попробуй снова через несколько минут.</string>
 </resources>

@@ -29,7 +29,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import onemoretodolist.app.shared.generated.resources.Res
-import onemoretodolist.app.shared.generated.resources.snackbar_no_text_found
+import onemoretodolist.app.shared.generated.resources.snackbar_photo_unreadable
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodoListViewModelTest {
@@ -199,7 +199,7 @@ class TodoListViewModelTest {
     }
 
     @Test
-    fun `OnTextRecognized opens the review for paragraphs and shows a snackbar for no text`() = runTest(testDispatcher) {
+    fun `OnTextRecognized opens the review for paragraphs and shows a snackbar for a photo that couldn't be opened`() = runTest(testDispatcher) {
         val viewModel = todoListViewModel(FakeTodoLocalDataSource(initialTodos = emptyList()))
         val events = mutableListOf<TodoListEvent>()
         backgroundScope.launch { viewModel.events.collect { events += it } }
@@ -211,7 +211,7 @@ class TodoListViewModelTest {
         assertEquals(
             listOf(
                 TodoListEvent.ShowScannedTextReview(listOf(ScannedParagraph(listOf("Milk")))),
-                TodoListEvent.ShowSnackbar(Res.string.snackbar_no_text_found)
+                TodoListEvent.ShowSnackbar(Res.string.snackbar_photo_unreadable)
             ),
             events
         )

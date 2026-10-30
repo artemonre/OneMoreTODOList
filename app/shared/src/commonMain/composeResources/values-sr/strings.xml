@@ -206,7 +206,7 @@
     <string name="photo_script_suggest_switch_cyrillic">Da, prepoznaj ćirilicu</string>
     <string name="photo_script_suggest_switch_latin">Da, prepoznaj latinicu</string>
     <string name="photo_script_suggest_keep">Ne, u redu je</string>
-    <string name="snackbar_no_text_found">Na fotografiji nije pronađen tekst</string>
+    <string name="snackbar_photo_unreadable">Nije uspelo otvaranje fotografije. Fotografiši ponovo ili izaberi drugu.</string>
     <string name="scan_review_title">Prepoznati tekst</string>
     <string name="scan_review_mode_separate">Odvojeni zadaci</string>
     <string name="scan_review_mode_single">Jedan zadatak</string>
@@ -230,16 +230,16 @@
     <string name="backup_export_dialog_title">Sačuvaj rezervnu kopiju</string>
     <string name="backup_import_dialog_title">Otvori rezervnu kopiju</string>
     <string name="backup_exported">Rezervna kopija je sačuvana</string>
-    <string name="backup_export_failed">Nije uspelo čuvanje fajla rezervne kopije</string>
-    <string name="backup_file_unreadable">Nije uspelo čitanje fajla</string>
+    <string name="backup_export_failed">Nije uspelo čuvanje fajla rezervne kopije. Proveri da li na uređaju ima slobodnog prostora ili izaberi drugi folder.</string>
+    <string name="backup_file_unreadable">Nije uspelo otvaranje fajla. Ako je sačuvan u oblaku, prvo ga preuzmi na uređaj, pa pokušaj ponovo.</string>
     <string name="backup_import_mode_title">Uvoz zadataka</string>
     <string name="backup_import_mode_message">„Spoji“ zadržava najnoviju verziju svakog zadatka i dodaje one koje nemaš. „Zameni“ pravi od kopije ceo tvoj spisak — zadaci kojih u njoj nema biće obrisani.</string>
     <string name="backup_import_merge">Spoji</string>
     <string name="backup_import_replace">Zameni</string>
     <string name="backup_import_nothing_new">Nema ničeg novog za uvoz — spisak je već ažuran</string>
-    <string name="backup_import_invalid">Ovo nije fajl rezervne kopije ili je oštećen</string>
+    <string name="backup_import_invalid">Ovo nije rezervna kopija ove aplikacije ili je oštećena. Izaberi fajl sačuvan dugmetom „Sačuvaj“.</string>
     <string name="backup_import_newer_format">Ovu kopiju je napravila novija verzija aplikacije. Ažuriraj aplikaciju da bi je uvezao.</string>
-    <string name="backup_import_storage_error">Nije uspelo čuvanje uvezenih zadataka</string>
+    <string name="backup_import_storage_error">Nije uspelo čuvanje uvezenih zadataka, pa tvoja lista nije promenjena. Oslobodi prostor na uređaju i pokušaj ponovo.</string>
     <plurals name="backup_imported">
         <item quantity="one">Uvezen je %1$d zadatak</item>
         <item quantity="few">Uvezena su %1$d zadatka</item>
@@ -255,9 +255,9 @@
     <string name="drive_needs_reconnect">Dnevnoj kopiji ponovo treba pristup Google Disku. Dodirni „Sačuvaj“ da se ponovo povežeš.</string>
     <string name="drive_disconnect">Prekini vezu sa Google Diskom</string>
     <string name="drive_backed_up">Kopija je sačuvana na Google Disku</string>
-    <string name="drive_no_backup_found">Na ovom Google nalogu još nema rezervne kopije</string>
-    <string name="drive_access_denied">Pristup Google Disku nije odobren</string>
+    <string name="drive_no_backup_found">Na ovom Google nalogu još nema rezervne kopije. Prvo sačuvaj kopiju ili proveri da li koristiš nalog na koji si je sačuvao.</string>
+    <string name="drive_access_denied">Pristup Google Disku nije odobren. Pokušaj ponovo i dozvoli pristup kada Google zatraži.</string>
     <string name="drive_not_configured">Rezervna kopija na Google Disku nije dostupna u ovoj verziji aplikacije</string>
-    <string name="drive_no_internet">Nema internet veze</string>
-    <string name="drive_backup_failed">Nešto nije u redu sa Google Diskom. Pokušaj ponovo kasnije.</string>
+    <string name="drive_no_internet">Nema internet veze. Poveži se na Wi-Fi ili mobilne podatke i pokušaj ponovo.</string>
+    <string name="drive_backup_failed">Povezivanje sa Google Diskom nije uspelo. Proveri da li si prijavljen na Google na ovom uređaju, pa pokušaj ponovo za nekoliko minuta.</string>
 </resources>

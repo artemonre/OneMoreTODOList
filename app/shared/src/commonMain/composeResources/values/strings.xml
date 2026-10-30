@@ -223,7 +223,7 @@
     <string name="photo_script_suggest_switch_cyrillic">Yes, switch to Cyrillic</string>
     <string name="photo_script_suggest_switch_latin">Yes, switch to Latin</string>
     <string name="photo_script_suggest_keep">No, it\'s fine</string>
-    <string name="snackbar_no_text_found">No text found in the photo</string>
+    <string name="snackbar_photo_unreadable">Couldn't open that photo. Take it again or pick another one.</string>
     <string name="scan_review_title">Scanned text</string>
     <string name="scan_review_mode_separate">Separate todos</string>
     <string name="scan_review_mode_single">One todo</string>
@@ -246,16 +246,16 @@
     <string name="backup_export_dialog_title">Save backup</string>
     <string name="backup_import_dialog_title">Open backup</string>
     <string name="backup_exported">Backup saved</string>
-    <string name="backup_export_failed">Couldn't save the backup file</string>
-    <string name="backup_file_unreadable">Couldn't read that file</string>
+    <string name="backup_export_failed">Couldn't save the backup file. Check that there's free space on the device, or pick another folder.</string>
+    <string name="backup_file_unreadable">Couldn't open that file. If it's stored in the cloud, download it to the device first, then try again.</string>
     <string name="backup_import_mode_title">Import todos</string>
     <string name="backup_import_mode_message">Merge keeps the newest version of each todo and adds the ones you don't have. Replace makes the backup your whole list — todos that aren't in it are deleted.</string>
     <string name="backup_import_merge">Merge</string>
     <string name="backup_import_replace">Replace</string>
     <string name="backup_import_nothing_new">Nothing new to import — your list is already up to date</string>
-    <string name="backup_import_invalid">This isn't a backup file, or it's damaged</string>
+    <string name="backup_import_invalid">This isn't a backup from this app, or it's damaged. Pick a file saved with Back up.</string>
     <string name="backup_import_newer_format">This backup was made by a newer version of the app. Update the app to import it.</string>
-    <string name="backup_import_storage_error">Couldn't save the imported todos</string>
+    <string name="backup_import_storage_error">Couldn't save the imported todos, so your list wasn't changed. Free up some space on the device and try again.</string>
     <plurals name="backup_imported">
         <item quantity="one">Imported %1$d todo</item>
         <item quantity="other">Imported %1$d todos</item>
@@ -270,9 +270,9 @@
     <string name="drive_needs_reconnect">The daily backup needs access to Google Drive again. Tap Back up to reconnect.</string>
     <string name="drive_disconnect">Disconnect Google Drive</string>
     <string name="drive_backed_up">Backed up to Google Drive</string>
-    <string name="drive_no_backup_found">There's no backup in this Google account yet</string>
-    <string name="drive_access_denied">Google Drive access wasn't granted</string>
+    <string name="drive_no_backup_found">There's no backup in this Google account yet. Back up first, or check that you're using the account you backed up with.</string>
+    <string name="drive_access_denied">Google Drive access wasn't granted. Try again and allow access when Google asks.</string>
     <string name="drive_not_configured">Google Drive backup isn't available in this version of the app</string>
-    <string name="drive_no_internet">No internet connection</string>
-    <string name="drive_backup_failed">Something went wrong with Google Drive. Please try again later.</string>
+    <string name="drive_no_internet">No internet connection. Connect to Wi-Fi or mobile data and try again.</string>
+    <string name="drive_backup_failed">Couldn't reach Google Drive. Check that you're signed in to Google on this device, then try again in a few minutes.</string>
 </resources>

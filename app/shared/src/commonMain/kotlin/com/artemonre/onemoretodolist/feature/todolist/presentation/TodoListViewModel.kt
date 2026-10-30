@@ -42,7 +42,7 @@ import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import onemoretodolist.app.shared.generated.resources.Res
-import onemoretodolist.app.shared.generated.resources.snackbar_no_text_found
+import onemoretodolist.app.shared.generated.resources.snackbar_photo_unreadable
 import onemoretodolist.app.shared.generated.resources.snackbar_reorder_hint
 import onemoretodolist.app.shared.generated.resources.snackbar_switched_to_manual_sort
 import onemoretodolist.app.shared.generated.resources.snackbar_todo_completed
@@ -194,8 +194,10 @@ class TodoListViewModel(
             }
             is TodoListAction.OnTextRecognized -> viewModelScope.launch {
                 _events.send(
+                    // Empty only when the photo itself couldn't be loaded - a photo with no text is handled
+                    // inside the capture dialog.
                     if (action.paragraphs.isEmpty()) {
-                        TodoListEvent.ShowSnackbar(Res.string.snackbar_no_text_found)
+                        TodoListEvent.ShowSnackbar(Res.string.snackbar_photo_unreadable)
                     } else {
                         TodoListEvent.ShowScannedTextReview(action.paragraphs)
                     }
