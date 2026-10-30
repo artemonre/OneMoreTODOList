@@ -29,6 +29,8 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -49,6 +51,8 @@ private fun openAppFromWidget() =
 
 @Composable
 fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, background: ColorProvider) {
+    // For the "+": TalkBack would otherwise read the bare glyph as "plus".
+    val addTodoDescription = LocalContext.current.getString(R.string.widget_add_todo)
     GlanceTheme(colors = colors) {
         Column(
             modifier = GlanceModifier
@@ -72,7 +76,8 @@ fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, backgroun
                 Box(
                     modifier = GlanceModifier
                         .size(48.dp)
-                        .clickable(actionStartActivity<QuickAddTodoActivity>()),
+                        .clickable(actionStartActivity<QuickAddTodoActivity>())
+                        .semantics { contentDescription = addTodoDescription },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -106,6 +111,8 @@ fun TodoWidgetContent(todos: List<TodoItemUi>, colors: ColorProviders, backgroun
 // zone that fills all the remaining height (tap opens quick-add).
 @Composable
 fun TodoWidgetContentCompact(activeCount: Int, colors: ColorProviders, background: ColorProvider) {
+    // For the "+": TalkBack would otherwise read the bare glyph as "plus".
+    val addTodoDescription = LocalContext.current.getString(R.string.widget_add_todo)
     GlanceTheme(colors = colors) {
         Column(
             modifier = GlanceModifier
@@ -132,7 +139,8 @@ fun TodoWidgetContentCompact(activeCount: Int, colors: ColorProviders, backgroun
                 modifier = GlanceModifier
                     .fillMaxWidth()
                     .defaultWeight()
-                    .clickable(actionStartActivity<QuickAddTodoActivity>()),
+                    .clickable(actionStartActivity<QuickAddTodoActivity>())
+                    .semantics { contentDescription = addTodoDescription },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -168,6 +176,8 @@ private fun TopTodoAttention.content(): ColorProvider = when (this) {
 // quick-add affordance since there's no room for a separate header.
 @Composable
 fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, background: ColorProvider) {
+    // For the "+": TalkBack would otherwise read the bare glyph as "plus".
+    val addTodoDescription = LocalContext.current.getString(R.string.widget_add_todo)
     GlanceTheme(colors = colors) {
         val attentionBackground = topTodo?.attention?.background()
         // Shared by the checkbox and the "+" affordance below, both of which sit on this same
@@ -187,6 +197,7 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
                     onCheckedChange = actionRunCallback<ToggleTodoDoneAction>(
                         actionParametersOf(todoIdKey to topTodo.id)
                     ),
+                    modifier = GlanceModifier.semantics { contentDescription = topTodo.text },
                     colors = CheckboxDefaults.checkBoxColors(
                         checkedColor = accentColor,
                         uncheckedColor = accentColor
@@ -225,6 +236,7 @@ fun TodoWidgetContentRow(topTodo: TodoItemUi?, colors: ColorProviders, backgroun
                 modifier = GlanceModifier
                     .fillMaxHeight()
                     .clickable(actionStartActivity<QuickAddTodoActivity>())
+                    .semantics { contentDescription = addTodoDescription }
                     .padding(horizontal = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -251,9 +263,11 @@ internal fun TodoWidgetRow(item: TodoItemUi) {
         // can otherwise be invisible or low-contrast against an attention background such as the
         // error color used for overdue todos.
         val checkboxColor = if (attentionBackground != null) item.attention.content() else GlanceTheme.colors.primary
+        // Labeled with the todo itself - TalkBack would otherwise read just "Checkbox, not checked".
         CheckBox(
             checked = false,
             onCheckedChange = actionRunCallback<ToggleTodoDoneAction>(actionParametersOf(todoIdKey to item.id)),
+            modifier = GlanceModifier.semantics { contentDescription = item.text },
             colors = CheckboxDefaults.checkBoxColors(
                 checkedColor = checkboxColor,
                 uncheckedColor = checkboxColor

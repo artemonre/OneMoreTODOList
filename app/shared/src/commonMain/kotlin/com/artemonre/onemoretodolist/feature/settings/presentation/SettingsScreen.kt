@@ -28,6 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
@@ -148,7 +151,8 @@ fun SettingsScreen(
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_theme),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() }
                 )
                 AppSegmentedControl(
                     options = ThemeMode.entries,
@@ -167,6 +171,7 @@ fun SettingsScreen(
                 // like before (a plain "Palette" title, swatches always shown).
                 val dynamicColorSupported = isDynamicColorSupported()
                 if (dynamicColorSupported) {
+                    val paletteTitle = stringResource(Res.string.settings_palette)
                     AppSegmentedControl(
                         options = PaletteSourceTab.entries,
                         selectedOption = if (state.useDynamicColor) {
@@ -178,12 +183,20 @@ fun SettingsScreen(
                             onAction(SettingsAction.OnUseDynamicColorChanged(it == PaletteSourceTab.DynamicColor))
                         },
                         label = resourceLabels(PaletteSourceTab.entries) { it.displayName() },
-                        modifier = Modifier.fillMaxWidth()
+                        // No visible title here, so the switch stands in for it - this card stays
+                        // reachable by TalkBack's Headings navigation like every other one.
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics {
+                                heading()
+                                contentDescription = paletteTitle
+                            }
                     )
                 } else {
                     Text(
                         text = stringResource(Res.string.settings_palette),
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { heading() }
                     )
                 }
                 if (!dynamicColorSupported || !state.useDynamicColor) {
@@ -219,7 +232,8 @@ fun SettingsScreen(
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_font),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() }
                 )
                 AppChipGroup(
                     options = FontOption.entries,
@@ -234,7 +248,8 @@ fun SettingsScreen(
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_ui_style),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() }
                 )
                 AppChipGroup(
                     // Paper is hidden from the picker for now - dark theme support for it isn't
@@ -252,7 +267,8 @@ fun SettingsScreen(
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_todos),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() }
                 )
                 Row(
                     modifier = Modifier
@@ -288,7 +304,8 @@ fun SettingsScreen(
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
                 Text(
                     text = stringResource(Res.string.settings_support),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() }
                 )
                 val uriHandler = LocalUriHandler.current
                 Row(

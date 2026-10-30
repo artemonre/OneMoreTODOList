@@ -82,6 +82,10 @@
     <string name="action_undo">Opozovi</string>
     <string name="action_edit">Izmeni</string>
     <string name="action_delete">Obriši</string>
+    <string name="action_move_to_top">Pomeri na vrh</string>
+    <string name="action_move_up">Pomeri gore</string>
+    <string name="action_move_down">Pomeri dole</string>
+    <string name="action_move_to_bottom">Pomeri na dno</string>
     <string name="action_close">Zatvori</string>
     <string name="snackbar_copied">Kopirano u privremenu memoriju</string>
     <string name="snackbar_todo_deleted">Zadatak je obrisan</string>

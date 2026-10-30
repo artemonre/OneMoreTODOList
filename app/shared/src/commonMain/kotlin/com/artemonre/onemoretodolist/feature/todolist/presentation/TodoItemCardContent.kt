@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -116,7 +117,10 @@ fun TodoItemCardContent(
             ) {
                 AppCheckToggle(
                     checked = isDone,
-                    onCheckedChange = { onToggleDone() }
+                    onCheckedChange = { onToggleDone() },
+                    // The checkbox is its own TalkBack stop, apart from the card - without a label
+                    // it's just "Checkbox, not checked", with no word of which todo it completes.
+                    modifier = Modifier.semantics { contentDescription = text }
                 )
                 Box(modifier = Modifier.weight(1f)) {
                     val strikeProgress by animateFloatAsState(

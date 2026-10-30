@@ -7,6 +7,7 @@
     <string name="todo_widget_row_description">Показывает следующую активную задачу. Нажми, чтобы добавить или отметить её</string>
     <string name="widget_title">Мои задачи</string>
     <string name="widget_empty">Нет активных задач</string>
+    <string name="widget_add_todo">Добавить задачу</string>
     <string name="due_notification_channel_name">Напоминания о задачах</string>
     <string name="due_notification_title">Пора сделать это</string>
     <string name="due_notification_action_done">Готово</string>

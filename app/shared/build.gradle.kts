@@ -164,6 +164,10 @@ kotlin {
         }
         jvmTest.dependencies {
             implementation(libs.androidx.room3.testing)
+            // Compose UI tests (runComposeUiTest) run here, on the desktop JVM - no device needed.
+            // They need Skia's native library for this machine, same as the desktop app itself.
+            implementation(libs.compose.uiTest)
+            implementation(compose.desktop.currentOs)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)

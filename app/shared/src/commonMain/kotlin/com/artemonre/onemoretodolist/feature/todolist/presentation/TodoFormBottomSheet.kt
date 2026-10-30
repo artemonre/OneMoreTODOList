@@ -72,6 +72,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -215,7 +217,8 @@ fun TodoFormBottomSheet(
         ) {
             Text(
                 text = stringResource(Res.string.form_quick_add),
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.semantics { heading() }
             )
             TextButton(onClick = { onMoreSettingsClick(currentText) }) {
                 Text(stringResource(Res.string.form_more_settings))
@@ -394,7 +397,9 @@ fun TodoFormBody(
             Text(
                 text = stringResource(if (editingItem != null) Res.string.form_title_edit else Res.string.form_title_add),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = AppSpacing.s)
+                modifier = Modifier
+                    .padding(top = AppSpacing.s)
+                    .semantics { heading() }
             )
             Spacer(Modifier.height(AppSpacing.l))
         }
