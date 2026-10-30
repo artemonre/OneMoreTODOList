@@ -93,7 +93,6 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
-import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
@@ -105,7 +104,6 @@ import com.artemonre.onemoretodolist.rememberSpeechToText
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -180,20 +178,23 @@ private const val MASCOT_FENCE_FRACTION = 0.65f
 private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_SIZE, MASCOT_EARS_FRACTION, MASCOT_FENCE_FRACTION)
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
+// onDismiss is every close that isn't a choice - swipe down, Back, a tap outside - while onDiscard
+// is the Discard button: an add host keeps its draft (initialDraft/onDraftChange) on the first
+// and drops it on the second.
 @Composable
 fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
     onConfirm: (TodoDraft) -> Unit,
     onDismiss: () -> Unit,
-    // Carries whatever the user had already typed into the sheet along to the full-screen dialog,
-    // so switching to "More settings" doesn't lose it.
-    onMoreSettingsClick: (text: String) -> Unit,
-    modifier: Modifier = Modifier
+    // The host carries the draft (kept up to date through onDraftChange) along to the full-screen
+    // dialog, so switching to "More settings" doesn't lose anything.
+    onMoreSettingsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onDiscard: () -> Unit = onDismiss,
+    initialDraft: TodoDraft? = null,
+    onDraftChange: (TodoDraft) -> Unit = {}
 ) {
     var isSheetExpanded by remember { mutableStateOf(false) }
-    // Mirrors TodoFormBody's own internal text state (which it otherwise keeps private) just so
-    // "More settings" has something to hand off - not the source of truth for the field itself.
-    var currentText by remember { mutableStateOf(editingItem?.text.orEmpty()) }
 
     AppBottomSheet(
         onDismissRequest = onDismiss,
@@ -220,15 +221,16 @@ fun TodoFormBottomSheet(
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.semantics { heading() }
             )
-            TextButton(onClick = { onMoreSettingsClick(currentText) }) {
+            TextButton(onClick = onMoreSettingsClick) {
                 Text(stringResource(Res.string.form_more_settings))
             }
         }
         TodoFormBody(
             editingItem = editingItem,
             onConfirm = onConfirm,
-            onDismiss = onDismiss,
-            onTextChange = { currentText = it },
+            onDismiss = onDiscard,
+            initialDraft = initialDraft,
+            onDraftChange = onDraftChange,
             // A short window (JVM/desktop, or a small/rotated phone) can leave less height than
             // the form needs - without this the Cancel/OK row can end up positioned below the
             // visible sheet instead of being reachable by scrolling.
@@ -279,34 +281,28 @@ fun TodoFormBody(
     // "Done" handling and keep their existing no-op-on-blank behavior. TodoFormFullScreenDialog
     // turns this on since it's the one flow where a stray blank-text save was reachable.
     requireText: Boolean = false,
-    // Only used when editingItem == null - lets a caller (TodoFormFullScreenDialog, handed a draft
-    // from TodoFormBottomSheet's "More settings") seed the field without pretending it's an edit.
-    initialText: String = "",
-    // Same add-mode-only seeding as initialText - used by the photo -> todo flow, which hands over
-    // the scanned lines after the first as checklist items.
-    initialChecklist: List<ChecklistItem> = emptyList(),
-    onTextChange: (String) -> Unit = {},
+    // Only used when editingItem == null - seeds every field without pretending it's an edit: the
+    // unsaved add draft kept from an accidental close, or a scanned photo continued as one todo.
+    initialDraft: TodoDraft? = null,
+    // The form's current state on every change, from the first composition on - what an add host
+    // keeps as its unsaved draft. Raw, unlike onConfirm's: untrimmed text, blank checklist lines.
+    onDraftChange: (TodoDraft) -> Unit = {},
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
-    // Pre-filled text - editing an existing todo, or a draft carried over from the quick-add sheet -
-    // starts with the cursor at the end instead of the start, which is what you'd want to keep
-    // typing from.
-    val textState = (editingItem?.text ?: initialText).let { prefilled ->
+    val seed = editingItem?.toTodoDraft() ?: initialDraft
+    // Pre-filled text - editing an existing todo, or a kept draft - starts with the cursor at the
+    // end instead of the start, which is what you'd want to keep typing from.
+    val textState = seed?.text.orEmpty().let { prefilled ->
         rememberTextFieldState(initialText = prefilled, initialSelection = TextRange(prefilled.length))
     }
-    // Every change after the prefill - typing, clearing, speech - reaches onTextChange.
-    val currentOnTextChange by rememberUpdatedState(onTextChange)
-    LaunchedEffect(textState) {
-        snapshotFlow { textState.text.toString() }.drop(1).collect { currentOnTextChange(it) }
-    }
-    var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
-    var tags by remember { mutableStateOf(editingItem?.tags.orEmpty()) }
-    var checklist by remember { mutableStateOf(editingItem?.checklist ?: initialChecklist) }
-    var repeatEnabled by remember { mutableStateOf(editingItem?.recurrence != null) }
-    var recurrenceType by remember { mutableStateOf(editingItem?.recurrence?.type ?: RecurrenceType.Every) }
+    var isPrioritized by remember { mutableStateOf(seed?.isPrioritized ?: false) }
+    var tags by remember { mutableStateOf(seed?.tags.orEmpty()) }
+    var checklist by remember { mutableStateOf(seed?.checklist.orEmpty()) }
+    var repeatEnabled by remember { mutableStateOf(seed?.recurrence != null) }
+    var recurrenceType by remember { mutableStateOf(seed?.recurrence?.type ?: RecurrenceType.Every) }
     // A counter (not free text) so this is always a valid positive interval - no parsing/validation needed.
-    var recurrenceInterval by remember { mutableStateOf(editingItem?.recurrence?.interval ?: 1) }
-    var recurrenceUnit by remember { mutableStateOf(editingItem?.recurrence?.unit ?: RecurrenceUnit.Day) }
+    var recurrenceInterval by remember { mutableStateOf(seed?.recurrence?.interval ?: 1) }
+    var recurrenceUnit by remember { mutableStateOf(seed?.recurrence?.unit ?: RecurrenceUnit.Day) }
     // Built even while Repeat is off, so the controls' description still has something to show
     // while they animate out.
     val recurrenceDraft = Recurrence(type = recurrenceType, interval = recurrenceInterval, unit = recurrenceUnit)
@@ -319,7 +315,7 @@ fun TodoFormBody(
     val notificationPermission = rememberDueTimeNotificationPermissionState()
     // Values survive unchecking "Reminder" the same way recurrenceInterval/Unit do. Prefilled from
     // editingItem, same as the recurrence fields above.
-    var dueTimeEnabled by remember { mutableStateOf(editingItem?.dueDate != null) }
+    var dueTimeEnabled by remember { mutableStateOf(seed?.dueDate != null) }
     // Off = approximate (the silent default/fallback, no extra permission needed) - on is an
     // explicit opt-in for exact-time delivery, not a mode the user is forced to pick upfront.
     // Defaults purely off the current permission state, adding or editing alike - no reason to
@@ -331,8 +327,8 @@ fun TodoFormBody(
     // Wall-clock local values, not a resolved instant - "10am" should keep meaning 10am local even
     // if the timezone changes before it fires, see TodoItem.dueInstant.
     var showExactPermissionDialog by remember { mutableStateOf(false) }
-    var dueDate by remember { mutableStateOf(editingItem?.dueDate) }
-    var dueTime by remember { mutableStateOf(editingItem?.dueTime) }
+    var dueDate by remember { mutableStateOf(seed?.dueDate) }
+    var dueTime by remember { mutableStateOf(seed?.dueTime) }
     var showDueDatePicker by remember { mutableStateOf(false) }
     val shortDateFormat = rememberShortDateFormat()
     var showDueTimePicker by remember { mutableStateOf(false) }
@@ -371,6 +367,29 @@ fun TodoFormBody(
                 tags = tags
             )
         )
+    }
+    // Reads the state holders themselves (not the values computed above), so snapshotFlow sees
+    // every change. A turned-off reminder or repeat leaves out the values it keeps for re-enabling,
+    // same as submit.
+    val currentOnDraftChange by rememberUpdatedState(onDraftChange)
+    LaunchedEffect(Unit) {
+        snapshotFlow {
+            TodoDraft(
+                text = textState.text.toString(),
+                isPrioritized = isPrioritized,
+                recurrence = Recurrence(type = recurrenceType, interval = recurrenceInterval, unit = recurrenceUnit)
+                    .takeIf { repeatEnabled },
+                dueDate = dueDate.takeIf { dueTimeEnabled },
+                dueTime = dueTime.takeIf { dueTimeEnabled },
+                dueTimeMode = if (dueTimeEnabled && dueDate != null && dueTime != null) {
+                    if (exactTimeEnabled) DueTimeMode.Exact else DueTimeMode.Approximate
+                } else {
+                    null
+                },
+                checklist = checklist,
+                tags = tags
+            )
+        }.collect { currentOnDraftChange(it) }
     }
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current

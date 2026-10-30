@@ -194,13 +194,10 @@ fun TodoListRoot(
     var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
     var showAddTodoSheet by remember { mutableStateOf(false) }
     var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
-    // Text carried from the quick-add sheet's "More settings" button into the full-screen dialog -
-    // cleared whenever the full-screen dialog is opened directly, so that path never inherits a
-    // stale draft left over from an earlier "More settings" hop.
-    var addTodoDraftText by remember { mutableStateOf("") }
-    // Same idea for the checklist - only ever non-empty when a scanned photo is continued as one
-    // todo from ScannedTextReviewDialog.
-    var addTodoDraftChecklist by remember { mutableStateOf(emptyList<ChecklistItem>()) }
+    // What the add form opens with: the ViewModel's unsaved draft (handed over with the event that
+    // opens the form), or a scanned photo continued as one todo. The form reports every change
+    // back (OnAddDraftChanged), so the ViewModel's copy is the one that's kept.
+    var addTodoDraft by remember { mutableStateOf<TodoDraft?>(null) }
     var showPhotoCapture by remember { mutableStateOf(false) }
     var scannedParagraphs by remember { mutableStateOf<List<ScannedParagraph>?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -208,10 +205,13 @@ fun TodoListRoot(
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
-            TodoListEvent.ShowAddTodoFullScreenDialog -> {
-                addTodoDraftText = ""
-                addTodoDraftChecklist = emptyList()
+            is TodoListEvent.ShowAddTodoSheet -> {
+                addTodoDraft = event.draft
+                showAddTodoSheet = true
+            }
+            is TodoListEvent.ShowAddTodoFullScreenDialog -> {
+                addTodoDraft = event.draft
+                showAddTodoSheet = false
                 showAddTodoFullScreenDialog = true
             }
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
@@ -256,13 +256,14 @@ fun TodoListRoot(
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
-            onMoreSettingsClick = { draftText ->
-                viewModel.onAction(TodoListAction.OnAddFormExpanded)
+            onDiscard = {
+                viewModel.onAction(TodoListAction.OnAddDraftDiscarded)
                 showAddTodoSheet = false
-                addTodoDraftText = draftText
-                addTodoDraftChecklist = emptyList()
-                showAddTodoFullScreenDialog = true
-            }
+            },
+            // Opens the full-screen form with the draft (ShowAddTodoFullScreenDialog).
+            onMoreSettingsClick = { viewModel.onAction(TodoListAction.OnAddFormExpanded) },
+            initialDraft = addTodoDraft,
+            onDraftChange = { viewModel.onAction(TodoListAction.OnAddDraftChanged(it)) }
         )
     }
 
@@ -274,8 +275,9 @@ fun TodoListRoot(
                 showAddTodoFullScreenDialog = false
             },
             onDismiss = { showAddTodoFullScreenDialog = false },
-            initialText = addTodoDraftText,
-            initialChecklist = addTodoDraftChecklist,
+            onDiscard = { viewModel.onAction(TodoListAction.OnAddDraftDiscarded) },
+            initialDraft = addTodoDraft,
+            onDraftChange = { viewModel.onAction(TodoListAction.OnAddDraftChanged(it)) },
             knownTags = state.knownTags
         )
     }
@@ -300,8 +302,12 @@ fun TodoListRoot(
             onContinueAsSingle = { text, checklist ->
                 viewModel.onAction(TodoListAction.OnScannedTextContinuedAsSingle)
                 scannedParagraphs = null
-                addTodoDraftText = text
-                addTodoDraftChecklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
+                // Replaces any earlier unsaved draft - the form reports it as the new one right away.
+                addTodoDraft = TodoDraft(
+                    text = text,
+                    isPrioritized = false,
+                    checklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
+                )
                 showAddTodoFullScreenDialog = true
             },
             // Back/Discard steps back to the camera for another shot rather than leaving the flow.

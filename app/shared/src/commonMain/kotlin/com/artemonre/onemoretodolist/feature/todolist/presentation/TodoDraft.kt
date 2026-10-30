@@ -19,3 +19,25 @@ data class TodoDraft(
     val checklist: List<ChecklistItem> = emptyList(),
     val tags: List<TodoTag> = emptyList()
 )
+
+// Nothing typed or picked yet - not worth keeping as an unsaved add draft.
+internal val TodoDraft.isEmpty: Boolean
+    get() = text.isBlank() && !isPrioritized && recurrence == null && dueDate == null &&
+        checklist.all { it.text.isBlank() } && tags.isEmpty()
+
+// Uses something only TodoFormFullScreenDialog shows, so an unsaved add draft has to reopen there -
+// the quick-add sheet would hide it.
+internal val TodoDraft.needsFullForm: Boolean
+    get() = recurrence != null || dueDate != null || checklist.isNotEmpty() || tags.isNotEmpty()
+
+// An existing todo as the form's starting point - TodoFormBody seeds edit and add mode alike from a draft.
+internal fun TodoItemUi.toTodoDraft(): TodoDraft = TodoDraft(
+    text = text,
+    isPrioritized = isPrioritized,
+    recurrence = recurrence,
+    dueDate = dueDate,
+    dueTime = dueTime,
+    dueTimeMode = dueTimeMode,
+    checklist = checklist,
+    tags = tags
+)
