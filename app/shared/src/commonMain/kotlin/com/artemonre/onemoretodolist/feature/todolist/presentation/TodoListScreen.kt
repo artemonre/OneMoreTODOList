@@ -69,6 +69,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
@@ -106,6 +110,10 @@ import kotlinx.datetime.LocalDate
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.action_delete
 import onemoretodolist.app.shared.generated.resources.action_edit
+import onemoretodolist.app.shared.generated.resources.action_move_down
+import onemoretodolist.app.shared.generated.resources.action_move_to_bottom
+import onemoretodolist.app.shared.generated.resources.action_move_to_top
+import onemoretodolist.app.shared.generated.resources.action_move_up
 import onemoretodolist.app.shared.generated.resources.action_undo
 import onemoretodolist.app.shared.generated.resources.completed_summary_this_month
 import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
@@ -115,6 +123,7 @@ import onemoretodolist.app.shared.generated.resources.mascot_sitting
 import onemoretodolist.app.shared.generated.resources.mascot_sitting_monochrome
 import onemoretodolist.app.shared.generated.resources.mascot_ball_monochrome
 import onemoretodolist.app.shared.generated.resources.mascot_ball
+import onemoretodolist.app.shared.generated.resources.share_title
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_date
 import onemoretodolist.app.shared.generated.resources.sort_manual
@@ -185,13 +194,10 @@ fun TodoListRoot(
     var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
     var showAddTodoSheet by remember { mutableStateOf(false) }
     var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
-    // Text carried from the quick-add sheet's "More settings" button into the full-screen dialog -
-    // cleared whenever the full-screen dialog is opened directly, so that path never inherits a
-    // stale draft left over from an earlier "More settings" hop.
-    var addTodoDraftText by remember { mutableStateOf("") }
-    // Same idea for the checklist - only ever non-empty when a scanned photo is continued as one
-    // todo from ScannedTextReviewDialog.
-    var addTodoDraftChecklist by remember { mutableStateOf(emptyList<ChecklistItem>()) }
+    // What the add form opens with: the ViewModel's unsaved draft (handed over with the event that
+    // opens the form), or a scanned photo continued as one todo. The form reports every change
+    // back (OnAddDraftChanged), so the ViewModel's copy is the one that's kept.
+    var addTodoDraft by remember { mutableStateOf<TodoDraft?>(null) }
     var showPhotoCapture by remember { mutableStateOf(false) }
     var scannedParagraphs by remember { mutableStateOf<List<ScannedParagraph>?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -199,10 +205,13 @@ fun TodoListRoot(
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
-            TodoListEvent.ShowAddTodoFullScreenDialog -> {
-                addTodoDraftText = ""
-                addTodoDraftChecklist = emptyList()
+            is TodoListEvent.ShowAddTodoSheet -> {
+                addTodoDraft = event.draft
+                showAddTodoSheet = true
+            }
+            is TodoListEvent.ShowAddTodoFullScreenDialog -> {
+                addTodoDraft = event.draft
+                showAddTodoSheet = false
                 showAddTodoFullScreenDialog = true
             }
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
@@ -247,13 +256,14 @@ fun TodoListRoot(
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
-            onMoreSettingsClick = { draftText ->
-                viewModel.onAction(TodoListAction.OnAddFormExpanded)
+            onDiscard = {
+                viewModel.onAction(TodoListAction.OnAddDraftDiscarded)
                 showAddTodoSheet = false
-                addTodoDraftText = draftText
-                addTodoDraftChecklist = emptyList()
-                showAddTodoFullScreenDialog = true
-            }
+            },
+            // Opens the full-screen form with the draft (ShowAddTodoFullScreenDialog).
+            onMoreSettingsClick = { viewModel.onAction(TodoListAction.OnAddFormExpanded) },
+            initialDraft = addTodoDraft,
+            onDraftChange = { viewModel.onAction(TodoListAction.OnAddDraftChanged(it)) }
         )
     }
 
@@ -265,8 +275,9 @@ fun TodoListRoot(
                 showAddTodoFullScreenDialog = false
             },
             onDismiss = { showAddTodoFullScreenDialog = false },
-            initialText = addTodoDraftText,
-            initialChecklist = addTodoDraftChecklist,
+            onDiscard = { viewModel.onAction(TodoListAction.OnAddDraftDiscarded) },
+            initialDraft = addTodoDraft,
+            onDraftChange = { viewModel.onAction(TodoListAction.OnAddDraftChanged(it)) },
             knownTags = state.knownTags
         )
     }
@@ -291,8 +302,12 @@ fun TodoListRoot(
             onContinueAsSingle = { text, checklist ->
                 viewModel.onAction(TodoListAction.OnScannedTextContinuedAsSingle)
                 scannedParagraphs = null
-                addTodoDraftText = text
-                addTodoDraftChecklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
+                // Replaces any earlier unsaved draft - the form reports it as the new one right away.
+                addTodoDraft = TodoDraft(
+                    text = text,
+                    isPrioritized = false,
+                    checklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
+                )
                 showAddTodoFullScreenDialog = true
             },
             // Back/Discard steps back to the camera for another shot rather than leaving the flow.
@@ -499,6 +514,14 @@ fun TodoListScreen(
                         item = item,
                         cloudSegment = cloudSegments[item.id],
                         modifier = rowModifier,
+                        // TalkBack's stand-in for dragging, offered exactly when dragging is.
+                        moveActions = if (state.isReorderEnabled) {
+                            moveAccessibilityActions(item.id, state.items.map { it.id }) { orderedIds ->
+                                onAction(TodoListAction.OnReorder(orderedIds))
+                            }
+                        } else {
+                            emptyList()
+                        },
                         swipeEnabled = !isDragging,
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                         onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
@@ -717,7 +740,8 @@ private fun CompletedSummaryCard(
         ) {
             Text(
                 text = stringResource(Res.string.completed_summary_title),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() }
             )
             Spacer(modifier = Modifier.height(AppSpacing.s))
             Row(
@@ -741,6 +765,31 @@ private fun CompletedSummaryCard(
     }
 }
 
+// Move to top / up / down / to bottom for one todo in the list as shown - each only where it'd
+// actually move it. Hands back the whole new order, same as a finished drag.
+@Composable
+private fun moveAccessibilityActions(
+    id: String,
+    orderedIds: List<String>,
+    onReorder: (List<String>) -> Unit
+): List<CustomAccessibilityAction> {
+    val index = orderedIds.indexOf(id)
+    if (index == -1) return emptyList()
+    val lastIndex = orderedIds.lastIndex
+    return buildList {
+        if (index > 0) {
+            add(CustomAccessibilityAction(stringResource(Res.string.action_move_to_top)) { onReorder(orderedIds.moved(index, 0)); true })
+            add(CustomAccessibilityAction(stringResource(Res.string.action_move_up)) { onReorder(orderedIds.moved(index, index - 1)); true })
+        }
+        if (index < lastIndex) {
+            add(CustomAccessibilityAction(stringResource(Res.string.action_move_down)) { onReorder(orderedIds.moved(index, index + 1)); true })
+            add(CustomAccessibilityAction(stringResource(Res.string.action_move_to_bottom)) { onReorder(orderedIds.moved(index, lastIndex)); true })
+        }
+    }
+}
+
+private fun List<String>.moved(from: Int, to: Int): List<String> = toMutableList().apply { add(to, removeAt(from)) }
+
 @Composable
 private fun SwipeableTodoRow(
     item: TodoItemUi,
@@ -752,7 +801,8 @@ private fun SwipeableTodoRow(
     modifier: Modifier = Modifier,
     swipeEnabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
-    cloudSegment: CloudSegment? = null
+    cloudSegment: CloudSegment? = null,
+    moveActions: List<CustomAccessibilityAction> = emptyList()
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -806,7 +856,12 @@ private fun SwipeableTodoRow(
             modifier = Modifier
                 .matchParentSize()
                 .padding(horizontal = AppSpacing.s)
-                .background(MaterialTheme.colorScheme.surfaceVariant, appListItemCardShape()),
+                .background(MaterialTheme.colorScheme.surfaceVariant, appListItemCardShape())
+                // Hidden under the card until swiped open - TalkBack would otherwise stop on them
+                // with no word of which todo they belong to. The card's own actions cover them.
+                .then(
+                    if (swipeState.currentValue == SwipeAnchor.Closed) Modifier.clearAndSetSemantics {} else Modifier
+                ),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -847,6 +902,12 @@ private fun SwipeableTodoRow(
             },
             onClick = onItemClick,
             onLongClick = onLongClick,
+            // Every swipe action, plus moving, without the gestures TalkBack can't do.
+            customActions = listOf(
+                CustomAccessibilityAction(stringResource(Res.string.action_edit)) { onEditClick(); true },
+                CustomAccessibilityAction(stringResource(Res.string.action_delete)) { onDeleteClick(); true },
+                CustomAccessibilityAction(stringResource(Res.string.share_title)) { onShareSwipe(); true }
+            ) + moveActions,
             modifier = Modifier
                 .padding(horizontal = AppSpacing.s)
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }

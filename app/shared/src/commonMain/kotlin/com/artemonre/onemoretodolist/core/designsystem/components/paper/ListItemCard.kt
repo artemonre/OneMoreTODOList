@@ -24,6 +24,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCardContentPadding
@@ -64,6 +67,7 @@ fun ListItemCard(
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     containerColor: Color? = null,
+    customActions: List<CustomAccessibilityAction> = emptyList(),
     content: @Composable () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -101,7 +105,8 @@ fun ListItemCard(
                 indication = null,
                 onLongClick = onLongClick,
                 onClick = onClick
-            ),
+            )
+            .semantics { this.customActions = customActions },
         shape = cardShape,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
         colors = if (containerColor != null) {

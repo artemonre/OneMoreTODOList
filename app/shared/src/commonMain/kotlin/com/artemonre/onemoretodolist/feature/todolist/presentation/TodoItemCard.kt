@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.tooling.preview.Preview
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCardContentPadding
@@ -43,13 +44,15 @@ fun TodoItemCard(
     checklistDone: Int = 0,
     checklistTotal: Int = 0,
     nextReminder: Instant? = null,
-    cloudSegment: CloudSegment? = null
+    cloudSegment: CloudSegment? = null,
+    customActions: List<CustomAccessibilityAction> = emptyList()
 ) {
     AppListItemCard(
         onClick = onClick,
         onLongClick = onLongClick,
         modifier = modifier,
-        containerColor = attention.containerColor()
+        containerColor = attention.containerColor(),
+        customActions = customActions
     ) {
         Box(
             modifier = Modifier

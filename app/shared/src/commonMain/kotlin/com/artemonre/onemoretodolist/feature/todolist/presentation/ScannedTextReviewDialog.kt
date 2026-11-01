@@ -37,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -105,7 +107,9 @@ fun ScannedTextReviewDialog(
             Text(
                 text = stringResource(Res.string.scan_review_title),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .semantics { heading() }
             )
             Spacer(Modifier.height(16.dp))
             EnumSegmentedRow(
@@ -121,7 +125,8 @@ fun ScannedTextReviewDialog(
                     if (index == 1) Spacer(Modifier.height(8.dp))
                     Text(
                         text = stringResource(if (index == 0) Res.string.scan_review_todo_text else Res.string.checklist_title),
-                        style = MaterialTheme.typography.titleSmall
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.semantics { heading() }
                     )
                     Spacer(Modifier.height(4.dp))
                 }

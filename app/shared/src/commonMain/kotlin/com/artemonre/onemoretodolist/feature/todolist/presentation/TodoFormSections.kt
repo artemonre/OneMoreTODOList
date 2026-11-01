@@ -44,6 +44,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -105,7 +106,11 @@ internal fun TodoFormTagsSection(
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(text = stringResource(Res.string.tags_title), style = MaterialTheme.typography.titleSmall)
+        Text(
+            text = stringResource(Res.string.tags_title),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.semantics { heading() }
+        )
         Spacer(Modifier.height(AppSpacing.xs))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.s)) {
             tags.forEach { tag ->
@@ -295,7 +300,11 @@ internal fun TodoFormChecklistSection(
 ) {
     var justAddedId by remember { mutableStateOf<String?>(null) }
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(text = stringResource(Res.string.checklist_title), style = MaterialTheme.typography.titleSmall)
+        Text(
+            text = stringResource(Res.string.checklist_title),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.semantics { heading() }
+        )
         items.forEach { item ->
             val focusRequester = remember(item.id) { FocusRequester() }
             if (item.id == justAddedId) {

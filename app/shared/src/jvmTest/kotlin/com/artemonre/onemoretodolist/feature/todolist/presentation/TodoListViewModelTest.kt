@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
+import com.artemonre.onemoretodolist.analytics.TodoForm
 import com.artemonre.onemoretodolist.feature.todolist.domain.AddTodo
 import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.EditTodo
@@ -22,12 +23,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import onemoretodolist.app.shared.generated.resources.Res
-import onemoretodolist.app.shared.generated.resources.snackbar_no_text_found
+import onemoretodolist.app.shared.generated.resources.snackbar_photo_unreadable
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodoListViewModelTest {
@@ -197,7 +199,7 @@ class TodoListViewModelTest {
     }
 
     @Test
-    fun `OnTextRecognized opens the review for paragraphs and shows a snackbar for no text`() = runTest(testDispatcher) {
+    fun `OnTextRecognized opens the review for paragraphs and shows a snackbar for a photo that couldn't be opened`() = runTest(testDispatcher) {
         val viewModel = todoListViewModel(FakeTodoLocalDataSource(initialTodos = emptyList()))
         val events = mutableListOf<TodoListEvent>()
         backgroundScope.launch { viewModel.events.collect { events += it } }
@@ -209,10 +211,82 @@ class TodoListViewModelTest {
         assertEquals(
             listOf(
                 TodoListEvent.ShowScannedTextReview(listOf(ScannedParagraph(listOf("Milk")))),
-                TodoListEvent.ShowSnackbar(Res.string.snackbar_no_text_found)
+                TodoListEvent.ShowSnackbar(Res.string.snackbar_photo_unreadable)
             ),
             events
         )
+    }
+
+    @Test
+    fun `an add form closed by accident reopens with its draft`() = runTest(testDispatcher) {
+        val viewModel = todoListViewModel(FakeTodoLocalDataSource(initialTodos = emptyList()))
+        val events = mutableListOf<TodoListEvent>()
+        // Unconfined, so each event lands right away - advanceUntilIdle doesn't wait for backgroundScope.
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.events.collect { events += it } }
+        val draft = TodoDraft(text = "Buy mi", isPrioritized = true)
+
+        viewModel.onAction(TodoListAction.OnAddTodoClick)
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.onAction(TodoListAction.OnAddDraftChanged(draft))
+        // Swiped away: the screen just hides the sheet, nothing reaches the ViewModel.
+        viewModel.onAction(TodoListAction.OnAddTodoClick)
+        viewModel.onAction(TodoListAction.OnAddTodoFullScreenClick)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                TodoListEvent.ShowAddTodoSheet(null),
+                TodoListEvent.ShowAddTodoSheet(draft),
+                TodoListEvent.ShowAddTodoFullScreenDialog(draft)
+            ),
+            events
+        )
+    }
+
+    @Test
+    fun `a draft with full-form-only fields reopens in the full form, from + and More settings alike`() = runTest(testDispatcher) {
+        val viewModel = todoListViewModel(FakeTodoLocalDataSource(initialTodos = emptyList()))
+        val events = mutableListOf<TodoListEvent>()
+        // Unconfined, so each event lands right away - advanceUntilIdle doesn't wait for backgroundScope.
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.events.collect { events += it } }
+        val withTag = TodoDraft(text = "Call", isPrioritized = false, tags = listOf(TodoTag("work", TagColor.Blue)))
+        val textOnly = TodoDraft(text = "Call", isPrioritized = false)
+
+        viewModel.onAction(TodoListAction.OnAddDraftChanged(withTag))
+        viewModel.onAction(TodoListAction.OnAddTodoClick)
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.onAction(TodoListAction.OnAddDraftChanged(textOnly))
+        viewModel.onAction(TodoListAction.OnAddFormExpanded)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(
+            listOf<TodoListEvent>(TodoListEvent.ShowAddTodoFullScreenDialog(withTag), TodoListEvent.ShowAddTodoFullScreenDialog(textOnly)),
+            events
+        )
+    }
+
+    @Test
+    fun `Create, Discard and an emptied form all drop the draft`() = runTest(testDispatcher) {
+        val viewModel = todoListViewModel(FakeTodoLocalDataSource(initialTodos = emptyList()))
+        val events = mutableListOf<TodoListEvent>()
+        // Unconfined, so each event lands right away - advanceUntilIdle doesn't wait for backgroundScope.
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.events.collect { events += it } }
+        val draft = TodoDraft(text = "Milk", isPrioritized = false)
+
+        viewModel.onAction(TodoListAction.OnAddDraftChanged(draft))
+        viewModel.onAction(TodoListAction.OnConfirmAddTodo(draft, TodoForm.QuickSheet))
+        viewModel.onAction(TodoListAction.OnAddTodoClick)
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.onAction(TodoListAction.OnAddDraftChanged(draft))
+        viewModel.onAction(TodoListAction.OnAddDraftDiscarded)
+        viewModel.onAction(TodoListAction.OnAddTodoClick)
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.onAction(TodoListAction.OnAddDraftChanged(draft))
+        viewModel.onAction(TodoListAction.OnAddDraftChanged(TodoDraft(text = "  ", isPrioritized = false)))
+        viewModel.onAction(TodoListAction.OnAddTodoClick)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(List<TodoListEvent>(3) { TodoListEvent.ShowAddTodoSheet(null) }, events)
     }
 
     private fun todoListViewModel(

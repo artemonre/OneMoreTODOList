@@ -42,7 +42,7 @@ import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import onemoretodolist.app.shared.generated.resources.Res
-import onemoretodolist.app.shared.generated.resources.snackbar_no_text_found
+import onemoretodolist.app.shared.generated.resources.snackbar_photo_unreadable
 import onemoretodolist.app.shared.generated.resources.snackbar_reorder_hint
 import onemoretodolist.app.shared.generated.resources.snackbar_switched_to_manual_sort
 import onemoretodolist.app.shared.generated.resources.snackbar_todo_completed
@@ -125,6 +125,12 @@ class TodoListViewModel(
     private val _events = Channel<TodoListEvent>()
     val events = _events.receiveAsFlow()
 
+    // The add form's unsaved state, so swiping it away, Back or a tap outside doesn't lose what was
+    // typed - only Create and Discard clear it. Lives as long as this ViewModel, not across an app
+    // restart. Not part of state: it only matters when a form opens, and keeping it there would
+    // re-emit the whole list on every keystroke.
+    private var addDraft: TodoDraft? = null
+
     // The item as it was right before its last completion/deletion, so OnUndoClick can restore
     // it exactly via upsertTodo - holds only the most recent one, matching the single Snackbar
     // that offers Undo for it.
@@ -153,16 +159,30 @@ class TodoListViewModel(
                 _events.send(TodoListEvent.ShowSnackbar(Res.string.snackbar_reorder_hint))
             }
             is TodoListAction.OnAddTodoClick -> {
+                val draft = addDraft
                 viewModelScope.launch {
-                    _events.send(TodoListEvent.ShowAddTodoSheet)
+                    // A draft using fields the quick sheet doesn't show reopens where they're visible.
+                    _events.send(
+                        if (draft?.needsFullForm == true) {
+                            TodoListEvent.ShowAddTodoFullScreenDialog(draft)
+                        } else {
+                            TodoListEvent.ShowAddTodoSheet(draft)
+                        }
+                    )
                 }
             }
             is TodoListAction.OnAddTodoFullScreenClick -> {
+                val draft = addDraft
                 viewModelScope.launch {
-                    _events.send(TodoListEvent.ShowAddTodoFullScreenDialog)
+                    _events.send(TodoListEvent.ShowAddTodoFullScreenDialog(draft))
                 }
             }
-            is TodoListAction.OnConfirmAddTodo -> addTodo(action.draft, action.form)
+            is TodoListAction.OnConfirmAddTodo -> {
+                addDraft = null
+                addTodo(action.draft, action.form)
+            }
+            is TodoListAction.OnAddDraftChanged -> addDraft = action.draft.takeUnless { it.isEmpty }
+            is TodoListAction.OnAddDraftDiscarded -> addDraft = null
             is TodoListAction.OnEditTodoClick -> showEditSheet(action.id)
             is TodoListAction.OnConfirmEditTodo -> editTodo(action.id, action.draft)
             is TodoListAction.OnToggleChecklistItem -> toggleChecklistItem(action.todoId, action.itemId)
@@ -174,8 +194,10 @@ class TodoListViewModel(
             }
             is TodoListAction.OnTextRecognized -> viewModelScope.launch {
                 _events.send(
+                    // Empty only when the photo itself couldn't be loaded - a photo with no text is handled
+                    // inside the capture dialog.
                     if (action.paragraphs.isEmpty()) {
-                        TodoListEvent.ShowSnackbar(Res.string.snackbar_no_text_found)
+                        TodoListEvent.ShowSnackbar(Res.string.snackbar_photo_unreadable)
                     } else {
                         TodoListEvent.ShowScannedTextReview(action.paragraphs)
                     }
@@ -203,7 +225,13 @@ class TodoListViewModel(
             is TodoListAction.OnAddWidgetClick -> viewModelScope.launch {
                 analytics.capture(AnalyticsEvents.widgetPinRequested(shown = homeScreenWidget.requestPin()))
             }
-            is TodoListAction.OnAddFormExpanded -> analytics.capture(AnalyticsEvents.addFormExpanded())
+            is TodoListAction.OnAddFormExpanded -> {
+                analytics.capture(AnalyticsEvents.addFormExpanded())
+                val draft = addDraft
+                viewModelScope.launch {
+                    _events.send(TodoListEvent.ShowAddTodoFullScreenDialog(draft))
+                }
+            }
             is TodoListAction.OnTodoDetailsOpened -> analytics.capture(AnalyticsEvents.todoDetailsOpened())
             is TodoListAction.OnTodoShared -> analytics.capture(AnalyticsEvents.todoShared(action.method))
             is TodoListAction.OnEmptyStateTipShown -> {

@@ -11,6 +11,9 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCardContentPadding
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -32,6 +35,7 @@ fun ListItemCard(
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     containerColor: Color? = null,
+    customActions: List<CustomAccessibilityAction> = emptyList(),
     content: @Composable () -> Unit
 ) {
     ElevatedCard(
@@ -45,6 +49,7 @@ fun ListItemCard(
         Box(
             modifier = Modifier
                 .combinedClickable(onLongClick = onLongClick, onClick = onClick)
+                .semantics { this.customActions = customActions }
                 .padding(AppListItemCardContentPadding)
         ) {
             content()

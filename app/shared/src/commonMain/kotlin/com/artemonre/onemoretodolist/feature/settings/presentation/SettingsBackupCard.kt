@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
@@ -104,7 +106,8 @@ internal fun SettingsBackupCard(
         Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
             Text(
                 text = stringResource(Res.string.settings_backup),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() }
             )
             if (driveBackup != null) {
                 AppSegmentedControl(
