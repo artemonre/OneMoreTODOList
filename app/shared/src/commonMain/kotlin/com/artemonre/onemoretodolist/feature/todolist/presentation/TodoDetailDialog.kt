@@ -65,16 +65,14 @@ import onemoretodolist.app.shared.generated.resources.mascot_head_leaning_on_fen
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
-private val MASCOT_SIZE = 160.dp
-// Where the drawing actually starts (the ear tips) and where its fence line runs, as fractions of its
-// square canvas. The card's top edge goes on the fence line, so the head peeks out from behind the
-// card while the paws rest on it.
-private const val MASCOT_EARS_FRACTION = 0.3f
-private const val MASCOT_FENCE_FRACTION = 0.65f
-private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_SIZE, MASCOT_EARS_FRACTION, MASCOT_FENCE_FRACTION)
+private val MASCOT_HEIGHT = 68.dp
+// Where the fence line runs, as a fraction of the drawing's height. The card's top edge goes on it,
+// so the head peeks out from behind the card while the paws rest on it.
+private const val MASCOT_FENCE_FRACTION = 0.815f
+private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_HEIGHT, MASCOT_FENCE_FRACTION)
 
 // The sheep below the card, with a small gap between the two.
-private val SHEEP_SIZE = 96.dp
+private val SHEEP_SIZE = 72.dp
 private val SHEEP_STRIP_HEIGHT = SHEEP_SIZE + AppSpacing.s
 
 // The card never grows past this share of the screen's height - a long text or checklist scrolls
@@ -139,8 +137,7 @@ fun TodoDetailDialog(
         topDecoration = {
             PeekingMascot(
                 mascotDrawable(Res.drawable.mascot_head_leaning_on_fence, Res.drawable.mascot_head_leaning_on_fence_monochrome),
-                MASCOT_SIZE,
-                MASCOT_EARS_FRACTION
+                MASCOT_HEIGHT
             )
         },
         topDecorationOverhang = MASCOT_OVERHANG,

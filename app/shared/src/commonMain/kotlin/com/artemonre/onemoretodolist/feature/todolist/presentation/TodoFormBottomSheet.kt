@@ -169,13 +169,11 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-private val MASCOT_SIZE = 160.dp
-// Where the drawing actually starts (the ear tips) and where the sheet's top edge goes, as fractions
-// of its square canvas - a bit above the bottom of its body, so the body's bottom and the paws rest
-// on the sheet.
-private const val MASCOT_EARS_FRACTION = 0.225f
-private const val MASCOT_FENCE_FRACTION = 0.65f
-private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_SIZE, MASCOT_EARS_FRACTION, MASCOT_FENCE_FRACTION)
+private val MASCOT_HEIGHT = 80.dp
+// Where the sheet's top edge goes, as a fraction of the drawing's height - a bit above the bottom of
+// its body, so the body's bottom and the paws rest on the sheet.
+private const val MASCOT_FENCE_FRACTION = 0.835f
+private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_HEIGHT, MASCOT_FENCE_FRACTION)
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
 // onDismiss is every close that isn't a choice - swipe down, Back, a tap outside - while onDiscard
@@ -203,8 +201,7 @@ fun TodoFormBottomSheet(
         topDecoration = {
             PeekingMascot(
                 mascotDrawable(Res.drawable.mascot_put_paws_on_fence, Res.drawable.mascot_put_paws_on_fence_monochrome),
-                MASCOT_SIZE,
-                MASCOT_EARS_FRACTION
+                MASCOT_HEIGHT
             )
         },
         topDecorationOverhang = MASCOT_OVERHANG

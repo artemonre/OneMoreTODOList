@@ -153,7 +153,7 @@ private val SWIPE_ACTION_WIDTH = 56.dp
 // Clears the scroll-to-top button (56dp) plus its 16dp margin, with a little extra breathing
 // room, so the last list item never ends up hidden behind it after a full scroll.
 private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
-private val MASCOT_HEIGHT = 160.dp
+private val MASCOT_HEIGHT = 148.dp
 // Half of ButtonDefaults.ContentPadding (24dp/8dp), snapped to the spacing scale.
 private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.xs)
 private const val BALL_AFTER_TODO_COUNT = 5
