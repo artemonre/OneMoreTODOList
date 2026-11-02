@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -26,8 +27,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -45,8 +48,9 @@ fun MaterialBottomSheet(
     modifier: Modifier = Modifier,
     showDragHandle: Boolean = true,
     onExpanded: () -> Unit = {},
-    // Drawn centered over the sheet's top edge, on top of it - sticks out above the sheet by
-    // topDecorationOverhang, and whatever's taller than that overlaps onto the sheet.
+    // Drawn over the sheet's top edge at its start, just past the rounded corner, on top of it -
+    // sticks out above the sheet by topDecorationOverhang, and whatever's taller than that overlaps
+    // onto the sheet.
     topDecoration: @Composable (() -> Unit)? = null,
     topDecorationOverhang: Dp = 0.dp,
     content: @Composable ColumnScope.() -> Unit
@@ -81,6 +85,13 @@ fun MaterialBottomSheet(
 
     val scope = rememberCoroutineScope()
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
+    val density = LocalDensity.current
+    // The sheet's own top-start corner radius, so the decoration starts where the corner's curve ends.
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+    val decorationStartPadding = (sheetShape as? CornerBasedShape)
+        ?.topStart
+        ?.let { with(density) { it.toPx(Size.Zero, density).toDp() } }
+        ?: 0.dp
 
     // The stock sheet clips its content to its own shape, so nothing can stick out above it. Instead
     // the stock sheet itself is left invisible and an identical-looking sheet is drawn inside it,
@@ -96,12 +107,11 @@ fun MaterialBottomSheet(
         dragHandle = null,
         contentWindowInsets = { WindowInsets(0) }
     ) {
-        // propagateMinConstraints keeps the visible sheet at full width - the decoration itself
-        // opts out of it via wrapContentSize.
+        // propagateMinConstraints keeps the visible sheet at full width.
         Box(propagateMinConstraints = true) {
             Surface(
                 modifier = Modifier.padding(top = topDecorationOverhang),
-                shape = BottomSheetDefaults.ExpandedShape,
+                shape = sheetShape,
                 color = BottomSheetDefaults.ContainerColor
             ) {
                 Column(
@@ -132,7 +142,11 @@ fun MaterialBottomSheet(
                         }
                     }
             )
-            Box(Modifier.wrapContentSize(Alignment.TopCenter)) { topDecoration() }
+            Box(
+                Modifier
+                    .wrapContentSize(Alignment.TopStart)
+                    .padding(start = decorationStartPadding)
+            ) { topDecoration() }
         }
     }
 }
