@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialFabMenu
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloFabMenu
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -35,5 +36,7 @@ fun AppFabMenu(
         // No Paper FAB menu yet - fall back to Material.
         UiStyleOption.Paper ->
             MaterialFabMenu(expanded, onExpandedChange, onClick, icon, items, contentDescription, modifier)
+        UiStyleOption.Holo ->
+            HoloFabMenu(expanded, onExpandedChange, onClick, icon, items, contentDescription, modifier)
     }
 }

@@ -33,9 +33,11 @@
     <string name="todo_filter_active">Active (%1$d)</string>
     <string name="todo_filter_done">Done (%1$d)</string>
     <string name="completed_summary_title">Completed todos</string>
-    <string name="completed_summary_today">Today %1$d</string>
-    <string name="completed_summary_this_week">This week %1$d</string>
-    <string name="completed_summary_this_month">This month %1$d</string>
+    <string name="completed_summary_today_label">Today</string>
+    <string name="completed_summary_this_week_label">This week</string>
+    <string name="completed_summary_this_month_label">This month</string>
+    <!-- One stat as a single line: a label and its count ("Today 3"). -->
+    <string name="stat_label_value">%1$s %2$d</string>
     <string name="todo_list_empty_completed">Completed todos land here.\nTick one off on the Active list to see it.</string>
 
     <!-- Tags and checklist - form sections, tag picker dialog, and the card's progress label. -->
@@ -169,7 +171,7 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
-    <string name="settings_palette">Palette</string>
+    <string name="settings_colors">Colors</string>
     <string name="settings_palettes">Palettes</string>
     <string name="settings_dynamic_color">Dynamic color</string>
     <string name="settings_dynamic_color_description">Colors are pulled from your wallpaper instead of a fixed palette, and update automatically if you change it.</string>
@@ -180,6 +182,7 @@
     <string name="settings_ui_style">UI Style</string>
     <string name="settings_ui_style_material">Material</string>
     <string name="settings_ui_style_paper">Paper</string>
+    <string name="settings_ui_style_holo">Holo</string>
     <string name="settings_todos">Todos</string>
     <string name="settings_archive_completed">Archive completed todos</string>
     <string name="settings_archive_completed_description">When off, completing a todo in the app deletes it immediately (Undo is offered via a snackbar). The widget's checkbox always archives instead, to avoid an unrecoverable mis-tap.</string>

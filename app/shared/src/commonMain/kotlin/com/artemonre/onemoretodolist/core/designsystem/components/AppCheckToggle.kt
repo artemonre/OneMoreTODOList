@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialCheckbox
 import com.artemonre.onemoretodolist.core.designsystem.components.paper.PaperCheckbox
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloCheckbox
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -20,5 +21,6 @@ fun AppCheckToggle(
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialCheckbox(checked, onCheckedChange, modifier)
         UiStyleOption.Paper -> PaperCheckbox(checked, onCheckedChange, modifier)
+        UiStyleOption.Holo -> HoloCheckbox(checked, onCheckedChange, modifier)
     }
 }

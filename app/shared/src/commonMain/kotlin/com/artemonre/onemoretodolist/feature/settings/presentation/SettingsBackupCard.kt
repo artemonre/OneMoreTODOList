@@ -4,21 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,11 +20,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppOutlinedButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSectionDivider
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSectionTitle
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSwitch
+import com.artemonre.onemoretodolist.core.designsystem.components.appSupportingTextStyle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.feature.backup.domain.BackupError
@@ -92,6 +89,7 @@ private val lastBackupFormat = LocalDateTime.Format {
 // file backup isn't possible (see rememberFileAutoBackup).
 @Composable
 internal fun SettingsBackupCard(
+    sectionNumber: Int?,
     state: SettingsState,
     onAction: (SettingsAction) -> Unit,
     fileBackupAvailable: Boolean,
@@ -104,10 +102,9 @@ internal fun SettingsBackupCard(
     }
     AppCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
-            Text(
-                text = stringResource(Res.string.settings_backup),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { heading() }
+            AppSectionTitle(
+                title = stringResource(Res.string.settings_backup),
+                number = sectionNumber
             )
             if (driveBackup != null) {
                 AppSegmentedControl(
@@ -180,7 +177,7 @@ private fun FileBackupTab(
 internal fun BackupTabDescription(text: StringResource) {
     Text(
         text = stringResource(text),
-        style = MaterialTheme.typography.bodySmall,
+        style = appSupportingTextStyle(),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = AppSpacing.m)
     )
@@ -200,26 +197,22 @@ internal fun BackupButtons(
             .padding(top = AppSpacing.m),
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.m)
     ) {
-        OutlinedButton(
+        AppOutlinedButton(
             onClick = onBackup,
+            text = stringResource(Res.string.backup_now),
+            icon = backupIcon,
             enabled = enabled,
             contentPadding = BACKUP_BUTTON_CONTENT_PADDING,
             modifier = Modifier.weight(1f)
-        ) {
-            Icon(imageVector = backupIcon, contentDescription = null)
-            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-            Text(stringResource(Res.string.backup_now))
-        }
-        OutlinedButton(
+        )
+        AppOutlinedButton(
             onClick = onRestore,
+            text = stringResource(Res.string.backup_restore),
+            icon = restoreIcon,
             enabled = enabled,
             contentPadding = BACKUP_BUTTON_CONTENT_PADDING,
             modifier = Modifier.weight(1f)
-        ) {
-            Icon(imageVector = restoreIcon, contentDescription = null)
-            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-            Text(stringResource(Res.string.backup_restore))
-        }
+        )
     }
 }
 
@@ -230,6 +223,7 @@ internal fun AutoBackupSwitch(
     enabled: Boolean,
     lastBackupAt: Instant?
 ) {
+    AppSectionDivider(modifier = Modifier.padding(top = AppSpacing.m))
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -240,12 +234,12 @@ internal fun AutoBackupSwitch(
             text = stringResource(Res.string.backup_auto_daily),
             modifier = Modifier.weight(1f)
         )
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        AppSwitch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
     lastBackupAt?.let {
         Text(
             text = stringResource(Res.string.backup_last_backup, lastBackupFormat.format(it.toLocalDateTime(TimeZone.currentSystemDefault()))),
-            style = MaterialTheme.typography.bodySmall,
+            style = appSupportingTextStyle(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = AppSpacing.xs)
         )
@@ -267,7 +261,7 @@ internal fun BackupBusyIndicator(isBusy: Boolean) {
 internal fun BackupStatusText(text: String, isError: Boolean) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodySmall,
+        style = appSupportingTextStyle(),
         color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = AppSpacing.s)
     )
@@ -279,22 +273,23 @@ internal fun ImportModeDialog(
     onModeSelected: (ImportMode) -> Unit,
     onDismiss: () -> Unit
 ) {
-    MaterialAlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.backup_import_mode_title)) },
         text = { Text(stringResource(Res.string.backup_import_mode_message)) },
         confirmButton = {
             Row {
-                TextButton(onClick = { onModeSelected(ImportMode.Replace) }) {
+                AppTextButton(onClick = { onModeSelected(ImportMode.Replace) }) {
                     Text(stringResource(Res.string.backup_import_replace))
                 }
-                TextButton(onClick = { onModeSelected(ImportMode.Merge) }) {
+                // Merge is the main action - it never loses a todo, unlike Replace.
+                AppTextButton(onClick = { onModeSelected(ImportMode.Merge) }, emphasized = true) {
                     Text(stringResource(Res.string.backup_import_merge))
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.form_cancel))
             }
         }

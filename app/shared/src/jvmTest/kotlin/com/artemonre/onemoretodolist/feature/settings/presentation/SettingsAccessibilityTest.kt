@@ -1,6 +1,8 @@
 package com.artemonre.onemoretodolist.feature.settings.presentation
 
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.runComposeUiTest
@@ -15,7 +17,7 @@ import kotlinx.coroutines.runBlocking
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.settings_backup
 import onemoretodolist.app.shared.generated.resources.settings_font
-import onemoretodolist.app.shared.generated.resources.settings_palette
+import onemoretodolist.app.shared.generated.resources.settings_colors
 import onemoretodolist.app.shared.generated.resources.settings_support
 import onemoretodolist.app.shared.generated.resources.settings_theme
 import onemoretodolist.app.shared.generated.resources.settings_todos
@@ -28,24 +30,38 @@ class SettingsAccessibilityTest {
 
     @Test
     fun `every section title is a heading`() = runComposeUiTest {
+        showSettings(UiStyleOption.Material)
+        assertEveryTitleIsAHeading()
+    }
+
+    // Holo numbers its sections ("01 // Theme") - the number is decoration, not read out.
+    @Test
+    fun `Holo section titles are headings without their numbers`() = runComposeUiTest {
+        showSettings(UiStyleOption.Holo)
+        assertEveryTitleIsAHeading()
+        onAllNodes(hasText("//", substring = true)).assertCountEquals(0)
+    }
+
+    private fun ComposeUiTest.showSettings(uiStyle: UiStyleOption) {
         setContent {
-            AppTheme(themeConfig = ThemeConfig()) {
+            AppTheme(themeConfig = ThemeConfig(uiStyle = uiStyle)) {
                 SettingsScreen(
                     state = SettingsState(
                         themeMode = ThemeMode.System,
                         palette = ColorPaletteOption.Default,
                         font = FontOption.Default,
-                        uiStyle = UiStyleOption.Material
+                        uiStyle = uiStyle
                     ),
                     onAction = {}
                 )
             }
         }
+    }
 
-        // Palette is a plain title only without dynamic color, which the desktop JVM never has.
+    private fun ComposeUiTest.assertEveryTitleIsAHeading() {
         listOf(
             Res.string.settings_theme,
-            Res.string.settings_palette,
+            Res.string.settings_colors,
             Res.string.settings_font,
             Res.string.settings_ui_style,
             Res.string.settings_todos,

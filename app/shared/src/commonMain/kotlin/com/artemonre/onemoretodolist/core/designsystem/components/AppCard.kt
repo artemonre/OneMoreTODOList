@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.artemonre.onemoretodolist.core.designsystem.components.material.Card as MaterialCard
 import com.artemonre.onemoretodolist.core.designsystem.components.paper.Card as PaperCard
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloCard
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -24,5 +25,6 @@ fun AppCard(
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialCard(modifier, containerColor, content)
         UiStyleOption.Paper -> PaperCard(modifier, containerColor, content)
+        UiStyleOption.Holo -> HoloCard(modifier, containerColor, content)
     }
 }

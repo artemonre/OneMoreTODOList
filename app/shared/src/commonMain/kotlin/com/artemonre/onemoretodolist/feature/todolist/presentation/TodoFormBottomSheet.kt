@@ -86,7 +86,9 @@ import com.artemonre.onemoretodolist.SpeechRecognitionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.components.keepsKeyboardOnTap
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedTextField
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialSegmentedButton
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
@@ -696,12 +698,12 @@ fun TodoFormBody(
                 exactTimeEnabled = false
                 showExactPermissionDialog = false
             }
-            MaterialAlertDialog(
+            AppAlertDialog(
                 onDismissRequest = cancel,
                 title = { Text(stringResource(Res.string.form_exact_permission_title)) },
                 text = { Text(stringResource(Res.string.form_exact_needs_permission)) },
                 confirmButton = {
-                    Button(onClick = {
+                    AppButton(onClick = {
                         showExactPermissionDialog = false
                         exactAlarmPermission.request()
                     }) {
@@ -709,7 +711,7 @@ fun TodoFormBody(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = cancel) {
+                    AppTextButton(onClick = cancel) {
                         Text(stringResource(Res.string.form_cancel))
                     }
                 }

@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialBottomSheet
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -28,5 +29,6 @@ fun AppBottomSheet(
         UiStyleOption.Material -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, onExpanded, topDecoration, topDecorationOverhang, content)
         // No Paper bottom sheet yet - fall back to Material.
         UiStyleOption.Paper -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, onExpanded, topDecoration, topDecorationOverhang, content)
+        UiStyleOption.Holo -> HoloBottomSheet(onDismissRequest, modifier, showDragHandle, onExpanded, topDecoration, topDecorationOverhang, content)
     }
 }

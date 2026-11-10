@@ -52,7 +52,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.components.keepsKeyboardOnTap
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAssistChip
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialInputChip
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedTextField
@@ -180,7 +181,7 @@ private fun AddTagDialog(
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    MaterialAlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.tag_new_title)) },
         text = {
@@ -234,15 +235,16 @@ private fun AddTagDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { onAdd(TodoTag(knownMatch?.name ?: trimmedName, color)) },
-                enabled = canAdd
+                enabled = canAdd,
+                emphasized = true
             ) {
                 Text(stringResource(Res.string.form_add))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.form_cancel))
             }
         }

@@ -41,7 +41,6 @@ import kotlinx.coroutines.launch
  * A stock Material3 [ModalBottomSheet] - default shape, colors, and scrim all from
  * `BottomSheetDefaults`, no customizations.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaterialBottomSheet(
     onDismissRequest: () -> Unit,
@@ -53,6 +52,35 @@ fun MaterialBottomSheet(
     // onto the sheet.
     topDecoration: @Composable (() -> Unit)? = null,
     topDecorationOverhang: Dp = 0.dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    BottomSheetLayout(
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        showDragHandle = showDragHandle,
+        onExpanded = onExpanded,
+        topDecoration = topDecoration,
+        topDecorationOverhang = topDecorationOverhang,
+        content = content
+    )
+}
+
+/**
+ * The modal bottom sheet every style builds on: Material3's [ModalBottomSheet] and its behavior,
+ * with a style's own [dragHandle] and [sheetDecoration] - a modifier on the visible sheet, drawn
+ * within its [BottomSheetDefaults.ExpandedShape].
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun BottomSheetLayout(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    showDragHandle: Boolean = true,
+    onExpanded: () -> Unit = {},
+    topDecoration: @Composable (() -> Unit)? = null,
+    topDecorationOverhang: Dp = 0.dp,
+    dragHandle: @Composable () -> Unit = { BottomSheetDefaults.DragHandle() },
+    sheetDecoration: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     // The default partially-expanded state relies on a swipe-up-to-expand gesture that isn't
@@ -71,13 +99,9 @@ fun MaterialBottomSheet(
     if (topDecoration == null) {
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
-            modifier = modifier,
+            modifier = modifier.then(sheetDecoration),
             sheetState = sheetState,
-            dragHandle = if (showDragHandle) {
-                { BottomSheetDefaults.DragHandle() }
-            } else {
-                null
-            },
+            dragHandle = if (showDragHandle) dragHandle else null,
             content = content
         )
         return
@@ -110,7 +134,9 @@ fun MaterialBottomSheet(
         // propagateMinConstraints keeps the visible sheet at full width.
         Box(propagateMinConstraints = true) {
             Surface(
-                modifier = Modifier.padding(top = topDecorationOverhang),
+                modifier = Modifier
+                    .padding(top = topDecorationOverhang)
+                    .then(sheetDecoration),
                 shape = sheetShape,
                 color = BottomSheetDefaults.ContainerColor
             ) {
@@ -120,7 +146,7 @@ fun MaterialBottomSheet(
                         .windowInsetsPadding(BottomSheetDefaults.modalWindowInsets)
                 ) {
                     if (showDragHandle) {
-                        BottomSheetDefaults.DragHandle(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) { dragHandle() }
                     }
                     content()
                 }

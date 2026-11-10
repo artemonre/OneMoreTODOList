@@ -21,19 +21,18 @@ import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSectionTitle
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSwitch
+import com.artemonre.onemoretodolist.core.designsystem.components.appSupportingTextStyle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedControl
 import com.artemonre.onemoretodolist.core.designsystem.components.PaletteSwatch
@@ -65,7 +64,7 @@ import onemoretodolist.app.shared.generated.resources.settings_font
 import onemoretodolist.app.shared.generated.resources.settings_font_default
 import onemoretodolist.app.shared.generated.resources.settings_font_mono
 import onemoretodolist.app.shared.generated.resources.settings_font_serif
-import onemoretodolist.app.shared.generated.resources.settings_palette
+import onemoretodolist.app.shared.generated.resources.settings_colors
 import onemoretodolist.app.shared.generated.resources.settings_palettes
 import onemoretodolist.app.shared.generated.resources.settings_privacy_policy
 import onemoretodolist.app.shared.generated.resources.settings_send_email
@@ -78,6 +77,7 @@ import onemoretodolist.app.shared.generated.resources.settings_todos
 import onemoretodolist.app.shared.generated.resources.settings_ui_style
 import onemoretodolist.app.shared.generated.resources.settings_ui_style_material
 import onemoretodolist.app.shared.generated.resources.settings_ui_style_paper
+import onemoretodolist.app.shared.generated.resources.settings_ui_style_holo
 import onemoretodolist.app.shared.generated.resources.settings_update
 import onemoretodolist.app.shared.generated.resources.settings_update_available
 import org.jetbrains.compose.resources.StringResource
@@ -139,6 +139,9 @@ fun SettingsScreen(
     fileAutoBackup: FileAutoBackupController? = null
 ) {
     val startAppUpdate = rememberAppUpdateLauncher()
+    // Dynamic color only exists on Android 12+ - everywhere else the Colors card has no
+    // Palettes / Dynamic color switch and always shows the swatches.
+    val dynamicColorSupported = isDynamicColorSupported()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -149,10 +152,9 @@ fun SettingsScreen(
     ) {
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
-                Text(
-                    text = stringResource(Res.string.settings_theme),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.semantics { heading() }
+                AppSectionTitle(
+                    title = stringResource(Res.string.settings_theme),
+                    number = SettingsSection.Theme.number
                 )
                 AppSegmentedControl(
                     options = ThemeMode.entries,
@@ -167,11 +169,11 @@ fun SettingsScreen(
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
-                // Dynamic color only exists on Android 12+ - everywhere else this card looks just
-                // like before (a plain "Palette" title, swatches always shown).
-                val dynamicColorSupported = isDynamicColorSupported()
+                AppSectionTitle(
+                    title = stringResource(Res.string.settings_colors),
+                    number = SettingsSection.Colors.number
+                )
                 if (dynamicColorSupported) {
-                    val paletteTitle = stringResource(Res.string.settings_palette)
                     AppSegmentedControl(
                         options = PaletteSourceTab.entries,
                         selectedOption = if (state.useDynamicColor) {
@@ -183,20 +185,9 @@ fun SettingsScreen(
                             onAction(SettingsAction.OnUseDynamicColorChanged(it == PaletteSourceTab.DynamicColor))
                         },
                         label = resourceLabels(PaletteSourceTab.entries) { it.displayName() },
-                        // No visible title here, so the switch stands in for it - this card stays
-                        // reachable by TalkBack's Headings navigation like every other one.
                         modifier = Modifier
                             .fillMaxWidth()
-                            .semantics {
-                                heading()
-                                contentDescription = paletteTitle
-                            }
-                    )
-                } else {
-                    Text(
-                        text = stringResource(Res.string.settings_palette),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.semantics { heading() }
+                            .padding(top = AppSpacing.m)
                     )
                 }
                 if (!dynamicColorSupported || !state.useDynamicColor) {
@@ -221,7 +212,7 @@ fun SettingsScreen(
                 } else {
                     Text(
                         text = stringResource(Res.string.settings_dynamic_color_description),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = appSupportingTextStyle(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = AppSpacing.m)
                     )
@@ -230,10 +221,9 @@ fun SettingsScreen(
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
-                Text(
-                    text = stringResource(Res.string.settings_font),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.semantics { heading() }
+                AppSectionTitle(
+                    title = stringResource(Res.string.settings_font),
+                    number = SettingsSection.Font.number
                 )
                 AppChipGroup(
                     options = FontOption.entries,
@@ -246,10 +236,9 @@ fun SettingsScreen(
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
-                Text(
-                    text = stringResource(Res.string.settings_ui_style),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.semantics { heading() }
+                AppSectionTitle(
+                    title = stringResource(Res.string.settings_ui_style),
+                    number = SettingsSection.UiStyle.number
                 )
                 AppChipGroup(
                     // Paper is hidden from the picker for now - dark theme support for it isn't
@@ -265,10 +254,9 @@ fun SettingsScreen(
         }
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
-                Text(
-                    text = stringResource(Res.string.settings_todos),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.semantics { heading() }
+                AppSectionTitle(
+                    title = stringResource(Res.string.settings_todos),
+                    number = SettingsSection.Todos.number
                 )
                 Row(
                     modifier = Modifier
@@ -280,20 +268,21 @@ fun SettingsScreen(
                         text = stringResource(Res.string.settings_archive_completed),
                         modifier = Modifier.weight(1f)
                     )
-                    Switch(
+                    AppSwitch(
                         checked = state.archiveCompletedTodos,
                         onCheckedChange = { onAction(SettingsAction.OnArchiveCompletedTodosChanged(it)) }
                     )
                 }
                 Text(
                     text = stringResource(Res.string.settings_archive_completed_description),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = appSupportingTextStyle(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = AppSpacing.xs)
                 )
             }
         }
         SettingsBackupCard(
+            sectionNumber = SettingsSection.Backup.number,
             state = state,
             onAction = onAction,
             fileBackupAvailable = fileBackupAvailable,
@@ -302,10 +291,9 @@ fun SettingsScreen(
         )
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(SETTINGS_CARD_CONTENT_PADDING)) {
-                Text(
-                    text = stringResource(Res.string.settings_support),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.semantics { heading() }
+                AppSectionTitle(
+                    title = stringResource(Res.string.settings_support),
+                    number = SettingsSection.Support.number
                 )
                 val uriHandler = LocalUriHandler.current
                 Row(
@@ -358,10 +346,17 @@ fun SettingsScreen(
         }
         Text(
             text = stringResource(Res.string.settings_app_version, state.appVersion),
-            style = MaterialTheme.typography.bodySmall,
+            style = appSupportingTextStyle(),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+// The titled sections, in screen order - each one's number (Holo's "01 // Theme") is its place here.
+internal enum class SettingsSection {
+    Theme, Colors, Font, UiStyle, Todos, Backup, Support;
+
+    val number: Int get() = ordinal + 1
 }
 
 private fun ThemeMode.displayName(): StringResource = when (this) {
@@ -384,6 +379,7 @@ private fun FontOption.displayName(): StringResource = when (this) {
 private fun UiStyleOption.displayName(): StringResource = when (this) {
     UiStyleOption.Material -> Res.string.settings_ui_style_material
     UiStyleOption.Paper -> Res.string.settings_ui_style_paper
+    UiStyleOption.Holo -> Res.string.settings_ui_style_holo
 }
 
 @Preview

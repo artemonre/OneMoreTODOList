@@ -52,6 +52,7 @@ fun TodoItemCard(
         onLongClick = onLongClick,
         modifier = modifier,
         containerColor = attention.containerColor(),
+        accent = nextReminder != null,
         customActions = customActions
     ) {
         Box(

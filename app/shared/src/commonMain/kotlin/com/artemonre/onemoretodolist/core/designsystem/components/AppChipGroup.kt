@@ -3,6 +3,7 @@ package com.artemonre.onemoretodolist.core.designsystem.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialChipGroup
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloChipGroup
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -25,5 +26,6 @@ fun <T> AppChipGroup(
         UiStyleOption.Material -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine, compact)
         // No Paper chips yet - fall back to Material.
         UiStyleOption.Paper -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine, compact)
+        UiStyleOption.Holo -> HoloChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine, compact)
     }
 }

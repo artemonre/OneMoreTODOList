@@ -54,6 +54,19 @@ fun <T> MaterialChipGroup(
             )
         }
     }
+    ChipGroupLayout(singleLine = singleLine, modifier = modifier, chips = chips)
+}
+
+/**
+ * Lays out a chip group's [chips]: wrapped onto extra lines, or kept on one line that scrolls
+ * horizontally when [singleLine]. Shared by every style's chip group.
+ */
+@Composable
+internal fun ChipGroupLayout(
+    singleLine: Boolean,
+    modifier: Modifier = Modifier,
+    chips: @Composable () -> Unit
+) {
     if (singleLine) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(AppSpacing.s),

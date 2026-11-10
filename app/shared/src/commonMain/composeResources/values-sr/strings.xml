@@ -30,9 +30,11 @@
     <string name="todo_filter_active">Aktivni (%1$d)</string>
     <string name="todo_filter_done">Završeni (%1$d)</string>
     <string name="completed_summary_title">Završeni zadaci</string>
-    <string name="completed_summary_today">Danas %1$d</string>
-    <string name="completed_summary_this_week">Ove nedelje %1$d</string>
-    <string name="completed_summary_this_month">Ovog meseca %1$d</string>
+    <string name="completed_summary_today_label">Danas</string>
+    <string name="completed_summary_this_week_label">Ove nedelje</string>
+    <string name="completed_summary_this_month_label">Ovog meseca</string>
+    <!-- One stat as a single line: a label and its count ("Today 3"). -->
+    <string name="stat_label_value">%1$s %2$d</string>
     <string name="todo_list_empty_completed">Ovde se pojavljuju završeni zadaci.\nOznači bilo koji na listi aktivnih da se nađe ovde.</string>
 
     <string name="tags_title">Oznake</string>
@@ -156,7 +158,7 @@
     <string name="settings_theme_system">Sistemska</string>
     <string name="settings_theme_light">Svetla</string>
     <string name="settings_theme_dark">Tamna</string>
-    <string name="settings_palette">Paleta</string>
+    <string name="settings_colors">Boje</string>
     <string name="settings_palettes">Palete</string>
     <string name="settings_dynamic_color">Boje pozadine</string>
     <string name="settings_dynamic_color_description">Boje se preuzimaju iz tvoje pozadine umesto iz gotove palete i menjaju se kada promeniš pozadinu.</string>
@@ -167,6 +169,7 @@
     <string name="settings_ui_style">Stil interfejsa</string>
     <string name="settings_ui_style_material">Material</string>
     <string name="settings_ui_style_paper">Papir</string>
+    <string name="settings_ui_style_holo">Holo</string>
     <string name="settings_todos">Zadaci</string>
     <string name="settings_archive_completed">Arhiviraj završene zadatke</string>
     <string name="settings_archive_completed_description">Kada je isključeno, zadatak završen u aplikaciji odmah se briše (možeš ga vratiti dugmetom „Opozovi“). Polje za potvrdu u vidžetu uvek arhivira, da slučajan dodir ne bi bio nepovratan.</string>

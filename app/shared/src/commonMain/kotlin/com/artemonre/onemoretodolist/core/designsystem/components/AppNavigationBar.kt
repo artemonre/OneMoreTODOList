@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialNavigationBar
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloNavigationBar
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -24,5 +25,6 @@ fun <T> AppNavigationBar(
         UiStyleOption.Material -> MaterialNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
         // No Paper navigation bar yet - fall back to Material.
         UiStyleOption.Paper -> MaterialNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
+        UiStyleOption.Holo -> HoloNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
     }
 }

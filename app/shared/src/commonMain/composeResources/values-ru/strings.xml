@@ -33,9 +33,11 @@
     <string name="todo_filter_active">Активные (%1$d)</string>
     <string name="todo_filter_done">Готово (%1$d)</string>
     <string name="completed_summary_title">Выполнено</string>
-    <string name="completed_summary_today">Сегодня %1$d</string>
-    <string name="completed_summary_this_week">За неделю %1$d</string>
-    <string name="completed_summary_this_month">За месяц %1$d</string>
+    <string name="completed_summary_today_label">Сегодня</string>
+    <string name="completed_summary_this_week_label">За неделю</string>
+    <string name="completed_summary_this_month_label">За месяц</string>
+    <!-- One stat as a single line: a label and its count ("Today 3"). -->
+    <string name="stat_label_value">%1$s %2$d</string>
     <string name="todo_list_empty_completed">Здесь появляются выполненные задачи.\nОтметь любую в списке активных, чтобы она оказалась здесь.</string>
 
     <string name="tags_title">Теги</string>
@@ -159,7 +161,7 @@
     <string name="settings_theme_system">Системная</string>
     <string name="settings_theme_light">Светлая</string>
     <string name="settings_theme_dark">Тёмная</string>
-    <string name="settings_palette">Палитра</string>
+    <string name="settings_colors">Цвета</string>
     <string name="settings_palettes">Палитры</string>
     <string name="settings_dynamic_color">Цвета обоев</string>
     <string name="settings_dynamic_color_description">Цвета берутся из твоих обоев, а не из готовой палитры, и обновляются, когда ты меняешь обои.</string>
@@ -170,6 +172,7 @@
     <string name="settings_ui_style">Стиль интерфейса</string>
     <string name="settings_ui_style_material">Material</string>
     <string name="settings_ui_style_paper">Бумага</string>
+    <string name="settings_ui_style_holo">Holo</string>
     <string name="settings_todos">Задачи</string>
     <string name="settings_archive_completed">Архивировать выполненные</string>
     <string name="settings_archive_completed_description">Если выключено, выполненная в приложении задача сразу удаляется (её можно вернуть кнопкой «Отменить»). Флажок в виджете всегда архивирует задачу, чтобы нельзя было удалить задачу случайным нажатием.</string>

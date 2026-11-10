@@ -19,7 +19,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,7 +39,8 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
@@ -123,7 +123,7 @@ fun TodoDetailDialog(
     // Read here, outside the dialog, so it's the app window's height rather than the dialog's own.
     val maxCardHeight = LocalWindowInfo.current.containerDpSize.height * MAX_CARD_HEIGHT_SCREEN_FRACTION
 
-    MaterialAlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         // The mascot's overhang sits above the card, so it doesn't count toward the card's cap.
         // fillMaxWidth keeps the card at the dialog's max width whatever the text length, so
@@ -150,7 +150,7 @@ fun TodoDetailDialog(
         },
         bottomDecorationHeight = SHEEP_STRIP_HEIGHT,
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss, emphasized = true) {
                 Text(stringResource(Res.string.action_close))
             }
         },

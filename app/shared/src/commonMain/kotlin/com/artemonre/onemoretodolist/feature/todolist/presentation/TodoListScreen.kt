@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -83,6 +82,9 @@ import com.artemonre.onemoretodolist.analytics.TodoForm
 import com.artemonre.onemoretodolist.core.container.FAB_NAV_BAR_OVERLAP
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
+import com.artemonre.onemoretodolist.core.designsystem.components.AppStat
+import com.artemonre.onemoretodolist.core.designsystem.components.AppStatsCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTonalButton
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
 import com.artemonre.onemoretodolist.core.designsystem.components.CLOUD_SEGMENT_COUNT
 import com.artemonre.onemoretodolist.core.designsystem.components.CloudSegment
@@ -115,10 +117,10 @@ import onemoretodolist.app.shared.generated.resources.action_move_to_bottom
 import onemoretodolist.app.shared.generated.resources.action_move_to_top
 import onemoretodolist.app.shared.generated.resources.action_move_up
 import onemoretodolist.app.shared.generated.resources.action_undo
-import onemoretodolist.app.shared.generated.resources.completed_summary_this_month
-import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
+import onemoretodolist.app.shared.generated.resources.completed_summary_this_month_label
+import onemoretodolist.app.shared.generated.resources.completed_summary_this_week_label
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
-import onemoretodolist.app.shared.generated.resources.completed_summary_today
+import onemoretodolist.app.shared.generated.resources.completed_summary_today_label
 import onemoretodolist.app.shared.generated.resources.mascot_sitting
 import onemoretodolist.app.shared.generated.resources.mascot_sitting_monochrome
 import onemoretodolist.app.shared.generated.resources.mascot_ball_monochrome
@@ -457,7 +459,7 @@ fun TodoListScreen(
                     // to Active.
                     if (state.filter == TodoListFilter.Active) {
                         Box {
-                            FilledTonalButton(
+                            AppTonalButton(
                                 onClick = { sortMenuExpanded = true },
                                 contentPadding = SORT_BUTTON_CONTENT_PADDING
                             ) {
@@ -573,7 +575,7 @@ fun TodoListScreen(
                         val tip = state.emptyStateTip.takeIf { state.filter == TodoListFilter.Active }
                         if (state.filter == TodoListFilter.Done && !state.archiveCompletedTodos) {
                             Spacer(modifier = Modifier.height(AppSpacing.l))
-                            FilledTonalButton(onClick = { onAction(TodoListAction.OnKeepCompletedTodosClick) }) {
+                            AppTonalButton(onClick = { onAction(TodoListAction.OnKeepCompletedTodosClick) }) {
                                 Text(stringResource(Res.string.todo_list_keep_completed))
                             }
                         } else if (tip == EmptyStateTip.AddWidget || tip == EmptyStateTip.MoreSettings) {
@@ -589,7 +591,7 @@ fun TodoListScreen(
                             )
                             if (tip == EmptyStateTip.AddWidget && state.canPinWidget) {
                                 Spacer(modifier = Modifier.height(AppSpacing.m))
-                                FilledTonalButton(onClick = { onAction(TodoListAction.OnAddWidgetClick) }) {
+                                AppTonalButton(onClick = { onAction(TodoListAction.OnAddWidgetClick) }) {
                                     Text(stringResource(Res.string.todo_list_add_widget))
                                 }
                             }
@@ -729,40 +731,15 @@ private fun CompletedSummaryCard(
     thisMonthCount: Int,
     modifier: Modifier = Modifier
 ) {
-    // Same color as the bottom navigation bar, so the card reads as part of the app chrome
-    // rather than as another todo.
-    AppCard(modifier = modifier, containerColor = ShortNavigationBarDefaults.containerColor) {
-        // Extra padding on top of the card's own 8dp - 12dp total, same as the settings sections.
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AppSpacing.xs)
-        ) {
-            Text(
-                text = stringResource(Res.string.completed_summary_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { heading() }
-            )
-            Spacer(modifier = Modifier.height(AppSpacing.s))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = stringResource(Res.string.completed_summary_today, todayCount),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Text(
-                    text = stringResource(Res.string.completed_summary_this_week, thisWeekCount),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Text(
-                    text = stringResource(Res.string.completed_summary_this_month, thisMonthCount),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
-    }
+    AppStatsCard(
+        title = stringResource(Res.string.completed_summary_title),
+        stats = listOf(
+            AppStat(stringResource(Res.string.completed_summary_today_label), todayCount),
+            AppStat(stringResource(Res.string.completed_summary_this_week_label), thisWeekCount),
+            AppStat(stringResource(Res.string.completed_summary_this_month_label), thisMonthCount)
+        ),
+        modifier = modifier
+    )
 }
 
 // Move to top / up / down / to bottom for one todo in the list as shown - each only where it'd
