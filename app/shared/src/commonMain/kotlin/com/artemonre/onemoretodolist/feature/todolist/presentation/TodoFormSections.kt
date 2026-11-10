@@ -40,7 +40,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -52,6 +51,7 @@ import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
 import com.artemonre.onemoretodolist.core.designsystem.components.AppAssistChip
 import com.artemonre.onemoretodolist.core.designsystem.components.AppIconButton
 import com.artemonre.onemoretodolist.core.designsystem.components.AppInputChip
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSectionTitle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSuggestionChip
 import com.artemonre.onemoretodolist.core.designsystem.components.AppTextField
 import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
@@ -92,15 +92,12 @@ internal fun TodoFormTagsSection(
     tags: List<TodoTag>,
     knownTags: List<TodoTag>,
     onTagsChange: (List<TodoTag>) -> Unit,
+    number: Int?,
     modifier: Modifier = Modifier
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(Res.string.tags_title),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.semantics { heading() }
-        )
+        AppSectionTitle(title = stringResource(Res.string.tags_title), number = number, compact = true)
         Spacer(Modifier.height(AppSpacing.xs))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.s)) {
             tags.forEach { tag ->
@@ -261,15 +258,12 @@ private fun TagColorSwatch(
 internal fun TodoFormChecklistSection(
     items: List<ChecklistItem>,
     onItemsChange: (List<ChecklistItem>) -> Unit,
+    number: Int?,
     modifier: Modifier = Modifier
 ) {
     var justAddedId by remember { mutableStateOf<String?>(null) }
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(Res.string.checklist_title),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.semantics { heading() }
-        )
+        AppSectionTitle(title = stringResource(Res.string.checklist_title), number = number, compact = true)
         items.forEach { item ->
             val focusRequester = remember(item.id) { FocusRequester() }
             if (item.id == justAddedId) {

@@ -38,7 +38,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -152,8 +153,9 @@ fun HoloSwitch(
 }
 
 /**
- * A Holo section title: `01 // Title`, the number in a small mono accent font. The number is
- * decoration - TalkBack reads only [title], as a heading.
+ * A Holo section title: `01 // TITLE` - the number in a small mono accent font, the title in
+ * capitals, both the same small size wherever they're used. The number and the capitals are
+ * decoration - TalkBack reads [title] as written, as a heading.
  */
 @Composable
 fun HoloSectionTitle(
@@ -172,10 +174,13 @@ fun HoloSectionTitle(
             Spacer(Modifier.width(AppSpacing.s))
         }
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
+            text = title.uppercase(),
+            style = MaterialTheme.typography.titleSmall.copy(letterSpacing = HoloDefaults.LabelLetterSpacing),
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.semantics { heading() }
+            modifier = Modifier.clearAndSetSemantics {
+                heading()
+                text = AnnotatedString(title)
+            }
         )
     }
 }

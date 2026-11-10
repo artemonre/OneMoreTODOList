@@ -144,6 +144,7 @@
     <string name="form_allow_notifications">Allow notifications</string>
     <string name="form_grant_permission">Grant permission</string>
     <string name="form_ok">OK</string>
+    <string name="form_reminder_and_repeat">Reminder and repeat</string>
     <string name="form_repeat">Repeat</string>
     <string name="form_every">Every</string>
     <string name="form_only_after_completion">Only after completion</string>

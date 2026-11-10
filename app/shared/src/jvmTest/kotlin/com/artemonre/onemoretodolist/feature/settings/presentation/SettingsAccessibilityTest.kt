@@ -34,12 +34,14 @@ class SettingsAccessibilityTest {
         assertEveryTitleIsAHeading()
     }
 
-    // Holo numbers its sections ("01 // Theme") - the number is decoration, not read out.
+    // Holo numbers its sections and shows them in capitals ("01 // THEME") - both are decoration,
+    // TalkBack reads the title as written.
     @Test
-    fun `Holo section titles are headings without their numbers`() = runComposeUiTest {
+    fun `Holo section titles are headings without their numbers or capitals`() = runComposeUiTest {
         showSettings(UiStyleOption.Holo)
         assertEveryTitleIsAHeading()
         onAllNodes(hasText("//", substring = true)).assertCountEquals(0)
+        onAllNodes(hasText(runBlocking { getString(Res.string.settings_theme) }.uppercase())).assertCountEquals(0)
     }
 
     private fun ComposeUiTest.showSettings(uiStyle: UiStyleOption) {

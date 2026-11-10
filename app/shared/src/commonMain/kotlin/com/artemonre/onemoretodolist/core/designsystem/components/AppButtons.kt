@@ -27,8 +27,9 @@ fun AppButton(
 }
 
 /**
- * A text button for the current [LocalUiStyle] - Material3's [TextButton] by default. [emphasized]
- * marks a dialog's main action: Holo draws it as an [AppButton], the other styles ignore it.
+ * A text button for the current [LocalUiStyle] - Material3's [TextButton] by default; Holo gives
+ * it an outline. [emphasized] marks a dialog's main action: Holo draws it as an [AppButton], the
+ * other styles ignore it.
  */
 @Composable
 fun AppTextButton(

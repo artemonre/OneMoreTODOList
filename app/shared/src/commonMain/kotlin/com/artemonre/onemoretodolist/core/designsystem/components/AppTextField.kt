@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloTextField
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedTextField
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
@@ -28,8 +29,10 @@ fun AppTextField(
     compact: Boolean = false
 ) {
     when (LocalUiStyle.current) {
-        // No Holo text field yet - fall back to Material.
-        UiStyleOption.Material, UiStyleOption.Holo -> MaterialOutlinedTextField(
+        UiStyleOption.Material -> MaterialOutlinedTextField(
+            state, modifier, readOnly, label, placeholder, trailingIcon, keyboardOptions, onKeyboardAction, lineLimits, compact
+        )
+        UiStyleOption.Holo -> HoloTextField(
             state, modifier, readOnly, label, placeholder, trailingIcon, keyboardOptions, onKeyboardAction, lineLimits, compact
         )
     }

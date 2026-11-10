@@ -24,19 +24,21 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
 /**
- * A section's title, as a heading. Holo puts the section's [number] before it (`01 // Title`);
- * Material shows the title alone.
+ * A section's title, as a heading. Holo puts the section's [number] before it (`01 // TITLE`) and
+ * uses one small size everywhere; Material shows the title alone, a size smaller when [compact]
+ * (inside a form rather than on a settings card).
  */
 @Composable
 fun AppSectionTitle(
     title: String,
     number: Int?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
+            style = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
             modifier = modifier.semantics { heading() }
         )
         UiStyleOption.Holo -> HoloSectionTitle(title, number, modifier)

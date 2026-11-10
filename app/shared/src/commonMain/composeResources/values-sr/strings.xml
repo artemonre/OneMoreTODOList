@@ -133,6 +133,7 @@
     <string name="form_allow_notifications">Dozvoli obaveštenja</string>
     <string name="form_grant_permission">Odobri dozvolu</string>
     <string name="form_ok">U redu</string>
+    <string name="form_reminder_and_repeat">Podsetnik i ponavljanje</string>
     <string name="form_repeat">Ponavljaj</string>
     <string name="form_every">Jednom u</string>
     <string name="form_only_after_completion">Tek nakon završetka</string>

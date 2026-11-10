@@ -17,18 +17,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -45,7 +44,8 @@ import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
-private val CHECKBOX_SIZE = 24.dp
+// Drawn smaller than Material's 24dp box; the touch area stays the full 48dp either way.
+private val CHECKBOX_SIZE = 20.dp
 private val CONTROL_MIN_HEIGHT = 32.dp
 
 /** A Holo checkbox: a square with a thick outline, filled with the check when [checked]. */
@@ -77,7 +77,7 @@ fun HoloCheckbox(
                     if (checked) {
                         Modifier.background(colors.primary, shape)
                     } else {
-                        Modifier.border(HoloDefaults.BorderWidth, colors.outline, shape)
+                        Modifier.border(HoloDefaults.BorderWidth, colors.onSurfaceVariant, shape)
                     }
                 ),
             contentAlignment = Alignment.Center
@@ -179,20 +179,20 @@ fun HoloButton(
     contentPadding: PaddingValues = PaddingValues(horizontal = AppSpacing.l),
     content: @Composable RowScope.() -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
+    // Material3's filled-button colors, disabled state included.
+    val colors = ButtonDefaults.buttonColors()
     Row(
         modifier = modifier
             .minimumInteractiveComponentSize()
             .clip(HoloControlShape)
-            .background(colors.primary)
+            .background(if (enabled) colors.containerColor else colors.disabledContainerColor)
             .clickable(enabled = enabled, onClick = onClick, role = Role.Button)
-            .alpha(if (enabled) 1f else HOLO_DISABLED_ALPHA)
             .defaultMinSize(minHeight = CONTROL_MIN_HEIGHT)
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        CompositionLocalProvider(LocalContentColor provides colors.onPrimary) {
+        CompositionLocalProvider(LocalContentColor provides if (enabled) colors.contentColor else colors.disabledContentColor) {
             ProvideTextStyle(MaterialTheme.typography.labelLarge) {
                 content()
             }
@@ -200,7 +200,11 @@ fun HoloButton(
     }
 }
 
-/** A Holo secondary-action button: accent-colored text, pressed as a rounded rectangle. */
+/**
+ * A Holo secondary-action button: Material3's outlined-button colors and border, disabled state
+ * included, in the same rounded rectangle and size as [HoloButton] - so a secondary action never
+ * looks bigger than the main one beside it.
+ */
 @Composable
 fun HoloTextButton(
     onClick: () -> Unit,
@@ -208,7 +212,25 @@ fun HoloTextButton(
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit
 ) {
-    TextButton(onClick = onClick, modifier = modifier, enabled = enabled, shape = HoloControlShape, content = content)
+    val colors = ButtonDefaults.outlinedButtonColors()
+    val border = ButtonDefaults.outlinedButtonBorder(enabled)
+    Row(
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .clip(HoloControlShape)
+            .border(border, HoloControlShape)
+            .clickable(enabled = enabled, onClick = onClick, role = Role.Button)
+            .defaultMinSize(minHeight = CONTROL_MIN_HEIGHT)
+            .padding(horizontal = AppSpacing.l),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        CompositionLocalProvider(LocalContentColor provides if (enabled) colors.contentColor else colors.disabledContentColor) {
+            ProvideTextStyle(MaterialTheme.typography.labelLarge) {
+                content()
+            }
+        }
+    }
 }
 
 /**

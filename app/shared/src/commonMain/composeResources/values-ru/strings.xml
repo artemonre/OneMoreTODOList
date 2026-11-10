@@ -136,6 +136,7 @@
     <string name="form_allow_notifications">Разрешить уведомления</string>
     <string name="form_grant_permission">Выдать разрешение</string>
     <string name="form_ok">ОК</string>
+    <string name="form_reminder_and_repeat">Напоминание и повтор</string>
     <string name="form_repeat">Повторять</string>
     <string name="form_every">Раз в</string>
     <string name="form_only_after_completion">Только после выполнения</string>
