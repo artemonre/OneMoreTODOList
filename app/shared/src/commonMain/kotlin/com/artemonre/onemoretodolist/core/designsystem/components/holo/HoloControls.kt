@@ -1,5 +1,6 @@
 package com.artemonre.onemoretodolist.core.designsystem.components.holo
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
@@ -30,12 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.artemonre.onemoretodolist.core.designsystem.components.TagChipLayout
 import com.artemonre.onemoretodolist.core.designsystem.components.material.ChipGroupLayout
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -210,6 +214,7 @@ fun HoloTextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    contentPadding: PaddingValues = PaddingValues(horizontal = AppSpacing.s),
     content: @Composable RowScope.() -> Unit
 ) {
     val colors = ButtonDefaults.outlinedButtonColors()
@@ -221,7 +226,7 @@ fun HoloTextButton(
             .border(border, HoloControlShape)
             .clickable(enabled = enabled, onClick = onClick, role = Role.Button)
             .defaultMinSize(minHeight = CONTROL_MIN_HEIGHT)
-            .padding(horizontal = AppSpacing.l),
+            .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -235,33 +240,66 @@ fun HoloTextButton(
 
 /**
  * A Holo tag label: `# NAME` in capitals with a soft outline. TalkBack reads [text] as given,
- * without the glyph or the capitals.
+ * without the glyph or the capitals. [onClick], [trailingIcon] and [trailingIconDescription] work
+ * as in [com.artemonre.onemoretodolist.core.designsystem.components.AppTagChip].
  */
 @Composable
 fun HoloTagChip(
     text: String,
     containerColor: Color,
     contentColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    trailingIcon: ImageVector? = null,
+    trailingIconDescription: String? = null
 ) {
-    val shape = MaterialTheme.shapes.small
-    Row(
+    TagChipLayout(
+        containerColor = containerColor,
+        contentColor = contentColor,
+        border = BorderStroke(HoloDefaults.ThinBorderWidth, contentColor.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA)),
+        onClick = onClick,
+        trailingIcon = trailingIcon,
+        trailingIconDescription = trailingIconDescription,
         modifier = modifier
-            .clearAndSetSemantics { contentDescription = text }
-            .background(containerColor, shape)
-            .border(HoloDefaults.ThinBorderWidth, contentColor.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA), shape)
-            .padding(horizontal = AppSpacing.s, vertical = AppSpacing.xs)
     ) {
-        val style = MaterialTheme.typography.labelSmall.copy(letterSpacing = HoloDefaults.LabelLetterSpacing)
-        Text(text = HoloDefaults.TAG_GLYPH, style = style, color = contentColor)
-        Spacer(Modifier.width(AppSpacing.xs))
-        Text(
-            text = text.uppercase(),
-            style = style,
-            color = contentColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        HoloTagLabel(glyph = HoloDefaults.TAG_GLYPH, text = text)
+    }
+}
+
+/**
+ * A Holo action sized like a [HoloTagChip] - `ADD TAG` in the same capitals, after [leadingIcon]
+ * in place of the `#`. Colors are Material's assist-chip roles, as in the Material style.
+ */
+@Composable
+fun HoloTagButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: ImageVector? = null
+) {
+    TagChipLayout(
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(HoloDefaults.ThinBorderWidth, MaterialTheme.colorScheme.outlineVariant),
+        onClick = onClick,
+        leadingIcon = leadingIcon,
+        leadingIconColor = MaterialTheme.colorScheme.primary,
+        modifier = modifier
+    ) {
+        HoloTagLabel(glyph = null, text = text)
+    }
+}
+
+// The capitals (and optional glyph) are only drawn; TalkBack gets [text] as written.
+@Composable
+private fun HoloTagLabel(glyph: String?, text: String) {
+    Row(
+        modifier = Modifier.clearAndSetSemantics { contentDescription = text },
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
+    ) {
+        val style = LocalTextStyle.current.copy(letterSpacing = HoloDefaults.LabelLetterSpacing)
+        if (glyph != null) Text(text = glyph, style = style)
+        Text(text = text.uppercase(), style = style, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

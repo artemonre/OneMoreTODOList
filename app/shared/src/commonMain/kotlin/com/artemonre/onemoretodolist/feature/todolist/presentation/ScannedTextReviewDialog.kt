@@ -195,10 +195,9 @@ fun ScannedTextReviewDialog(
                     val newRow = ScannedLine(id = Uuid.random().toString(), text = "")
                     justAddedId = newRow.id
                     rows = rows + newRow
-                }
+                },
+                leadingIcon = Icons.Filled.Add
             ) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
                 Text(stringResource(Res.string.scan_review_add_line))
             }
             Spacer(Modifier.height(20.dp))

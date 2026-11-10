@@ -8,6 +8,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
@@ -15,6 +16,7 @@ import androidx.compose.ui.test.runComposeUiTest
 import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
 import com.artemonre.onemoretodolist.core.designsystem.components.AppStat
 import com.artemonre.onemoretodolist.core.designsystem.components.AppStatsCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTagButton
 import com.artemonre.onemoretodolist.core.designsystem.components.AppTagChip
 import com.artemonre.onemoretodolist.core.designsystem.components.AppNavigationBar
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -37,6 +39,7 @@ class HoloAccessibilityTest {
                         stats = listOf(AppStat("Today", 0), AppStat("This week", 1))
                     )
                     AppTagChip(text = "Money", containerColor = Color.White, contentColor = Color.Black)
+                    AppTagButton(text = "Add tag", onClick = {}, leadingIcon = Icons.Filled.Add)
                     AppNavigationBar(
                         items = listOf("Todo", "Settings"),
                         selectedIndex = 0,
@@ -52,10 +55,11 @@ class HoloAccessibilityTest {
         onNode(hasContentDescription("Today 0")).assertExists()
         onNode(hasContentDescription("This week 1")).assertExists()
         onNode(hasContentDescription("Money")).assertExists()
+        onNode(hasContentDescription("Add tag") and hasClickAction()).assertExists()
         onNode(hasContentDescription("Settings")).assertExists()
 
         // The merged tree is what TalkBack reads.
-        listOf(">", "#", "COMPLETED TODOS", "TODAY", "MONEY", "SETTINGS").forEach { shown ->
+        listOf(">", "#", "COMPLETED TODOS", "TODAY", "MONEY", "ADD TAG", "SETTINGS").forEach { shown ->
             onAllNodes(hasText(shown, substring = true)).assertCountEquals(0)
         }
     }

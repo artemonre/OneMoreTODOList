@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,9 +47,9 @@ import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.components.keepsKeyboardOnTap
 import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
-import com.artemonre.onemoretodolist.core.designsystem.components.AppAssistChip
 import com.artemonre.onemoretodolist.core.designsystem.components.AppIconButton
-import com.artemonre.onemoretodolist.core.designsystem.components.AppInputChip
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTagButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTagChip
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSectionTitle
 import com.artemonre.onemoretodolist.core.designsystem.components.AppSuggestionChip
 import com.artemonre.onemoretodolist.core.designsystem.components.AppTextField
@@ -103,16 +102,16 @@ internal fun TodoFormTagsSection(
             tags.forEach { tag ->
                 val swatch = tag.color.swatch()
                 val removeDescription = stringResource(Res.string.tag_remove, tag.name)
-                AppInputChip(
+                AppTagChip(
                     text = tag.name,
-                    onClick = { onTagsChange(tags - tag) },
                     containerColor = swatch.container,
                     contentColor = swatch.content,
+                    onClick = { onTagsChange(tags - tag) },
                     trailingIcon = Icons.Filled.Close,
                     trailingIconDescription = removeDescription
                 )
             }
-            AppAssistChip(
+            AppTagButton(
                 text = stringResource(Res.string.tag_add),
                 onClick = { showAddDialog = true },
                 leadingIcon = Icons.Filled.Add
@@ -313,10 +312,9 @@ internal fun TodoFormChecklistSection(
                 val newItem = ChecklistItem(id = Uuid.random().toString(), text = "")
                 justAddedId = newItem.id
                 onItemsChange(items + newItem)
-            }
+            },
+            leadingIcon = Icons.Filled.Add
         ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = null)
-            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
             Text(stringResource(Res.string.checklist_add_item))
         }
     }

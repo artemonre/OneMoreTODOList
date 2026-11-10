@@ -27,6 +27,7 @@ internal object HoloDefaults {
     val HeroCardCornerRadius = 24.dp
     val TileCornerRadius = 12.dp
     val ControlCornerRadius = 12.dp
+    val FieldCornerRadius = 16.dp
     val CheckboxCornerRadius = 4.dp
     val FabCornerRadius = 16.dp
     val BorderWidth = 2.dp
@@ -96,6 +97,10 @@ internal val HoloCardShape: Shape = HoloFoldedCornerShape(HoloDefaults.CardCorne
 internal const val HOLO_DISABLED_ALPHA = 0.38f
 
 internal val HoloControlShape = RoundedCornerShape(HoloDefaults.ControlCornerRadius)
+
+// Text fields and form section cards - rounder than chips and buttons.
+internal val HoloFieldShape = RoundedCornerShape(HoloDefaults.FieldCornerRadius)
+internal val HoloSectionCardShape = RoundedCornerShape(HoloDefaults.CardCornerRadius)
 
 /**
  * The Holo look shared by chips and the tonal button: a rounded rectangle, filled with a darker

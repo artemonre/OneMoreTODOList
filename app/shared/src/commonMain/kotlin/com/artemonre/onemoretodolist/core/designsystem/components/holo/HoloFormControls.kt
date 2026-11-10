@@ -50,7 +50,7 @@ private val SEGMENT_ROW_HEIGHT = 40.dp
 
 /**
  * A Holo text field: Material3's outlined field - its colors and label behavior - in Holo's
- * rounded-rectangle shape. Same parameters as [MaterialOutlinedTextField].
+ * rounder field shape. Same parameters as [MaterialOutlinedTextField].
  */
 @Composable
 fun HoloTextField(
@@ -67,7 +67,7 @@ fun HoloTextField(
 ) {
     MaterialOutlinedTextField(
         state, modifier, readOnly, label, placeholder, trailingIcon, keyboardOptions, onKeyboardAction, lineLimits, compact,
-        shape = HoloControlShape
+        shape = HoloFieldShape
     )
 }
 
