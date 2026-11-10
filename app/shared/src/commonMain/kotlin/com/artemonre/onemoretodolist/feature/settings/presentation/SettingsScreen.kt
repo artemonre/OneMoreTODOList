@@ -76,7 +76,6 @@ import onemoretodolist.app.shared.generated.resources.settings_theme_system
 import onemoretodolist.app.shared.generated.resources.settings_todos
 import onemoretodolist.app.shared.generated.resources.settings_ui_style
 import onemoretodolist.app.shared.generated.resources.settings_ui_style_material
-import onemoretodolist.app.shared.generated.resources.settings_ui_style_paper
 import onemoretodolist.app.shared.generated.resources.settings_ui_style_holo
 import onemoretodolist.app.shared.generated.resources.settings_update
 import onemoretodolist.app.shared.generated.resources.settings_update_available
@@ -241,10 +240,7 @@ fun SettingsScreen(
                     number = SettingsSection.UiStyle.number
                 )
                 AppChipGroup(
-                    // Paper is hidden from the picker for now - dark theme support for it isn't
-                    // settled yet. The enum value and its whole implementation stay in place, just
-                    // not user-selectable.
-                    options = UiStyleOption.entries.filter { it != UiStyleOption.Paper },
+                    options = UiStyleOption.entries,
                     selectedOption = state.uiStyle,
                     onOptionSelected = { onAction(SettingsAction.OnUiStyleSelected(it)) },
                     label = resourceLabels(UiStyleOption.entries) { it.displayName() },
@@ -378,7 +374,6 @@ private fun FontOption.displayName(): StringResource = when (this) {
 
 private fun UiStyleOption.displayName(): StringResource = when (this) {
     UiStyleOption.Material -> Res.string.settings_ui_style_material
-    UiStyleOption.Paper -> Res.string.settings_ui_style_paper
     UiStyleOption.Holo -> Res.string.settings_ui_style_holo
 }
 

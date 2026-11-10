@@ -5,7 +5,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import com.artemonre.onemoretodolist.core.designsystem.components.material.ListItemCard as MaterialListItemCard
-import com.artemonre.onemoretodolist.core.designsystem.components.paper.ListItemCard as PaperListItemCard
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloListItemCard
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
@@ -38,7 +37,6 @@ fun AppListItemCard(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialListItemCard(onClick, modifier, onLongClick, containerColor, customActions, content)
-        UiStyleOption.Paper -> PaperListItemCard(onClick, modifier, onLongClick, containerColor, customActions, content)
         UiStyleOption.Holo -> HoloListItemCard(onClick, modifier, onLongClick, containerColor, accent, customActions, content)
     }
 }

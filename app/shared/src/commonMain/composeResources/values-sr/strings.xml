@@ -168,7 +168,6 @@
     <string name="settings_font_mono">Monospace</string>
     <string name="settings_ui_style">Stil interfejsa</string>
     <string name="settings_ui_style_material">Material</string>
-    <string name="settings_ui_style_paper">Papir</string>
     <string name="settings_ui_style_holo">Holo</string>
     <string name="settings_todos">Zadaci</string>
     <string name="settings_archive_completed">Arhiviraj završene zadatke</string>

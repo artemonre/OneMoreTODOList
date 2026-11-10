@@ -26,7 +26,7 @@ import org.jetbrains.compose.resources.stringResource
 data class AppStat(val label: String, val value: Int)
 
 /**
- * A card with a [title] heading and a row of [stats]. Material and Paper show each stat as one
+ * A card with a [title] heading and a row of [stats]. Material shows each stat as one
  * line ("Today 3"); Holo shows tiles with the label above a big number.
  */
 @Composable
@@ -36,7 +36,7 @@ fun AppStatsCard(
     modifier: Modifier = Modifier
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper -> InlineStatsCard(title, stats, modifier)
+        UiStyleOption.Material -> InlineStatsCard(title, stats, modifier)
         UiStyleOption.Holo -> HoloStatsCard(title, stats, modifier)
     }
 }

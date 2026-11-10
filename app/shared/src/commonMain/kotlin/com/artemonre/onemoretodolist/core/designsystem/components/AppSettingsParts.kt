@@ -25,7 +25,7 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
 /**
  * A section's title, as a heading. Holo puts the section's [number] before it (`01 // Title`);
- * Material and Paper show the title alone.
+ * Material shows the title alone.
  */
 @Composable
 fun AppSectionTitle(
@@ -34,7 +34,7 @@ fun AppSectionTitle(
     modifier: Modifier = Modifier
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper -> Text(
+        UiStyleOption.Material -> Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             modifier = modifier.semantics { heading() }
@@ -52,7 +52,7 @@ fun AppSwitch(
     enabled: Boolean = true
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper ->
+        UiStyleOption.Material ->
             Switch(checked = checked, onCheckedChange = onCheckedChange, modifier = modifier, enabled = enabled)
         UiStyleOption.Holo -> HoloSwitch(checked, onCheckedChange, modifier, enabled)
     }
@@ -69,7 +69,7 @@ fun AppOutlinedButton(
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper -> OutlinedButton(
+        UiStyleOption.Material -> OutlinedButton(
             onClick = onClick,
             enabled = enabled,
             contentPadding = contentPadding,
@@ -84,13 +84,13 @@ fun AppOutlinedButton(
 }
 
 /**
- * A thin line between the parts of a section. Only Holo draws one; Material and Paper separate
+ * A thin line between the parts of a section. Only Holo draws one; Material separates
  * the parts with spacing alone.
  */
 @Composable
 fun AppSectionDivider(modifier: Modifier = Modifier) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper -> Unit
+        UiStyleOption.Material -> Unit
         UiStyleOption.Holo -> HoloDivider(modifier)
     }
 }
@@ -98,6 +98,6 @@ fun AppSectionDivider(modifier: Modifier = Modifier) {
 /** The style for small supporting text under a setting or a control (descriptions, notes). */
 @Composable
 fun appSupportingTextStyle(): TextStyle = when (LocalUiStyle.current) {
-    UiStyleOption.Material, UiStyleOption.Paper -> MaterialTheme.typography.bodySmall
+    UiStyleOption.Material -> MaterialTheme.typography.bodySmall
     UiStyleOption.Holo -> holoSupportingTextStyle()
 }

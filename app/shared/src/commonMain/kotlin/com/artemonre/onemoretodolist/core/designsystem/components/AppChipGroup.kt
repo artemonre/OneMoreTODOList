@@ -24,8 +24,6 @@ fun <T> AppChipGroup(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine, compact)
-        // No Paper chips yet - fall back to Material.
-        UiStyleOption.Paper -> MaterialChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine, compact)
         UiStyleOption.Holo -> HoloChipGroup(options, selectedOption, onOptionSelected, label, modifier, singleLine, compact)
     }
 }

@@ -3,7 +3,6 @@ package com.artemonre.onemoretodolist.core.designsystem.components
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Shape
-import com.artemonre.onemoretodolist.core.designsystem.components.paper.PaperListItemCardShape
 import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloCardShape
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
@@ -17,6 +16,5 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 fun appListItemCardShape(): Shape = when (LocalUiStyle.current) {
     // The Material card is an ElevatedCard - match its shape, not the plain Card's.
     UiStyleOption.Material -> CardDefaults.elevatedShape
-    UiStyleOption.Paper -> PaperListItemCardShape
     UiStyleOption.Holo -> HoloCardShape
 }

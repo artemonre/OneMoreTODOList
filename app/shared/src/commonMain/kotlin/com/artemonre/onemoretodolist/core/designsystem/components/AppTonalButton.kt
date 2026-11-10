@@ -22,7 +22,7 @@ fun AppTonalButton(
     content: @Composable RowScope.() -> Unit
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper ->
+        UiStyleOption.Material ->
             FilledTonalButton(onClick = onClick, modifier = modifier, contentPadding = contentPadding, content = content)
         UiStyleOption.Holo -> HoloTonalButton(onClick = onClick, modifier = modifier, contentPadding = contentPadding, content = content)
     }

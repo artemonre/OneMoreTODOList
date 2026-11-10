@@ -23,8 +23,6 @@ fun <T> AppNavigationBar(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
-        // No Paper navigation bar yet - fall back to Material.
-        UiStyleOption.Paper -> MaterialNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
         UiStyleOption.Holo -> HoloNavigationBar(items, selectedIndex, onItemSelected, icon, label, modifier)
     }
 }

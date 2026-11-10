@@ -34,7 +34,7 @@ fun AppAlertDialog(
     properties: DialogProperties = DialogProperties()
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper -> MaterialAlertDialog(
+        UiStyleOption.Material -> MaterialAlertDialog(
             onDismissRequest, confirmButton, modifier, dismissButton, icon, title, text, contentPadding,
             buttonsTopSpacing, topDecoration, topDecorationOverhang, bottomDecoration, bottomDecorationHeight, properties
         )

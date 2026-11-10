@@ -22,8 +22,6 @@ fun AppFab(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialFab(onClick, icon, contentDescription, modifier)
-        // No Paper FAB yet - fall back to Material.
-        UiStyleOption.Paper -> MaterialFab(onClick, icon, contentDescription, modifier)
         UiStyleOption.Holo -> HoloFab(onClick, icon, contentDescription, modifier)
     }
 }

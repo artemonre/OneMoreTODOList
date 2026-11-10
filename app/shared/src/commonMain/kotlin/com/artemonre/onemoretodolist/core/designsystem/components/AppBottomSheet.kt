@@ -27,8 +27,6 @@ fun AppBottomSheet(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, onExpanded, topDecoration, topDecorationOverhang, content)
-        // No Paper bottom sheet yet - fall back to Material.
-        UiStyleOption.Paper -> MaterialBottomSheet(onDismissRequest, modifier, showDragHandle, onExpanded, topDecoration, topDecorationOverhang, content)
         UiStyleOption.Holo -> HoloBottomSheet(onDismissRequest, modifier, showDragHandle, onExpanded, topDecoration, topDecorationOverhang, content)
     }
 }

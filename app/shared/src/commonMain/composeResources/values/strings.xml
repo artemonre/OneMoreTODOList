@@ -181,7 +181,6 @@
     <string name="settings_font_mono">Mono</string>
     <string name="settings_ui_style">UI Style</string>
     <string name="settings_ui_style_material">Material</string>
-    <string name="settings_ui_style_paper">Paper</string>
     <string name="settings_ui_style_holo">Holo</string>
     <string name="settings_todos">Todos</string>
     <string name="settings_archive_completed">Archive completed todos</string>

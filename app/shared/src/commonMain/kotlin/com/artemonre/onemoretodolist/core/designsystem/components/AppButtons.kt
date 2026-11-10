@@ -19,7 +19,7 @@ fun AppButton(
     content: @Composable RowScope.() -> Unit
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper ->
+        UiStyleOption.Material ->
             Button(onClick = onClick, modifier = modifier, enabled = enabled, content = content)
         UiStyleOption.Holo -> HoloButton(onClick = onClick, modifier = modifier, enabled = enabled, content = content)
     }
@@ -38,7 +38,7 @@ fun AppTextButton(
     content: @Composable RowScope.() -> Unit
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper ->
+        UiStyleOption.Material ->
             TextButton(onClick = onClick, modifier = modifier, enabled = enabled, content = content)
         UiStyleOption.Holo -> if (emphasized) {
             HoloButton(onClick = onClick, modifier = modifier, enabled = enabled, content = content)

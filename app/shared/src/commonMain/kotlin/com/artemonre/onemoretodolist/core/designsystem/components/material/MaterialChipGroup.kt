@@ -91,7 +91,7 @@ internal fun ChipGroupLayout(
 private fun MaterialChipGroupPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
         MaterialChipGroup(
-            options = listOf("Material", "Paper"),
+            options = listOf("Material", "Holo"),
             selectedOption = "Material",
             onOptionSelected = {},
             label = { it },

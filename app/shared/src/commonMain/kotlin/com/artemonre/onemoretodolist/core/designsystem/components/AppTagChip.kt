@@ -25,7 +25,7 @@ fun AppTagChip(
     modifier: Modifier = Modifier
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material, UiStyleOption.Paper -> Text(
+        UiStyleOption.Material -> Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
             color = contentColor,

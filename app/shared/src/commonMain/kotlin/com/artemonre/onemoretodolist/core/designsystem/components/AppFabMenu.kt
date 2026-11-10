@@ -33,9 +33,6 @@ fun AppFabMenu(
     when (LocalUiStyle.current) {
         UiStyleOption.Material ->
             MaterialFabMenu(expanded, onExpandedChange, onClick, icon, items, contentDescription, modifier)
-        // No Paper FAB menu yet - fall back to Material.
-        UiStyleOption.Paper ->
-            MaterialFabMenu(expanded, onExpandedChange, onClick, icon, items, contentDescription, modifier)
         UiStyleOption.Holo ->
             HoloFabMenu(expanded, onExpandedChange, onClick, icon, items, contentDescription, modifier)
     }
