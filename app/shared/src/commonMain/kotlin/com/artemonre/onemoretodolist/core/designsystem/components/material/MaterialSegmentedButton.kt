@@ -3,6 +3,8 @@ package com.artemonre.onemoretodolist.core.designsystem.components.material
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Text
 import androidx.compose.material3.SingleChoiceSegmentedButtonRowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -30,4 +32,29 @@ fun SingleChoiceSegmentedButtonRowScope.MaterialSegmentedButton(
         contentPadding = contentPadding,
         label = label
     )
+}
+
+/**
+ * A row of [MaterialSegmentedButton]s, one per option - the compact, connected single-choice row
+ * (smaller than [MaterialSegmentedControl]'s button group), for picks inside a form.
+ */
+@Composable
+fun <T> MaterialSegmentedButtonRow(
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    label: (T) -> String,
+    modifier: Modifier = Modifier
+) {
+    SingleChoiceSegmentedButtonRow(modifier = modifier) {
+        options.forEachIndexed { index, option ->
+            MaterialSegmentedButton(
+                selected = option == selectedOption,
+                onClick = { onOptionSelected(option) },
+                index = index,
+                count = options.size,
+                label = { Text(label(option)) }
+            )
+        }
+    }
 }

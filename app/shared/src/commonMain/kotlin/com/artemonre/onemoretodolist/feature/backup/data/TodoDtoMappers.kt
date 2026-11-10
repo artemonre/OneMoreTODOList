@@ -65,7 +65,7 @@ fun TodoDto.toTodoItemOrNull(): TodoItem? {
             dueTimeMode = dueTimeMode?.let { enumOrNull<DueTimeMode>(it) },
             snoozedUntil = snoozedUntil?.let(Instant::fromEpochMilliseconds),
             checklist = checklist.map { ChecklistItem(id = it.id, text = it.text, isDone = it.isDone) },
-            tags = tags.map { TodoTag(name = it.name, color = enumOrNull<TagColor>(it.color) ?: TagColor.Blue) },
+            tags = tags.map { TodoTag(name = it.name, color = TagColor.fromStoredName(it.color) ?: TagColor.Fallback) },
             updatedAt = Instant.fromEpochMilliseconds(updatedAt),
             deletedAt = deletedAt?.let(Instant::fromEpochMilliseconds)
         )

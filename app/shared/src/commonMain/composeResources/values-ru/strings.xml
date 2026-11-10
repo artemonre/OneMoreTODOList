@@ -46,14 +46,7 @@
     <string name="tag_new_title">Новый тег</string>
     <string name="tag_name">Название тега</string>
     <string name="tag_color">Цвет</string>
-    <string name="tag_color_red">Красный</string>
-    <string name="tag_color_orange">Оранжевый</string>
-    <string name="tag_color_yellow">Жёлтый</string>
-    <string name="tag_color_green">Зелёный</string>
-    <string name="tag_color_teal">Бирюзовый</string>
-    <string name="tag_color_blue">Синий</string>
-    <string name="tag_color_purple">Фиолетовый</string>
-    <string name="tag_color_pink">Розовый</string>
+    <string name="tag_color_number">Цвет %1$d</string>
     <string name="checklist_title">Чек-лист</string>
     <string name="checklist_item_placeholder">Пункт</string>
     <string name="checklist_add_item">Добавить пункт</string>

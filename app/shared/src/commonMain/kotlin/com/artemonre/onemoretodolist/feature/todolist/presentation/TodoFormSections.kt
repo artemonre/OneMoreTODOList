@@ -24,12 +24,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,11 +49,12 @@ import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
 import com.artemonre.onemoretodolist.core.designsystem.components.keepsKeyboardOnTap
 import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppAssistChip
+import com.artemonre.onemoretodolist.core.designsystem.components.AppIconButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppInputChip
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSuggestionChip
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextField
 import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAssistChip
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialInputChip
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedTextField
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialSuggestionChip
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.MAX_CHECKLIST_ITEMS
@@ -74,19 +71,11 @@ import onemoretodolist.app.shared.generated.resources.form_add
 import onemoretodolist.app.shared.generated.resources.form_cancel
 import onemoretodolist.app.shared.generated.resources.tag_add
 import onemoretodolist.app.shared.generated.resources.tag_color
-import onemoretodolist.app.shared.generated.resources.tag_color_blue
-import onemoretodolist.app.shared.generated.resources.tag_color_green
-import onemoretodolist.app.shared.generated.resources.tag_color_orange
-import onemoretodolist.app.shared.generated.resources.tag_color_pink
-import onemoretodolist.app.shared.generated.resources.tag_color_purple
-import onemoretodolist.app.shared.generated.resources.tag_color_red
-import onemoretodolist.app.shared.generated.resources.tag_color_teal
-import onemoretodolist.app.shared.generated.resources.tag_color_yellow
+import onemoretodolist.app.shared.generated.resources.tag_color_number
 import onemoretodolist.app.shared.generated.resources.tag_name
 import onemoretodolist.app.shared.generated.resources.tag_new_title
 import onemoretodolist.app.shared.generated.resources.tag_remove
 import onemoretodolist.app.shared.generated.resources.tags_title
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 private val TAG_COLOR_SWATCH_SIZE = 32.dp
@@ -117,31 +106,19 @@ internal fun TodoFormTagsSection(
             tags.forEach { tag ->
                 val swatch = tag.color.swatch()
                 val removeDescription = stringResource(Res.string.tag_remove, tag.name)
-                MaterialInputChip(
-                    selected = false,
+                AppInputChip(
+                    text = tag.name,
                     onClick = { onTagsChange(tags - tag) },
-                    label = { Text(tag.name) },
-                    trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = removeDescription,
-                            modifier = Modifier.size(InputChipDefaults.IconSize)
-                        )
-                    },
-                    colors = InputChipDefaults.inputChipColors(
-                        containerColor = swatch.container,
-                        labelColor = swatch.content,
-                        trailingIconColor = swatch.content
-                    ),
-                    border = null
+                    containerColor = swatch.container,
+                    contentColor = swatch.content,
+                    trailingIcon = Icons.Filled.Close,
+                    trailingIconDescription = removeDescription
                 )
             }
-            MaterialAssistChip(
+            AppAssistChip(
+                text = stringResource(Res.string.tag_add),
                 onClick = { showAddDialog = true },
-                label = { Text(stringResource(Res.string.tag_add)) },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Filled.Add, contentDescription = null)
-                }
+                leadingIcon = Icons.Filled.Add
             )
         }
     }
@@ -186,7 +163,7 @@ private fun AddTagDialog(
         title = { Text(stringResource(Res.string.tag_new_title)) },
         text = {
             Column {
-                MaterialOutlinedTextField(
+                AppTextField(
                     state = nameState,
                     label = { Text(stringResource(Res.string.tag_name)) },
                     lineLimits = TextFieldLineLimits.SingleLine,
@@ -204,14 +181,11 @@ private fun AddTagDialog(
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.s)) {
                         suggestions.forEach { suggestion ->
                             val swatch = suggestion.color.swatch()
-                            MaterialSuggestionChip(
+                            AppSuggestionChip(
+                                text = suggestion.name,
                                 onClick = { onAdd(suggestion) },
-                                label = { Text(suggestion.name) },
-                                colors = SuggestionChipDefaults.suggestionChipColors(
-                                    containerColor = swatch.container,
-                                    labelColor = swatch.content
-                                ),
-                                border = null
+                                containerColor = swatch.container,
+                                contentColor = swatch.content
                             )
                         }
                     }
@@ -258,7 +232,7 @@ private fun TagColorSwatch(
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    val description = stringResource(color.nameResource())
+    val description = stringResource(Res.string.tag_color_number, color.ordinal + 1)
     Box(
         modifier = Modifier
             .size(TAG_COLOR_SWATCH_SIZE)
@@ -277,17 +251,6 @@ private fun TagColorSwatch(
                 this.selected = selected
             }
     )
-}
-
-private fun TagColor.nameResource(): StringResource = when (this) {
-    TagColor.Red -> Res.string.tag_color_red
-    TagColor.Orange -> Res.string.tag_color_orange
-    TagColor.Yellow -> Res.string.tag_color_yellow
-    TagColor.Green -> Res.string.tag_color_green
-    TagColor.Teal -> Res.string.tag_color_teal
-    TagColor.Blue -> Res.string.tag_color_blue
-    TagColor.Purple -> Res.string.tag_color_purple
-    TagColor.Pink -> Res.string.tag_color_pink
 }
 
 // One flat level of items - tick, edit text, remove - plus "Add item", which appends a blank item
@@ -341,7 +304,7 @@ internal fun TodoFormChecklistSection(
                         .weight(1f)
                         .focusRequester(focusRequester)
                 )
-                IconButton(onClick = { onItemsChange(items.filterNot { it.id == item.id }) }) {
+                AppIconButton(onClick = { onItemsChange(items.filterNot { it.id == item.id }) }) {
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = stringResource(Res.string.checklist_remove_item)
@@ -350,7 +313,7 @@ internal fun TodoFormChecklistSection(
             }
             Spacer(Modifier.height(AppSpacing.xs))
         }
-        TextButton(
+        AppTextButton(
             enabled = items.size < MAX_CHECKLIST_ITEMS,
             onClick = {
                 val newItem = ChecklistItem(id = Uuid.random().toString(), text = "")

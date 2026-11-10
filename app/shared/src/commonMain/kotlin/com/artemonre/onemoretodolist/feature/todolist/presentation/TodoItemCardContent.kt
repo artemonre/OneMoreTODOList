@@ -241,7 +241,7 @@ private fun TodoItemCardContentWithTagsPreview() {
             isDone = false,
             formattedDate = "24 Aug 2026",
             onToggleDone = {},
-            tags = listOf(TodoTag("Travel", TagColor.Teal), TodoTag("Home", TagColor.Orange)),
+            tags = listOf(TodoTag("Travel", TagColor.Color5), TodoTag("Home", TagColor.Color2)),
             checklistDone = 2,
             checklistTotal = 5,
             nextReminder = Clock.System.now()

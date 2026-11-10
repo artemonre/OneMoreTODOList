@@ -251,7 +251,7 @@ private fun TodoDetailDialogPreview() {
                     ChecklistItem(id = "a", text = "Outline modules", isDone = true),
                     ChecklistItem(id = "b", text = "Describe data flow")
                 ),
-                tags = listOf(TodoTag("Work", TagColor.Blue))
+                tags = listOf(TodoTag("Work", TagColor.Color6))
             ),
             onDismiss = {},
             onCopied = {}

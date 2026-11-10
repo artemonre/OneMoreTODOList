@@ -166,7 +166,7 @@ class TodoListViewModelTest {
         val viewModel = todoListViewModel(dataSource)
         backgroundScope.launch { viewModel.state.collect {} }
         testDispatcher.scheduler.advanceUntilIdle()
-        val tags = listOf(TodoTag("Work", TagColor.Blue))
+        val tags = listOf(TodoTag("Work", TagColor.Color6))
         val checklist = listOf(ChecklistItem(id = "a", text = "Step"))
 
         viewModel.onAction(
@@ -249,7 +249,7 @@ class TodoListViewModelTest {
         val events = mutableListOf<TodoListEvent>()
         // Unconfined, so each event lands right away - advanceUntilIdle doesn't wait for backgroundScope.
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.events.collect { events += it } }
-        val withTag = TodoDraft(text = "Call", isPrioritized = false, tags = listOf(TodoTag("work", TagColor.Blue)))
+        val withTag = TodoDraft(text = "Call", isPrioritized = false, tags = listOf(TodoTag("work", TagColor.Color6)))
         val textOnly = TodoDraft(text = "Call", isPrioritized = false)
 
         viewModel.onAction(TodoListAction.OnAddDraftChanged(withTag))

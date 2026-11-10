@@ -39,7 +39,7 @@ class AppFunctionTypesTest {
             dueTime = LocalTime(9, 30),
             dueTimeMode = DueTimeMode.Exact,
             checklist = listOf(ChecklistItem("a", "Passport", isDone = true)),
-            tags = listOf(TodoTag("Travel", TagColor.Teal))
+            tags = listOf(TodoTag("Travel", TagColor.Color5))
         )
 
         assertEquals(
@@ -52,7 +52,7 @@ class AppFunctionTypesTest {
                 reminderExact = true,
                 recurrence = TodoRecurrence("AFTER_COMPLETION", 2, "WEEK"),
                 checklist = listOf(TodoChecklistItem("a", "Passport", isDone = true)),
-                tags = listOf(TodoTagItem("Travel", "TEAL")),
+                tags = listOf(TodoTagItem("Travel", "COLOR5")),
                 creationDate = "2026-09-30",
                 completionDate = null
             ),
@@ -119,16 +119,21 @@ class AppFunctionTypesTest {
 
     // ---------------- tags
 
-    private val knownTags = listOf(TodoTag("Work", TagColor.Blue))
+    private val knownTags = listOf(TodoTag("Work", TagColor.Color6))
 
     @Test
     fun `a known tag name keeps its color and original spelling`() {
-        assertEquals(listOf(TodoTag("Work", TagColor.Blue)), listOf(TodoTagItem(" work ", null)).toTags(knownTags))
+        assertEquals(listOf(TodoTag("Work", TagColor.Color6)), listOf(TodoTagItem(" work ", null)).toTags(knownTags))
     }
 
     @Test
     fun `an explicit color wins, case-insensitively`() {
-        assertEquals(listOf(TodoTag("Work", TagColor.Red)), listOf(TodoTagItem("Work", "red")).toTags(knownTags))
+        assertEquals(listOf(TodoTag("Work", TagColor.Color1)), listOf(TodoTagItem("Work", "color1")).toTags(knownTags))
+    }
+
+    @Test
+    fun `an old color name still reads as its numbered slot`() {
+        assertEquals(listOf(TodoTag("Work", TagColor.Color8)), listOf(TodoTagItem("Work", "PINK")).toTags(knownTags))
     }
 
     @Test
@@ -141,9 +146,9 @@ class AppFunctionTypesTest {
 
     @Test
     fun `blank and duplicate tag names are dropped`() {
-        val tags = listOf(TodoTagItem("Home", "GREEN"), TodoTagItem("home", "RED"), TodoTagItem(" ", null)).toTags(knownTags)
+        val tags = listOf(TodoTagItem("Home", "COLOR4"), TodoTagItem("home", "COLOR1"), TodoTagItem(" ", null)).toTags(knownTags)
 
-        assertEquals(listOf(TodoTag("Home", TagColor.Green)), tags)
+        assertEquals(listOf(TodoTag("Home", TagColor.Color4)), tags)
     }
 
     @Test

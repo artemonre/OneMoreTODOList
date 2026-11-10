@@ -5,7 +5,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
@@ -22,6 +21,7 @@ import onemoretodolist.app.shared.generated.resources.drive_no_backup_found
 import onemoretodolist.app.shared.generated.resources.drive_no_internet
 import onemoretodolist.app.shared.generated.resources.drive_not_configured
 import org.jetbrains.compose.resources.stringResource
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
 
 // The Google Drive tab of SettingsBackupCard (Android only).
 @Composable
@@ -45,7 +45,7 @@ internal fun DriveBackupTab(controller: DriveBackupController) {
     BackupBusyIndicator(state.isBusy)
     state.message?.let { message -> BackupStatusText(message.text(), message.isError) }
     if (state.isConnected) {
-        TextButton(
+        AppTextButton(
             onClick = controller::disconnect,
             enabled = !state.isBusy,
             modifier = Modifier.padding(top = AppSpacing.xs)

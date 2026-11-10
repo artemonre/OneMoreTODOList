@@ -43,14 +43,7 @@
     <string name="tag_new_title">Nova oznaka</string>
     <string name="tag_name">Naziv oznake</string>
     <string name="tag_color">Boja</string>
-    <string name="tag_color_red">Crvena</string>
-    <string name="tag_color_orange">Narandžasta</string>
-    <string name="tag_color_yellow">Žuta</string>
-    <string name="tag_color_green">Zelena</string>
-    <string name="tag_color_teal">Tirkizna</string>
-    <string name="tag_color_blue">Plava</string>
-    <string name="tag_color_purple">Ljubičasta</string>
-    <string name="tag_color_pink">Roze</string>
+    <string name="tag_color_number">Boja %1$d</string>
     <string name="checklist_title">Kontrolna lista</string>
     <string name="checklist_item_placeholder">Stavka</string>
     <string name="checklist_add_item">Dodaj stavku</string>

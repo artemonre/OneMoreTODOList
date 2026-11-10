@@ -37,7 +37,7 @@ internal fun List<TodoTag>.toTagsJson(): String =
 
 internal fun String.toTags(): List<TodoTag> = try {
     json.decodeFromString<List<TodoTagDto>>(this).map { dto ->
-        TodoTag(dto.name, TagColor.entries.firstOrNull { it.name == dto.color } ?: TagColor.Blue)
+        TodoTag(dto.name, TagColor.fromStoredName(dto.color) ?: TagColor.Fallback)
     }
 } catch (e: SerializationException) {
     emptyList()

@@ -40,15 +40,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ShortNavigationBarDefaults
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -147,6 +142,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.artemonre.onemoretodolist.core.designsystem.components.AppDropdownMenu
+import com.artemonre.onemoretodolist.core.designsystem.components.AppDropdownMenuItem
+import com.artemonre.onemoretodolist.core.designsystem.components.AppIconButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSnackbarHost
 
 private const val SCROLL_TO_TOP_THRESHOLD = 10
 private const val DRAG_ROTATION_DEGREES = 4f
@@ -465,12 +464,12 @@ fun TodoListScreen(
                             ) {
                                 Text(stringResource(state.sortOption.displayName()))
                             }
-                            DropdownMenu(
+                            AppDropdownMenu(
                                 expanded = sortMenuExpanded,
                                 onDismissRequest = { sortMenuExpanded = false }
                             ) {
                                 TodoSortOption.entries.forEach { option ->
-                                    DropdownMenuItem(
+                                    AppDropdownMenuItem(
                                         text = { Text(stringResource(option.displayName())) },
                                         onClick = {
                                             onAction(TodoListAction.OnSortOptionSelected(option))
@@ -664,7 +663,7 @@ fun TodoListScreen(
             )
         }
 
-        SnackbarHost(
+        AppSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -842,13 +841,13 @@ private fun SwipeableTodoRow(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
+            AppIconButton(
                 onClick = { onEditClick(); closeSwipe() },
                 modifier = Modifier.size(SWIPE_ACTION_WIDTH)
             ) {
                 Icon(imageVector = Icons.Filled.Edit, contentDescription = stringResource(Res.string.action_edit))
             }
-            IconButton(
+            AppIconButton(
                 onClick = { onDeleteClick() },
                 modifier = Modifier.size(SWIPE_ACTION_WIDTH)
             ) {

@@ -2,6 +2,7 @@ package com.artemonre.onemoretodolist.core.designsystem.components
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -45,5 +46,20 @@ fun AppTextButton(
         } else {
             HoloTextButton(onClick = onClick, modifier = modifier, enabled = enabled, content = content)
         }
+    }
+}
+
+/** A borderless icon-only button for the current [LocalUiStyle] - Material3's [IconButton] by default. */
+@Composable
+fun AppIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    when (LocalUiStyle.current) {
+        // No Holo icon button yet - fall back to Material.
+        UiStyleOption.Material, UiStyleOption.Holo ->
+            IconButton(onClick = onClick, modifier = modifier, enabled = enabled, content = content)
     }
 }

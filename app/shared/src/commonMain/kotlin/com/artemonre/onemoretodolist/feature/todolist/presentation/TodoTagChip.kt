@@ -12,19 +12,7 @@ import com.artemonre.onemoretodolist.feature.todolist.domain.TagColor
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 
 @Composable
-internal fun TagColor.swatch(): AccentSwatch {
-    val swatches = LocalAccentSwatches.current
-    return when (this) {
-        TagColor.Red -> swatches.red
-        TagColor.Orange -> swatches.orange
-        TagColor.Yellow -> swatches.yellow
-        TagColor.Green -> swatches.green
-        TagColor.Teal -> swatches.teal
-        TagColor.Blue -> swatches.blue
-        TagColor.Purple -> swatches.purple
-        TagColor.Pink -> swatches.pink
-    }
-}
+internal fun TagColor.swatch(): AccentSwatch = LocalAccentSwatches.current.slots[ordinal]
 
 // A small, non-interactive colored label - how a tag reads on the todo card and in the detail
 // dialog. The form uses interactive Material chips instead (see TodoFormTagsSection).
@@ -38,6 +26,6 @@ fun TodoTagChip(tag: TodoTag, modifier: Modifier = Modifier) {
 @Composable
 private fun TodoTagChipPreview() {
     AppTheme(themeConfig = ThemeConfig()) {
-        TodoTagChip(TodoTag("Work", TagColor.Blue))
+        TodoTagChip(TodoTag("Work", TagColor.Color6))
     }
 }

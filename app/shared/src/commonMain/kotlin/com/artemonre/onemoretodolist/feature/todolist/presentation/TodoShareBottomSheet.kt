@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +30,7 @@ import onemoretodolist.app.shared.generated.resources.share_coming_soon
 import onemoretodolist.app.shared.generated.resources.share_make_note
 import onemoretodolist.app.shared.generated.resources.share_title
 import org.jetbrains.compose.resources.stringResource
+import com.artemonre.onemoretodolist.core.designsystem.components.AppDivider
 
 private const val SHARE_PREVIEW_MAX_LINES = 8
 
@@ -61,7 +61,7 @@ fun TodoShareBottomSheet(
                     .fillMaxWidth()
                     .padding(start = AppSpacing.xl, top = 20.dp, end = AppSpacing.xl, bottom = AppSpacing.m)
             )
-            HorizontalDivider()
+            AppDivider()
             ShareSheetRow(
                 icon = Icons.Filled.Share,
                 label = stringResource(Res.string.share_title),

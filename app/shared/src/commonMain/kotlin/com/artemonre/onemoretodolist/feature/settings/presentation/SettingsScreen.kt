@@ -18,7 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.PrivacyTip
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -82,6 +81,7 @@ import onemoretodolist.app.shared.generated.resources.settings_update_available
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import com.artemonre.onemoretodolist.core.designsystem.components.AppButton
 
 private const val SUPPORT_EMAIL_URI = "mailto:artemonsupport@gmail.com"
 private const val PRIVACY_POLICY_URL = "https://artemonre.github.io/OneMoreTODOList/privacy-policy"
@@ -329,7 +329,7 @@ fun SettingsScreen(
                         text = stringResource(Res.string.settings_update_available),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Button(
+                    AppButton(
                         onClick = {
                             onAction(SettingsAction.OnUpdateClick)
                             startAppUpdate?.invoke()

@@ -1,6 +1,8 @@
 package com.artemonre.onemoretodolist.core.designsystem.components
 
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,5 +26,20 @@ fun AppCard(
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialCard(modifier, containerColor, content)
         UiStyleOption.Holo -> HoloCard(modifier, containerColor, content)
+    }
+}
+
+/**
+ * A bordered, unfilled section for the current [LocalUiStyle] - Material3's [OutlinedCard] by
+ * default. For a block of settings inside a form, where a filled [AppCard] would be too heavy.
+ */
+@Composable
+fun AppOutlinedCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    when (LocalUiStyle.current) {
+        // No Holo outlined card yet - fall back to Material.
+        UiStyleOption.Material, UiStyleOption.Holo -> OutlinedCard(modifier = modifier, content = content)
     }
 }

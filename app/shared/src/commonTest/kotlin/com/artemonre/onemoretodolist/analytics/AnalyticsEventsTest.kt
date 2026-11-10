@@ -118,7 +118,7 @@ class AnalyticsEventsTest {
     @Test
     fun `the summary counts features over the given todos and never their content`() {
         val todos = listOf(
-            todo().copy(dueDate = LocalDate(2026, 11, 1), tags = listOf(TodoTag("Home", TagColor.Red))),
+            todo().copy(dueDate = LocalDate(2026, 11, 1), tags = listOf(TodoTag("Home", TagColor.Color1))),
             todo(id = "2").copy(checklist = listOf(ChecklistItem("a", "Eggs")), priorityOrder = 0.9),
             todo(id = "3")
         )

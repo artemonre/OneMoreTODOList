@@ -45,7 +45,7 @@ class TodoFormDraftTest {
         dueTime = LocalTime(9, 30),
         dueTimeMode = DueTimeMode.Approximate,
         checklist = listOf(ChecklistItem(id = "c1", text = "Oat", isDone = false)),
-        tags = listOf(TodoTag(name = "home", color = TagColor.Green))
+        tags = listOf(TodoTag(name = "home", color = TagColor.Color4))
     )
 
     private fun ComposeUiTest.showForm(

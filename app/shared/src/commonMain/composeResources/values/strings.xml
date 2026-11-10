@@ -47,14 +47,7 @@
     <string name="tag_new_title">New tag</string>
     <string name="tag_name">Tag name</string>
     <string name="tag_color">Color</string>
-    <string name="tag_color_red">Red</string>
-    <string name="tag_color_orange">Orange</string>
-    <string name="tag_color_yellow">Yellow</string>
-    <string name="tag_color_green">Green</string>
-    <string name="tag_color_teal">Teal</string>
-    <string name="tag_color_blue">Blue</string>
-    <string name="tag_color_purple">Purple</string>
-    <string name="tag_color_pink">Pink</string>
+    <string name="tag_color_number">Color %1$d</string>
     <string name="checklist_title">Checklist</string>
     <string name="checklist_item_placeholder">Item</string>
     <string name="checklist_add_item">Add item</string>

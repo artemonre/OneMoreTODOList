@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,6 +66,7 @@ import onemoretodolist.app.shared.generated.resources.settings_backup_descriptio
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import com.artemonre.onemoretodolist.core.designsystem.components.AppLinearProgressIndicator
 
 // Two buttons share one row, so the stock 24dp side padding leaves little room for the label.
 private val BACKUP_BUTTON_CONTENT_PADDING = PaddingValues(AppSpacing.s)
@@ -249,7 +249,7 @@ internal fun AutoBackupSwitch(
 @Composable
 internal fun BackupBusyIndicator(isBusy: Boolean) {
     if (isBusy) {
-        LinearProgressIndicator(
+        AppLinearProgressIndicator(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = AppSpacing.m)
