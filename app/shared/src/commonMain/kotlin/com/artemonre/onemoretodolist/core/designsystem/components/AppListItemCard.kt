@@ -3,9 +3,10 @@ package com.artemonre.onemoretodolist.core.designsystem.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import com.artemonre.onemoretodolist.core.designsystem.components.material.ListItemCard as MaterialListItemCard
-import com.artemonre.onemoretodolist.core.designsystem.components.paper.ListItemCard as PaperListItemCard
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloListItemCard
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -20,6 +21,9 @@ val AppListItemCardContentPadding = AppSpacing.s
  *
  * [containerColor] overrides the card's default background (and picks a matching content color
  * for whatever's inside) when non-null - e.g. a caller drawing attention to one particular row.
+ * [customActions] are offered by accessibility services (TalkBack's actions menu) on the card's
+ * click target - for anything the row otherwise only reaches by gesture, such as swipe or drag.
+ * [accent] marks the row in styles that have a mark for it (Holo's folded corner); others ignore it.
  */
 @Composable
 fun AppListItemCard(
@@ -27,10 +31,12 @@ fun AppListItemCard(
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     containerColor: Color? = null,
+    accent: Boolean = false,
+    customActions: List<CustomAccessibilityAction> = emptyList(),
     content: @Composable () -> Unit
 ) {
     when (LocalUiStyle.current) {
-        UiStyleOption.Material -> MaterialListItemCard(onClick, modifier, onLongClick, containerColor, content)
-        UiStyleOption.Paper -> PaperListItemCard(onClick, modifier, onLongClick, containerColor, content)
+        UiStyleOption.Material -> MaterialListItemCard(onClick, modifier, onLongClick, containerColor, customActions, content)
+        UiStyleOption.Holo -> HoloListItemCard(onClick, modifier, onLongClick, containerColor, accent, customActions, content)
     }
 }

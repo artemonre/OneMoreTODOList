@@ -63,7 +63,7 @@ class BackupTodosTest {
             dueDate = LocalDate(2026, 3, 4),
             dueTime = LocalTime(9, 30),
             checklist = listOf(ChecklistItem(id = "c1", text = "Step", isDone = true)),
-            tags = listOf(TodoTag("Work", TagColor.Teal))
+            tags = listOf(TodoTag("Work", TagColor.Color5))
         )
         val json = ExportTodos(FakeTodoLocalDataSource(listOf(original)), codec, fixedClock)()
         val target = FakeTodoLocalDataSource()

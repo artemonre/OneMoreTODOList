@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -30,6 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -60,7 +63,6 @@ object MaterialAlertDialogDefaults {
  * [contentPadding] and the text-to-buttons gap ([buttonsTopSpacing]) can be customized - the stock
  * one hardcodes both.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaterialAlertDialog(
     onDismissRequest: () -> Unit,
@@ -81,6 +83,46 @@ fun MaterialAlertDialog(
     bottomDecorationHeight: Dp = 0.dp,
     properties: DialogProperties = DialogProperties()
 ) {
+    AlertDialogLayout(
+        onDismissRequest, confirmButton, modifier, dismissButton, icon, title, text, contentPadding,
+        buttonsTopSpacing, topDecoration, topDecorationOverhang, bottomDecoration, bottomDecorationHeight, properties
+    )
+}
+
+/**
+ * The alert dialog every style builds on - [MaterialAlertDialog]'s layout and behavior, with a
+ * style's own [card] (drawn behind the content, given the modifier to apply), an optional
+ * [titlePrefix] before the title, and the [textStyle] for the text.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun AlertDialogLayout(
+    onDismissRequest: () -> Unit,
+    confirmButton: @Composable () -> Unit,
+    modifier: Modifier,
+    dismissButton: @Composable (() -> Unit)?,
+    icon: @Composable (() -> Unit)?,
+    title: @Composable (() -> Unit)?,
+    text: @Composable (() -> Unit)?,
+    contentPadding: PaddingValues,
+    buttonsTopSpacing: Dp,
+    topDecoration: @Composable (() -> Unit)?,
+    topDecorationOverhang: Dp,
+    bottomDecoration: @Composable (() -> Unit)?,
+    bottomDecorationHeight: Dp,
+    properties: DialogProperties,
+    card: @Composable (modifier: Modifier, content: @Composable () -> Unit) -> Unit = { cardModifier, content ->
+        Surface(
+            modifier = cardModifier,
+            shape = AlertDialogDefaults.shape,
+            color = AlertDialogDefaults.containerColor,
+            tonalElevation = AlertDialogDefaults.TonalElevation,
+            content = content
+        )
+    },
+    titlePrefix: @Composable (() -> Unit)? = null,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium
+) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
     BasicAlertDialog(
         onDismissRequest = onDismissRequest,
@@ -90,12 +132,7 @@ fun MaterialAlertDialog(
         // propagateMinConstraints keeps the card at the dialog's own minimum width, same as without
         // a decoration - the decoration itself opts out of it via wrapContentSize.
         Box(propagateMinConstraints = true) {
-            Surface(
-                modifier = Modifier.padding(top = topDecorationOverhang, bottom = bottomDecorationHeight),
-                shape = AlertDialogDefaults.shape,
-                color = AlertDialogDefaults.containerColor,
-                tonalElevation = AlertDialogDefaults.TonalElevation
-            ) {
+            card(Modifier.padding(top = topDecorationOverhang, bottom = bottomDecorationHeight)) {
                 Column(modifier = Modifier.padding(contentPadding)) {
                     icon?.let {
                         CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.iconContentColor) {
@@ -118,15 +155,25 @@ fun MaterialAlertDialog(
                                 Modifier
                                     .padding(bottom = TITLE_BOTTOM_SPACING)
                                     .align(if (icon == null) Alignment.Start else Alignment.CenterHorizontally)
+                                    // Merged so the heading lands on the title text itself, not
+                                    // on an empty wrapper TalkBack never stops on.
+                                    .semantics(mergeDescendants = true) { heading() }
                             ) {
-                                title()
+                                if (titlePrefix == null) {
+                                    title()
+                                } else {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        titlePrefix()
+                                        title()
+                                    }
+                                }
                             }
                         }
                     }
                     text?.let {
                         ProvideContentColorTextStyle(
                             contentColor = AlertDialogDefaults.textContentColor,
-                            textStyle = MaterialTheme.typography.bodyMedium
+                            textStyle = textStyle
                         ) {
                             Box(
                                 Modifier

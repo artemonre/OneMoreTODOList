@@ -27,7 +27,6 @@ import com.artemonre.onemoretodolist.core.designsystem.components.DismissKeyboar
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.designsystem.theme.ConfigureSystemBarIcons
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
-import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.TodoTag
 import com.artemonre.onemoretodolist.feature.todolist.domain.isDueTimeUiSupported
 
@@ -49,17 +48,23 @@ fun TodoFormFullScreenDialog(
     editingItem: TodoItemUi?,
     onConfirm: (TodoDraft) -> Unit,
     onDismiss: () -> Unit,
-    // Only used when editingItem == null - seeds the field from a draft carried over from
-    // TodoFormBottomSheet's "More settings" button, or from a scanned photo.
-    initialText: String = "",
-    initialChecklist: List<ChecklistItem> = emptyList(),
+    // Same split as TodoFormBottomSheet: onDismiss is Back, onDiscard the Discard button - which
+    // still animates out through onDismiss afterwards.
+    onDiscard: () -> Unit = {},
+    // Only used when editingItem == null - seeds every field from the unsaved add draft (kept from
+    // an accidental close, or carried over by "More settings") or from a scanned photo.
+    initialDraft: TodoDraft? = null,
+    onDraftChange: (TodoDraft) -> Unit = {},
     knownTags: List<TodoTag> = emptyList()
 ) {
     FullScreenFormDialog(onDismiss = onDismiss) { requestDismiss ->
         TodoFormBody(
             editingItem = editingItem,
             onConfirm = onConfirm,
-            onDismiss = requestDismiss,
+            onDismiss = {
+                onDiscard()
+                requestDismiss()
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
@@ -71,8 +76,8 @@ fun TodoFormFullScreenDialog(
             showChecklist = true,
             knownTags = knownTags,
             requireText = true,
-            initialText = initialText,
-            initialChecklist = initialChecklist
+            initialDraft = initialDraft,
+            onDraftChange = onDraftChange
         )
     }
 }

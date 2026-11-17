@@ -21,7 +21,7 @@ class EditTodoTest {
         val dataSource = FakeTodoLocalDataSource(initialTodos = listOf(todoItem("1")))
         val scheduler = FakeDueTimeScheduler()
         val checklist = listOf(ChecklistItem("a", "Step", isDone = true))
-        val tags = listOf(TodoTag("Work", TagColor.Blue))
+        val tags = listOf(TodoTag("Work", TagColor.Color6))
 
         val updated = edit(
             dataSource, scheduler, "1",

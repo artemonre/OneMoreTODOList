@@ -13,6 +13,10 @@ android {
     namespace = "com.artemonre.onemoretodolist"
     defaultConfig {
         applicationId = "com.artemonre.onemoretodolist"
+        // Never bumped by hand - GPP sets the real one at build time, one above whatever's live on
+        // Play (see resolutionStrategy below). Every other variant just keeps 1.
+        versionCode = 1
+        versionName = "1.4.0"
     }
     buildTypes {
         debug {

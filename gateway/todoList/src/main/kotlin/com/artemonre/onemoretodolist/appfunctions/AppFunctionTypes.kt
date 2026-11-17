@@ -63,10 +63,12 @@ data class TodoTagItem(
     /** The tag's name. The same name always means the same tag. */
     val name: String,
     /**
-     * The tag's color. When sending, null reuses the color the tag already has on other todos, or
-     * picks one for a brand-new tag.
+     * The tag's color: one of 8 numbered color slots. When sending, null reuses the color the tag
+     * already has on other todos, or picks one for a brand-new tag.
      */
-    @AppFunctionStringValueConstraint(enumValues = ["RED", "ORANGE", "YELLOW", "GREEN", "TEAL", "BLUE", "PURPLE", "PINK"])
+    @AppFunctionStringValueConstraint(
+        enumValues = ["COLOR1", "COLOR2", "COLOR3", "COLOR4", "COLOR5", "COLOR6", "COLOR7", "COLOR8"]
+    )
     val color: String?
 )
 
@@ -148,7 +150,7 @@ internal fun List<TodoTagItem>.toTags(knownTags: List<TodoTag>): List<TodoTag> =
             val name = item.name.trim()
             val known = knownTags.firstOrNull { it.name.equals(name, ignoreCase = true) }
             val color = item.color?.let { requested ->
-                TagColor.entries.firstOrNull { it.name.equals(requested, ignoreCase = true) }
+                TagColor.fromStoredName(requested)
                     ?: throw InvalidAgentInputException("Invalid tag color: $requested")
             } ?: known?.color ?: TagColor.entries.random()
             TodoTag(name = known?.name ?: name, color = color)

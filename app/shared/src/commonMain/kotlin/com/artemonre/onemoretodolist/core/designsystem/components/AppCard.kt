@@ -1,11 +1,14 @@
 package com.artemonre.onemoretodolist.core.designsystem.components
 
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.artemonre.onemoretodolist.core.designsystem.components.material.Card as MaterialCard
-import com.artemonre.onemoretodolist.core.designsystem.components.paper.Card as PaperCard
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloCard
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloSectionCardShape
+import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedCard
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -23,6 +26,25 @@ fun AppCard(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialCard(modifier, containerColor, content)
-        UiStyleOption.Paper -> PaperCard(modifier, containerColor, content)
+        UiStyleOption.Holo -> HoloCard(modifier, containerColor, content)
+    }
+}
+
+/**
+ * A bordered, unfilled section for the current [LocalUiStyle] - Material3's OutlinedCard by
+ * default. For a block of settings inside a form, where a filled [AppCard] would be too heavy.
+ * [footer], when set, is the card's bottom strip for notes about the block: edge to edge on the
+ * screen's background color, so it reads as part of the card rather than as a control. It
+ * resizes smoothly as its text changes.
+ */
+@Composable
+fun AppOutlinedCard(
+    modifier: Modifier = Modifier,
+    footer: (@Composable ColumnScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    when (LocalUiStyle.current) {
+        UiStyleOption.Material -> MaterialOutlinedCard(modifier = modifier, footer = footer, content = content)
+        UiStyleOption.Holo -> MaterialOutlinedCard(modifier = modifier, footer = footer, shape = HoloSectionCardShape, content = content)
     }
 }

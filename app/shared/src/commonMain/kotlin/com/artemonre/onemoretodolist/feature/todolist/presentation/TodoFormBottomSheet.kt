@@ -2,13 +2,9 @@ package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -31,29 +27,17 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -72,26 +56,26 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.artemonre.onemoretodolist.SpeechRecognitionState
 import com.artemonre.onemoretodolist.core.designsystem.components.AppBottomSheet
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCheckToggle
+import com.artemonre.onemoretodolist.core.designsystem.components.AppCounter
 import com.artemonre.onemoretodolist.core.designsystem.components.keepsKeyboardOnTap
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialOutlinedTextField
-import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialSegmentedButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppAlertDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.presentation.resourceLabels
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
-import com.artemonre.onemoretodolist.feature.todolist.domain.ChecklistItem
 import com.artemonre.onemoretodolist.feature.todolist.domain.DueTimeMode
 import com.artemonre.onemoretodolist.feature.todolist.domain.Recurrence
 import com.artemonre.onemoretodolist.feature.todolist.domain.RecurrenceType
@@ -103,7 +87,6 @@ import com.artemonre.onemoretodolist.rememberSpeechToText
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -139,6 +122,7 @@ import onemoretodolist.app.shared.generated.resources.form_pick_date
 import onemoretodolist.app.shared.generated.resources.form_pick_time
 import onemoretodolist.app.shared.generated.resources.form_put_to_top
 import onemoretodolist.app.shared.generated.resources.form_quick_add
+import onemoretodolist.app.shared.generated.resources.form_reminder_and_repeat
 import onemoretodolist.app.shared.generated.resources.form_repeat
 import onemoretodolist.app.shared.generated.resources.form_save
 import onemoretodolist.app.shared.generated.resources.form_select_date
@@ -168,30 +152,40 @@ import org.jetbrains.compose.resources.PluralStringResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import com.artemonre.onemoretodolist.core.designsystem.components.AppDatePickerDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.AppDivider
+import com.artemonre.onemoretodolist.core.designsystem.components.AppIconButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppOutlinedCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSectionTitle
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedButtonRow
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextField
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTimePickerDialog
+import com.artemonre.onemoretodolist.core.designsystem.components.appSupportingTextStyle
 
-private val MASCOT_SIZE = 160.dp
-// Where the drawing actually starts (the ear tips) and where the sheet's top edge goes, as fractions
-// of its square canvas - a bit above the bottom of its body, so the body's bottom and the paws rest
-// on the sheet.
-private const val MASCOT_EARS_FRACTION = 0.225f
-private const val MASCOT_FENCE_FRACTION = 0.65f
-private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_SIZE, MASCOT_EARS_FRACTION, MASCOT_FENCE_FRACTION)
+private val MASCOT_HEIGHT = 80.dp
+// Where the sheet's top edge goes, as a fraction of the drawing's height - a bit above the bottom of
+// its body, so the body's bottom and the paws rest on the sheet.
+private const val MASCOT_FENCE_FRACTION = 0.835f
+private val MASCOT_OVERHANG = peekingMascotOverhang(MASCOT_HEIGHT, MASCOT_FENCE_FRACTION)
 
 // editingItem == null means "add" mode; non-null pre-fills the form and confirms as an edit.
+// onDismiss is every close that isn't a choice - swipe down, Back, a tap outside - while onDiscard
+// is the Discard button: an add host keeps its draft (initialDraft/onDraftChange) on the first
+// and drops it on the second.
 @Composable
 fun TodoFormBottomSheet(
     editingItem: TodoItemUi?,
     onConfirm: (TodoDraft) -> Unit,
     onDismiss: () -> Unit,
-    // Carries whatever the user had already typed into the sheet along to the full-screen dialog,
-    // so switching to "More settings" doesn't lose it.
-    onMoreSettingsClick: (text: String) -> Unit,
-    modifier: Modifier = Modifier
+    // The host carries the draft (kept up to date through onDraftChange) along to the full-screen
+    // dialog, so switching to "More settings" doesn't lose anything.
+    onMoreSettingsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onDiscard: () -> Unit = onDismiss,
+    initialDraft: TodoDraft? = null,
+    onDraftChange: (TodoDraft) -> Unit = {}
 ) {
     var isSheetExpanded by remember { mutableStateOf(false) }
-    // Mirrors TodoFormBody's own internal text state (which it otherwise keeps private) just so
-    // "More settings" has something to hand off - not the source of truth for the field itself.
-    var currentText by remember { mutableStateOf(editingItem?.text.orEmpty()) }
 
     AppBottomSheet(
         onDismissRequest = onDismiss,
@@ -200,8 +194,7 @@ fun TodoFormBottomSheet(
         topDecoration = {
             PeekingMascot(
                 mascotDrawable(Res.drawable.mascot_put_paws_on_fence, Res.drawable.mascot_put_paws_on_fence_monochrome),
-                MASCOT_SIZE,
-                MASCOT_EARS_FRACTION
+                MASCOT_HEIGHT
             )
         },
         topDecorationOverhang = MASCOT_OVERHANG
@@ -215,17 +208,19 @@ fun TodoFormBottomSheet(
         ) {
             Text(
                 text = stringResource(Res.string.form_quick_add),
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.semantics { heading() }
             )
-            TextButton(onClick = { onMoreSettingsClick(currentText) }) {
+            AppTextButton(onClick = onMoreSettingsClick) {
                 Text(stringResource(Res.string.form_more_settings))
             }
         }
         TodoFormBody(
             editingItem = editingItem,
             onConfirm = onConfirm,
-            onDismiss = onDismiss,
-            onTextChange = { currentText = it },
+            onDismiss = onDiscard,
+            initialDraft = initialDraft,
+            onDraftChange = onDraftChange,
             // A short window (JVM/desktop, or a small/rotated phone) can leave less height than
             // the form needs - without this the Cancel/OK row can end up positioned below the
             // visible sheet instead of being reachable by scrolling.
@@ -240,6 +235,21 @@ fun TodoFormBottomSheet(
         )
     }
 }
+
+// The form's titled sections, in the order they're shown. Holo prints each one's number, so only
+// the sections this host actually shows are counted.
+internal enum class FormSection { Tags, Checklist, ReminderAndRepeat }
+
+internal fun formSectionNumbers(
+    showTags: Boolean,
+    showChecklist: Boolean,
+    showReminderAndRepeat: Boolean
+): Map<FormSection, Int> =
+    listOfNotNull(
+        FormSection.Tags.takeIf { showTags },
+        FormSection.Checklist.takeIf { showChecklist },
+        FormSection.ReminderAndRepeat.takeIf { showReminderAndRepeat }
+    ).withIndex().associate { (index, section) -> section to index + 1 }
 
 // Shared by TodoFormBottomSheet (quick-add flow), TodoFormFullScreenDialog (detailed add and edit
 // flows), and gateway/todoList's QuickAddTodoActivity (widget quick-add) - same fields and
@@ -276,34 +286,31 @@ fun TodoFormBody(
     // "Done" handling and keep their existing no-op-on-blank behavior. TodoFormFullScreenDialog
     // turns this on since it's the one flow where a stray blank-text save was reachable.
     requireText: Boolean = false,
-    // Only used when editingItem == null - lets a caller (TodoFormFullScreenDialog, handed a draft
-    // from TodoFormBottomSheet's "More settings") seed the field without pretending it's an edit.
-    initialText: String = "",
-    // Same add-mode-only seeding as initialText - used by the photo -> todo flow, which hands over
-    // the scanned lines after the first as checklist items.
-    initialChecklist: List<ChecklistItem> = emptyList(),
-    onTextChange: (String) -> Unit = {},
+    // Only used when editingItem == null - seeds every field without pretending it's an edit: the
+    // unsaved add draft kept from an accidental close, or a scanned photo continued as one todo.
+    initialDraft: TodoDraft? = null,
+    // The form's current state on every change, from the first composition on - what an add host
+    // keeps as its unsaved draft. Raw, unlike onConfirm's: untrimmed text, blank checklist lines.
+    onDraftChange: (TodoDraft) -> Unit = {},
     awaitAutoFocusReady: suspend () -> Unit = {}
 ) {
-    // Pre-filled text - editing an existing todo, or a draft carried over from the quick-add sheet -
-    // starts with the cursor at the end instead of the start, which is what you'd want to keep
-    // typing from.
-    val textState = (editingItem?.text ?: initialText).let { prefilled ->
+    val sectionNumbers = remember(showTags, showChecklist, showDueTime, showRecurrence) {
+        formSectionNumbers(showTags, showChecklist, showDueTime || showRecurrence)
+    }
+    val seed = editingItem?.toTodoDraft() ?: initialDraft
+    // Pre-filled text - editing an existing todo, or a kept draft - starts with the cursor at the
+    // end instead of the start, which is what you'd want to keep typing from.
+    val textState = seed?.text.orEmpty().let { prefilled ->
         rememberTextFieldState(initialText = prefilled, initialSelection = TextRange(prefilled.length))
     }
-    // Every change after the prefill - typing, clearing, speech - reaches onTextChange.
-    val currentOnTextChange by rememberUpdatedState(onTextChange)
-    LaunchedEffect(textState) {
-        snapshotFlow { textState.text.toString() }.drop(1).collect { currentOnTextChange(it) }
-    }
-    var isPrioritized by remember { mutableStateOf(editingItem?.isPrioritized ?: false) }
-    var tags by remember { mutableStateOf(editingItem?.tags.orEmpty()) }
-    var checklist by remember { mutableStateOf(editingItem?.checklist ?: initialChecklist) }
-    var repeatEnabled by remember { mutableStateOf(editingItem?.recurrence != null) }
-    var recurrenceType by remember { mutableStateOf(editingItem?.recurrence?.type ?: RecurrenceType.Every) }
+    var isPrioritized by remember { mutableStateOf(seed?.isPrioritized ?: false) }
+    var tags by remember { mutableStateOf(seed?.tags.orEmpty()) }
+    var checklist by remember { mutableStateOf(seed?.checklist.orEmpty()) }
+    var repeatEnabled by remember { mutableStateOf(seed?.recurrence != null) }
+    var recurrenceType by remember { mutableStateOf(seed?.recurrence?.type ?: RecurrenceType.Every) }
     // A counter (not free text) so this is always a valid positive interval - no parsing/validation needed.
-    var recurrenceInterval by remember { mutableStateOf(editingItem?.recurrence?.interval ?: 1) }
-    var recurrenceUnit by remember { mutableStateOf(editingItem?.recurrence?.unit ?: RecurrenceUnit.Day) }
+    var recurrenceInterval by remember { mutableStateOf(seed?.recurrence?.interval ?: 1) }
+    var recurrenceUnit by remember { mutableStateOf(seed?.recurrence?.unit ?: RecurrenceUnit.Day) }
     // Built even while Repeat is off, so the controls' description still has something to show
     // while they animate out.
     val recurrenceDraft = Recurrence(type = recurrenceType, interval = recurrenceInterval, unit = recurrenceUnit)
@@ -316,7 +323,7 @@ fun TodoFormBody(
     val notificationPermission = rememberDueTimeNotificationPermissionState()
     // Values survive unchecking "Reminder" the same way recurrenceInterval/Unit do. Prefilled from
     // editingItem, same as the recurrence fields above.
-    var dueTimeEnabled by remember { mutableStateOf(editingItem?.dueDate != null) }
+    var dueTimeEnabled by remember { mutableStateOf(seed?.dueDate != null) }
     // Off = approximate (the silent default/fallback, no extra permission needed) - on is an
     // explicit opt-in for exact-time delivery, not a mode the user is forced to pick upfront.
     // Defaults purely off the current permission state, adding or editing alike - no reason to
@@ -328,8 +335,8 @@ fun TodoFormBody(
     // Wall-clock local values, not a resolved instant - "10am" should keep meaning 10am local even
     // if the timezone changes before it fires, see TodoItem.dueInstant.
     var showExactPermissionDialog by remember { mutableStateOf(false) }
-    var dueDate by remember { mutableStateOf(editingItem?.dueDate) }
-    var dueTime by remember { mutableStateOf(editingItem?.dueTime) }
+    var dueDate by remember { mutableStateOf(seed?.dueDate) }
+    var dueTime by remember { mutableStateOf(seed?.dueTime) }
     var showDueDatePicker by remember { mutableStateOf(false) }
     val shortDateFormat = rememberShortDateFormat()
     var showDueTimePicker by remember { mutableStateOf(false) }
@@ -369,6 +376,29 @@ fun TodoFormBody(
             )
         )
     }
+    // Reads the state holders themselves (not the values computed above), so snapshotFlow sees
+    // every change. A turned-off reminder or repeat leaves out the values it keeps for re-enabling,
+    // same as submit.
+    val currentOnDraftChange by rememberUpdatedState(onDraftChange)
+    LaunchedEffect(Unit) {
+        snapshotFlow {
+            TodoDraft(
+                text = textState.text.toString(),
+                isPrioritized = isPrioritized,
+                recurrence = Recurrence(type = recurrenceType, interval = recurrenceInterval, unit = recurrenceUnit)
+                    .takeIf { repeatEnabled },
+                dueDate = dueDate.takeIf { dueTimeEnabled },
+                dueTime = dueTime.takeIf { dueTimeEnabled },
+                dueTimeMode = if (dueTimeEnabled && dueDate != null && dueTime != null) {
+                    if (exactTimeEnabled) DueTimeMode.Exact else DueTimeMode.Approximate
+                } else {
+                    null
+                },
+                checklist = checklist,
+                tags = tags
+            )
+        }.collect { currentOnDraftChange(it) }
+    }
     val textFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val speechController = rememberSpeechToText(
@@ -394,11 +424,13 @@ fun TodoFormBody(
             Text(
                 text = stringResource(if (editingItem != null) Res.string.form_title_edit else Res.string.form_title_add),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = AppSpacing.s)
+                modifier = Modifier
+                    .padding(top = AppSpacing.s)
+                    .semantics { heading() }
             )
             Spacer(Modifier.height(AppSpacing.l))
         }
-        MaterialOutlinedTextField(
+        AppTextField(
             state = textState,
             label = { Text(stringResource(Res.string.form_text_label)) },
             placeholder = { Text(stringResource(Res.string.form_text_placeholder)) },
@@ -411,7 +443,7 @@ fun TodoFormBody(
             compact = true,
             trailingIcon = if (textState.text.isNotEmpty()) {
                 {
-                    IconButton(onClick = { textState.clearText() }) {
+                    AppIconButton(onClick = { textState.clearText() }) {
                         Icon(imageVector = Icons.Filled.Close, contentDescription = stringResource(Res.string.form_clear_text))
                     }
                 }
@@ -419,7 +451,7 @@ fun TodoFormBody(
                 speechController?.let { controller ->
                     {
                         val isListening = controller.state.value is SpeechRecognitionState.Listening
-                        IconButton(
+                        AppIconButton(
                             onClick = { if (isListening) controller.stop() else controller.start() }
                         ) {
                             Icon(
@@ -435,14 +467,6 @@ fun TodoFormBody(
                 .focusRequester(textFocusRequester)
                 .keepsKeyboardOnTap()
         )
-        if (showTags) {
-            Spacer(Modifier.height(AppSpacing.m))
-            TodoFormTagsSection(
-                tags = tags,
-                knownTags = knownTags,
-                onTagsChange = { tags = it }
-            )
-        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -461,11 +485,30 @@ fun TodoFormBody(
             Spacer(Modifier.width(AppSpacing.m))
             Text(stringResource(Res.string.form_put_to_top))
         }
+        if (showTags) {
+            Spacer(Modifier.height(AppSpacing.s))
+            TodoFormTagsSection(
+                tags = tags,
+                knownTags = knownTags,
+                onTagsChange = { tags = it },
+                number = sectionNumbers[FormSection.Tags]
+            )
+        }
         if (showChecklist) {
-            Spacer(Modifier.height(AppSpacing.xs))
+            Spacer(Modifier.height(AppSpacing.m))
             TodoFormChecklistSection(
                 items = checklist,
-                onItemsChange = { checklist = it }
+                onItemsChange = { checklist = it },
+                number = sectionNumbers[FormSection.Checklist]
+            )
+        }
+        if (showDueTime || showRecurrence) {
+            Spacer(Modifier.height(AppSpacing.m))
+            AppSectionTitle(
+                // Without due times on this platform, the section is only Repeat.
+                title = stringResource(if (showDueTime) Res.string.form_reminder_and_repeat else Res.string.form_repeat),
+                number = sectionNumbers[FormSection.ReminderAndRepeat],
+                compact = true
             )
         }
         if (showDueTime) {
@@ -498,9 +541,60 @@ fun TodoFormBody(
             AnimatedVisibility(visible = dueTimeEnabled) {
                 Column {
                     Spacer(Modifier.height(AppSpacing.s))
+                    // Notifications being off blocks delivery entirely regardless of exact/approximate
+                    // mode, so it takes priority over that mode's own description, never both
+                    // stacked. With Repeat on, the mode descriptions give way to the combined one;
+                    // the two problems the buttons fix still show above it.
+                    val reminderProblem = when {
+                        notificationPermission?.isGranted == false -> Res.string.form_notifications_off
+                        exactTimeEnabled && exactAlarmPermission?.isGranted == false -> Res.string.form_exact_needs_permission
+                        else -> null
+                    }
+                    val repeatsHere = showRecurrence && repeatEnabled
+                    val date = dueDate
+                    val time = dueTime
+                    val reminderDescription = when {
+                        repeatsHere && date != null && time != null ->
+                            recurrenceDraft.describeWithReminder(shortDateFormat.format(date), dueTimeFormat.format(time))
+                        repeatsHere -> recurrenceDraft.describe()
+                        reminderProblem != null -> null
+                        !exactTimeEnabled -> stringResource(Res.string.form_approximate_description)
+                        else -> stringResource(Res.string.form_exact_description)
+                    }
                     // Mirrors the Recurrence section's bordered card below - same convention for a
                     // checkbox-toggled block of detailed settings.
-                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    AppOutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        // The card's notes, all at the bottom: a delivery problem with the button
+                        // that fixes it, then what the reminder (and repeat) will do.
+                        footer = {
+                            // Cross-fades between problems, and shrinks to nothing when there's none.
+                            AnimatedContent(
+                                targetState = reminderProblem,
+                                transitionSpec = { fadeIn() togetherWith fadeOut() }
+                            ) { problem ->
+                                problem?.let { FormDescription(stringResource(it)) }
+                            }
+                            AnimatedVisibility(visible = notificationPermission?.isGranted == false) {
+                                AppTextButton(onClick = { notificationPermission?.request(allowSettingsRedirect = true) }) {
+                                    Text(stringResource(Res.string.form_allow_notifications))
+                                }
+                            }
+                            exactAlarmPermission?.let { permission ->
+                                AnimatedVisibility(
+                                    visible = notificationPermission?.isGranted != false && exactTimeEnabled && !permission.isGranted
+                                ) {
+                                    AppTextButton(onClick = permission::request) {
+                                        Text(stringResource(Res.string.form_grant_permission))
+                                    }
+                                }
+                            }
+                            reminderDescription?.let { description ->
+                                if (reminderProblem != null) Spacer(Modifier.height(AppSpacing.s))
+                                FormDescription(description)
+                            }
+                        }
+                    ) {
                         Column(
                             modifier = Modifier.padding(AppSpacing.m)
                         ) {
@@ -552,63 +646,20 @@ fun TodoFormBody(
                                 Spacer(Modifier.width(AppSpacing.m))
                                 Text(stringResource(Res.string.form_exact_time))
                             }
-                            // Notifications being off blocks delivery entirely regardless of exact/
-                            // approximate mode, so it takes priority over that mode's own description -
-                            // one field, one message at a time, never both stacked. With Repeat on, the
-                            // plain mode descriptions give way to the combined one at the bottom of the
-                            // card; only the two problems the buttons below fix still show here.
-                            val reminderNotice = when {
-                                notificationPermission?.isGranted == false -> Res.string.form_notifications_off
-                                exactTimeEnabled && exactAlarmPermission?.isGranted == false -> Res.string.form_exact_needs_permission
-                                showRecurrence && repeatEnabled -> null
-                                !exactTimeEnabled -> Res.string.form_approximate_description
-                                else -> Res.string.form_exact_description
-                            }
-                            // Cross-fades between notices and resizes to nothing when there's none, so
-                            // ticking Repeat (which hides the plain descriptions) doesn't jump either.
-                            AnimatedContent(
-                                targetState = reminderNotice,
-                                transitionSpec = { fadeIn() togetherWith fadeOut() }
-                            ) { notice ->
-                                notice?.let { FormDescription(stringResource(it)) }
-                            }
-                            AnimatedVisibility(visible = notificationPermission?.isGranted == false) {
-                                TextButton(onClick = { notificationPermission?.request(allowSettingsRedirect = true) }) {
-                                    Text(stringResource(Res.string.form_allow_notifications))
-                                }
-                            }
-                            exactAlarmPermission?.let { permission ->
-                                AnimatedVisibility(
-                                    visible = notificationPermission?.isGranted != false && exactTimeEnabled && !permission.isGranted
-                                ) {
-                                    TextButton(onClick = permission::request) {
-                                        Text(stringResource(Res.string.form_grant_permission))
-                                    }
-                                }
-                            }
                             // Repeat moves into the Reminder card while it's open - the two drive each
                             // other (see reachedDueOccurrence/ToggleTodoDone), so they read as one block
                             // with one combined description, instead of two unrelated sections.
                             if (showRecurrence) {
-                                val dividerGap by animateDpAsState(if (reminderNotice != null) AppSpacing.s else 0.dp)
-                                Spacer(Modifier.height(dividerGap))
-                                HorizontalDivider()
+                                AppDivider()
                                 RepeatToggleRow(checked = repeatEnabled, onCheckedChange = { repeatEnabled = it })
                                 AnimatedVisibility(visible = repeatEnabled) {
-                                    val date = dueDate
-                                    val time = dueTime
                                     RecurrenceControls(
                                         interval = recurrenceInterval,
                                         onIntervalChange = { recurrenceInterval = it },
                                         unit = recurrenceUnit,
                                         onUnitChange = { recurrenceUnit = it },
                                         type = recurrenceType,
-                                        onTypeChange = { recurrenceType = it },
-                                        description = if (date != null && time != null) {
-                                            recurrenceDraft.describeWithReminder(shortDateFormat.format(date), dueTimeFormat.format(time))
-                                        } else {
-                                            recurrenceDraft.describe()
-                                        }
+                                        onTypeChange = { recurrenceType = it }
                                     )
                                 }
                             }
@@ -634,10 +685,11 @@ fun TodoFormBody(
                     .toEpochMilliseconds(),
                 selectableDates = selectableDates
             )
-            DatePickerDialog(
+            AppDatePickerDialog(
+                state = datePickerState,
                 onDismissRequest = { showDueDatePicker = false },
                 confirmButton = {
-                    TextButton(onClick = {
+                    AppTextButton(emphasized = true, onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
                             val pickedDate = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date
                             dueDate = pickedDate
@@ -659,13 +711,11 @@ fun TodoFormBody(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDueDatePicker = false }) {
+                    AppTextButton(onClick = { showDueDatePicker = false }) {
                         Text(stringResource(Res.string.form_cancel))
                     }
                 }
-            ) {
-                DatePicker(state = datePickerState)
-            }
+            )
         }
         // Asked up front when "Exact time" is ticked without the permission. Backing out of it
         // unticks the box again; the inline description and Grant permission button below stay
@@ -675,12 +725,12 @@ fun TodoFormBody(
                 exactTimeEnabled = false
                 showExactPermissionDialog = false
             }
-            MaterialAlertDialog(
+            AppAlertDialog(
                 onDismissRequest = cancel,
                 title = { Text(stringResource(Res.string.form_exact_permission_title)) },
                 text = { Text(stringResource(Res.string.form_exact_needs_permission)) },
                 confirmButton = {
-                    Button(onClick = {
+                    AppButton(onClick = {
                         showExactPermissionDialog = false
                         exactAlarmPermission.request()
                     }) {
@@ -688,7 +738,7 @@ fun TodoFormBody(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = cancel) {
+                    AppTextButton(onClick = cancel) {
                         Text(stringResource(Res.string.form_cancel))
                     }
                 }
@@ -700,42 +750,31 @@ fun TodoFormBody(
                 initialMinute = dueTime?.minute ?: 0,
                 is24Hour = true
             )
-            Dialog(onDismissRequest = { showDueTimePicker = false }) {
-                Surface(
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh
-                ) {
-                    Column(
-                        modifier = Modifier.padding(AppSpacing.xl),
-                        horizontalAlignment = Alignment.CenterHorizontally
+            val pickedTime = LocalTime(timePickerState.hour, timePickerState.minute)
+            val pickedDate = dueDate
+            AppTimePickerDialog(
+                state = timePickerState,
+                onDismissRequest = { showDueTimePicker = false },
+                confirmButton = {
+                    AppTextButton(
+                        onClick = {
+                            dueTime = pickedTime
+                            showDueTimePicker = false
+                        },
+                        // No past reminders - only checkable once a date is picked; picking
+                        // today afterwards bumps an already-past time instead (see above).
+                        enabled = pickedDate == null || LocalDateTime(pickedDate, pickedTime) >= localNow(),
+                        emphasized = true
                     ) {
-                        TimePicker(state = timePickerState)
-                        Spacer(Modifier.height(AppSpacing.s))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(onClick = { showDueTimePicker = false }) {
-                                Text(stringResource(Res.string.form_cancel))
-                            }
-                            Spacer(Modifier.width(AppSpacing.s))
-                            val pickedTime = LocalTime(timePickerState.hour, timePickerState.minute)
-                            val pickedDate = dueDate
-                            TextButton(
-                                onClick = {
-                                    dueTime = pickedTime
-                                    showDueTimePicker = false
-                                },
-                                // No past reminders - only checkable once a date is picked; picking
-                                // today afterwards bumps an already-past time instead (see above).
-                                enabled = pickedDate == null || LocalDateTime(pickedDate, pickedTime) >= localNow()
-                            ) {
-                                Text(stringResource(Res.string.form_ok))
-                            }
-                        }
+                        Text(stringResource(Res.string.form_ok))
+                    }
+                },
+                dismissButton = {
+                    AppTextButton(onClick = { showDueTimePicker = false }) {
+                        Text(stringResource(Res.string.form_cancel))
                     }
                 }
-            }
+            )
         }
         // Without an open Reminder card, Repeat stands on its own - see the Reminder card above for
         // where it lives otherwise.
@@ -752,7 +791,10 @@ fun TodoFormBody(
                     Spacer(Modifier.height(AppSpacing.s))
                     // A real bordered section for just the recurrence controls - not the Repeat
                     // checkbox above, which toggles the section rather than belonging inside it.
-                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    AppOutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        footer = { FormDescription(recurrenceDraft.describe()) }
+                    ) {
                         RecurrenceControls(
                             interval = recurrenceInterval,
                             onIntervalChange = { recurrenceInterval = it },
@@ -760,7 +802,6 @@ fun TodoFormBody(
                             onUnitChange = { recurrenceUnit = it },
                             type = recurrenceType,
                             onTypeChange = { recurrenceType = it },
-                            description = recurrenceDraft.describe(),
                             modifier = Modifier.padding(AppSpacing.m)
                         )
                     }
@@ -772,11 +813,11 @@ fun TodoFormBody(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.form_discard))
             }
             Spacer(Modifier.width(AppSpacing.s))
-            Button(
+            AppButton(
                 onClick = submit,
                 enabled = canSubmit
             ) {
@@ -821,7 +862,6 @@ private fun RecurrenceControls(
     onUnitChange: (RecurrenceUnit) -> Unit,
     type: RecurrenceType,
     onTypeChange: (RecurrenceType) -> Unit,
-    description: String,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -831,16 +871,20 @@ private fun RecurrenceControls(
         ) {
             Text(stringResource(Res.string.form_every))
             Spacer(Modifier.width(AppSpacing.s))
-            IntervalCounter(
+            AppCounter(
                 value = interval,
-                onValueChange = onIntervalChange
+                onDecrease = { onIntervalChange(interval - 1) },
+                onIncrease = { onIntervalChange(interval + 1) },
+                decreaseDescription = stringResource(Res.string.form_decrease),
+                increaseDescription = stringResource(Res.string.form_increase),
+                decreaseEnabled = interval > MIN_RECURRENCE_INTERVAL
             )
         }
         Spacer(Modifier.height(AppSpacing.s))
-        EnumSegmentedRow(
+        AppSegmentedButtonRow(
             options = RecurrenceUnit.entries,
-            selected = unit,
-            onSelected = onUnitChange,
+            selectedOption = unit,
+            onOptionSelected = onUnitChange,
             label = resourceLabels(RecurrenceUnit.entries) { it.displayName() },
             modifier = Modifier.fillMaxWidth()
         )
@@ -866,25 +910,17 @@ private fun RecurrenceControls(
             Spacer(Modifier.width(AppSpacing.m))
             Text(stringResource(Res.string.form_only_after_completion))
         }
-        FormDescription(description)
     }
 }
 
-// The small shaded explanation box under a form section's controls. Resizes smoothly when its
-// text changes length (e.g. Every <-> After completion).
+// A note in a card's footer (see AppOutlinedCard) - what a section's settings will do, or what's
+// stopping them. The footer itself carries the background and resizes as the text changes.
 @Composable
 private fun FormDescription(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier
-            .animateContentSize()
-            .background(
-                color = MaterialTheme.colorScheme.background,
-                shape = MaterialTheme.shapes.small
-            )
-            .padding(horizontal = AppSpacing.s, vertical = AppSpacing.s)
+        style = appSupportingTextStyle(),
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
@@ -892,46 +928,6 @@ private fun FormDescription(text: String) {
 // neither Recurrence nor its UI support.
 private const val MIN_RECURRENCE_INTERVAL = 1
 
-// A -/value/+ stepper instead of free-text entry, so the interval can never be blank, zero, or
-// otherwise invalid - onValueChange only ever fires with a valid positive value. Material3 has no
-// spec'd counter/stepper component, so this is a custom composition of standard M3 IconButtons -
-// bordered in the theme's medium (card-like) shape, rather than a hardcoded radius, so it stays
-// matched if the theme's shape scale changes.
-@Composable
-private fun IntervalCounter(
-    value: Int,
-    onValueChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.border(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outline,
-            shape = MaterialTheme.shapes.medium
-        ),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(
-            onClick = { onValueChange(value - 1) },
-            enabled = value > MIN_RECURRENCE_INTERVAL,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(imageVector = Icons.Filled.Remove, contentDescription = stringResource(Res.string.form_decrease))
-        }
-        Text(
-            text = value.toString(),
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.width(32.dp)
-        )
-        IconButton(
-            onClick = { onValueChange(value + 1) },
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = stringResource(Res.string.form_increase))
-        }
-    }
-}
 
 private val REMINDER_LEAD_TIME = 10.minutes
 
@@ -962,7 +958,7 @@ private fun ReadOnlyPickerField(
         // The icon is then pinned to the field's edge, so it carries its own end padding; the gap
         // on its start side already comes from the field's end padding.
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-            MaterialOutlinedTextField(
+            AppTextField(
                 state = remember(value) { TextFieldState(value) },
                 readOnly = true,
                 label = { Text(label) },
@@ -1021,30 +1017,6 @@ private fun RecurrenceUnit.pluralResource(): PluralStringResource = when (this) 
     RecurrenceUnit.Week -> Res.plurals.recurrence_unit_week
     RecurrenceUnit.Month -> Res.plurals.recurrence_unit_month
     RecurrenceUnit.Year -> Res.plurals.recurrence_unit_year
-}
-
-// One row of segmented buttons for a whole enum's worth of options - RecurrenceUnit here, and
-// ScannedTextReviewDialog's Separate/One-todo mode.
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun <T> EnumSegmentedRow(
-    options: List<T>,
-    selected: T,
-    onSelected: (T) -> Unit,
-    label: (T) -> String,
-    modifier: Modifier = Modifier
-) {
-    SingleChoiceSegmentedButtonRow(modifier = modifier) {
-        options.forEachIndexed { index, option ->
-            MaterialSegmentedButton(
-                selected = option == selected,
-                onClick = { onSelected(option) },
-                index = index,
-                count = options.size,
-                label = { Text(label(option)) }
-            )
-        }
-    }
 }
 
 private fun RecurrenceUnit.displayName(): StringResource = when (this) {

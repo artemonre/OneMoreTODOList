@@ -1,35 +1,26 @@
 package com.artemonre.onemoretodolist.feature.todolist.presentation
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.times
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalColorPalette
-import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 /**
- * A mascot drawing meant to sit over a card's top edge, as if peeking from behind it. Its square
- * canvas has empty space above the ears ([earsFraction] of its height), which is left out of the
- * layout so it doesn't push the card down. The card's edge goes [fenceFraction] down the canvas -
- * see [peekingMascotOverhang].
+ * A mascot drawing meant to sit over a card's top edge, as if peeking from behind it. The drawings
+ * are cropped to their content, so [height] is the drawing's own height and its width follows from
+ * its proportions. Where the card's edge crosses it is up to the caller - see [peekingMascotOverhang].
  */
 @Composable
-fun PeekingMascot(drawable: DrawableResource, size: Dp, earsFraction: Float, modifier: Modifier = Modifier) {
+fun PeekingMascot(drawable: DrawableResource, height: Dp, modifier: Modifier = Modifier) {
     Image(
         painter = painterResource(drawable),
         contentDescription = null,
-        modifier = modifier
-            .layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints)
-                val emptyTop = (placeable.height * earsFraction).roundToInt()
-                layout(placeable.width, placeable.height - emptyTop) { placeable.place(0, -emptyTop) }
-            }
-            .size(size)
+        modifier = modifier.height(height)
     )
 }
 
@@ -42,5 +33,4 @@ fun mascotDrawable(colored: DrawableResource, monochrome: DrawableResource): Dra
     if (LocalColorPalette.current == null) monochrome else colored
 
 /** How far a [PeekingMascot] sticks out above the card when the card's edge sits at [fenceFraction]. */
-fun peekingMascotOverhang(size: Dp, earsFraction: Float, fenceFraction: Float): Dp =
-    (fenceFraction - earsFraction) * size
+fun peekingMascotOverhang(height: Dp, fenceFraction: Float): Dp = fenceFraction * height

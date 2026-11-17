@@ -40,16 +40,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ShortNavigationBarDefaults
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -69,6 +63,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
@@ -79,6 +77,9 @@ import com.artemonre.onemoretodolist.analytics.TodoForm
 import com.artemonre.onemoretodolist.core.container.FAB_NAV_BAR_OVERLAP
 import com.artemonre.onemoretodolist.core.designsystem.components.AppCard
 import com.artemonre.onemoretodolist.core.designsystem.components.AppChipGroup
+import com.artemonre.onemoretodolist.core.designsystem.components.AppStat
+import com.artemonre.onemoretodolist.core.designsystem.components.AppStatsCard
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTonalButton
 import com.artemonre.onemoretodolist.core.designsystem.components.AppFab
 import com.artemonre.onemoretodolist.core.designsystem.components.CLOUD_SEGMENT_COUNT
 import com.artemonre.onemoretodolist.core.designsystem.components.CloudSegment
@@ -106,15 +107,20 @@ import kotlinx.datetime.LocalDate
 import onemoretodolist.app.shared.generated.resources.Res
 import onemoretodolist.app.shared.generated.resources.action_delete
 import onemoretodolist.app.shared.generated.resources.action_edit
+import onemoretodolist.app.shared.generated.resources.action_move_down
+import onemoretodolist.app.shared.generated.resources.action_move_to_bottom
+import onemoretodolist.app.shared.generated.resources.action_move_to_top
+import onemoretodolist.app.shared.generated.resources.action_move_up
 import onemoretodolist.app.shared.generated.resources.action_undo
-import onemoretodolist.app.shared.generated.resources.completed_summary_this_month
-import onemoretodolist.app.shared.generated.resources.completed_summary_this_week
+import onemoretodolist.app.shared.generated.resources.completed_summary_this_month_label
+import onemoretodolist.app.shared.generated.resources.completed_summary_this_week_label
 import onemoretodolist.app.shared.generated.resources.completed_summary_title
-import onemoretodolist.app.shared.generated.resources.completed_summary_today
+import onemoretodolist.app.shared.generated.resources.completed_summary_today_label
 import onemoretodolist.app.shared.generated.resources.mascot_sitting
 import onemoretodolist.app.shared.generated.resources.mascot_sitting_monochrome
 import onemoretodolist.app.shared.generated.resources.mascot_ball_monochrome
 import onemoretodolist.app.shared.generated.resources.mascot_ball
+import onemoretodolist.app.shared.generated.resources.share_title
 import onemoretodolist.app.shared.generated.resources.snackbar_copied
 import onemoretodolist.app.shared.generated.resources.sort_date
 import onemoretodolist.app.shared.generated.resources.sort_manual
@@ -136,6 +142,10 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.artemonre.onemoretodolist.core.designsystem.components.AppDropdownMenu
+import com.artemonre.onemoretodolist.core.designsystem.components.AppDropdownMenuItem
+import com.artemonre.onemoretodolist.core.designsystem.components.AppIconButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSnackbarHost
 
 private const val SCROLL_TO_TOP_THRESHOLD = 10
 private const val DRAG_ROTATION_DEGREES = 4f
@@ -144,7 +154,7 @@ private val SWIPE_ACTION_WIDTH = 56.dp
 // Clears the scroll-to-top button (56dp) plus its 16dp margin, with a little extra breathing
 // room, so the last list item never ends up hidden behind it after a full scroll.
 private val LIST_BOTTOM_CONTENT_PADDING = 80.dp
-private val MASCOT_HEIGHT = 160.dp
+private val MASCOT_HEIGHT = 148.dp
 // Half of ButtonDefaults.ContentPadding (24dp/8dp), snapped to the spacing scale.
 private val SORT_BUTTON_CONTENT_PADDING = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.xs)
 private const val BALL_AFTER_TODO_COUNT = 5
@@ -185,13 +195,10 @@ fun TodoListRoot(
     var editingTodo by remember { mutableStateOf<TodoItemUi?>(null) }
     var showAddTodoSheet by remember { mutableStateOf(false) }
     var showAddTodoFullScreenDialog by remember { mutableStateOf(false) }
-    // Text carried from the quick-add sheet's "More settings" button into the full-screen dialog -
-    // cleared whenever the full-screen dialog is opened directly, so that path never inherits a
-    // stale draft left over from an earlier "More settings" hop.
-    var addTodoDraftText by remember { mutableStateOf("") }
-    // Same idea for the checklist - only ever non-empty when a scanned photo is continued as one
-    // todo from ScannedTextReviewDialog.
-    var addTodoDraftChecklist by remember { mutableStateOf(emptyList<ChecklistItem>()) }
+    // What the add form opens with: the ViewModel's unsaved draft (handed over with the event that
+    // opens the form), or a scanned photo continued as one todo. The form reports every change
+    // back (OnAddDraftChanged), so the ViewModel's copy is the one that's kept.
+    var addTodoDraft by remember { mutableStateOf<TodoDraft?>(null) }
     var showPhotoCapture by remember { mutableStateOf(false) }
     var scannedParagraphs by remember { mutableStateOf<List<ScannedParagraph>?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -199,10 +206,13 @@ fun TodoListRoot(
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            TodoListEvent.ShowAddTodoSheet -> showAddTodoSheet = true
-            TodoListEvent.ShowAddTodoFullScreenDialog -> {
-                addTodoDraftText = ""
-                addTodoDraftChecklist = emptyList()
+            is TodoListEvent.ShowAddTodoSheet -> {
+                addTodoDraft = event.draft
+                showAddTodoSheet = true
+            }
+            is TodoListEvent.ShowAddTodoFullScreenDialog -> {
+                addTodoDraft = event.draft
+                showAddTodoSheet = false
                 showAddTodoFullScreenDialog = true
             }
             is TodoListEvent.ShowEditTodoSheet -> editingTodo = event.item
@@ -247,13 +257,14 @@ fun TodoListRoot(
                 showAddTodoSheet = false
             },
             onDismiss = { showAddTodoSheet = false },
-            onMoreSettingsClick = { draftText ->
-                viewModel.onAction(TodoListAction.OnAddFormExpanded)
+            onDiscard = {
+                viewModel.onAction(TodoListAction.OnAddDraftDiscarded)
                 showAddTodoSheet = false
-                addTodoDraftText = draftText
-                addTodoDraftChecklist = emptyList()
-                showAddTodoFullScreenDialog = true
-            }
+            },
+            // Opens the full-screen form with the draft (ShowAddTodoFullScreenDialog).
+            onMoreSettingsClick = { viewModel.onAction(TodoListAction.OnAddFormExpanded) },
+            initialDraft = addTodoDraft,
+            onDraftChange = { viewModel.onAction(TodoListAction.OnAddDraftChanged(it)) }
         )
     }
 
@@ -265,8 +276,9 @@ fun TodoListRoot(
                 showAddTodoFullScreenDialog = false
             },
             onDismiss = { showAddTodoFullScreenDialog = false },
-            initialText = addTodoDraftText,
-            initialChecklist = addTodoDraftChecklist,
+            onDiscard = { viewModel.onAction(TodoListAction.OnAddDraftDiscarded) },
+            initialDraft = addTodoDraft,
+            onDraftChange = { viewModel.onAction(TodoListAction.OnAddDraftChanged(it)) },
             knownTags = state.knownTags
         )
     }
@@ -291,8 +303,12 @@ fun TodoListRoot(
             onContinueAsSingle = { text, checklist ->
                 viewModel.onAction(TodoListAction.OnScannedTextContinuedAsSingle)
                 scannedParagraphs = null
-                addTodoDraftText = text
-                addTodoDraftChecklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
+                // Replaces any earlier unsaved draft - the form reports it as the new one right away.
+                addTodoDraft = TodoDraft(
+                    text = text,
+                    isPrioritized = false,
+                    checklist = checklist.map { ChecklistItem(id = Uuid.random().toString(), text = it) }
+                )
                 showAddTodoFullScreenDialog = true
             },
             // Back/Discard steps back to the camera for another shot rather than leaving the flow.
@@ -442,18 +458,18 @@ fun TodoListScreen(
                     // to Active.
                     if (state.filter == TodoListFilter.Active) {
                         Box {
-                            FilledTonalButton(
+                            AppTonalButton(
                                 onClick = { sortMenuExpanded = true },
                                 contentPadding = SORT_BUTTON_CONTENT_PADDING
                             ) {
                                 Text(stringResource(state.sortOption.displayName()))
                             }
-                            DropdownMenu(
+                            AppDropdownMenu(
                                 expanded = sortMenuExpanded,
                                 onDismissRequest = { sortMenuExpanded = false }
                             ) {
                                 TodoSortOption.entries.forEach { option ->
-                                    DropdownMenuItem(
+                                    AppDropdownMenuItem(
                                         text = { Text(stringResource(option.displayName())) },
                                         onClick = {
                                             onAction(TodoListAction.OnSortOptionSelected(option))
@@ -499,6 +515,14 @@ fun TodoListScreen(
                         item = item,
                         cloudSegment = cloudSegments[item.id],
                         modifier = rowModifier,
+                        // TalkBack's stand-in for dragging, offered exactly when dragging is.
+                        moveActions = if (state.isReorderEnabled) {
+                            moveAccessibilityActions(item.id, state.items.map { it.id }) { orderedIds ->
+                                onAction(TodoListAction.OnReorder(orderedIds))
+                            }
+                        } else {
+                            emptyList()
+                        },
                         swipeEnabled = !isDragging,
                         onToggleDone = { onAction(TodoListAction.OnToggleDone(item.id)) },
                         onEditClick = { onAction(TodoListAction.OnEditTodoClick(item.id)) },
@@ -550,7 +574,7 @@ fun TodoListScreen(
                         val tip = state.emptyStateTip.takeIf { state.filter == TodoListFilter.Active }
                         if (state.filter == TodoListFilter.Done && !state.archiveCompletedTodos) {
                             Spacer(modifier = Modifier.height(AppSpacing.l))
-                            FilledTonalButton(onClick = { onAction(TodoListAction.OnKeepCompletedTodosClick) }) {
+                            AppTonalButton(onClick = { onAction(TodoListAction.OnKeepCompletedTodosClick) }) {
                                 Text(stringResource(Res.string.todo_list_keep_completed))
                             }
                         } else if (tip == EmptyStateTip.AddWidget || tip == EmptyStateTip.MoreSettings) {
@@ -566,7 +590,7 @@ fun TodoListScreen(
                             )
                             if (tip == EmptyStateTip.AddWidget && state.canPinWidget) {
                                 Spacer(modifier = Modifier.height(AppSpacing.m))
-                                FilledTonalButton(onClick = { onAction(TodoListAction.OnAddWidgetClick) }) {
+                                AppTonalButton(onClick = { onAction(TodoListAction.OnAddWidgetClick) }) {
                                     Text(stringResource(Res.string.todo_list_add_widget))
                                 }
                             }
@@ -639,7 +663,7 @@ fun TodoListScreen(
             )
         }
 
-        SnackbarHost(
+        AppSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -706,40 +730,41 @@ private fun CompletedSummaryCard(
     thisMonthCount: Int,
     modifier: Modifier = Modifier
 ) {
-    // Same color as the bottom navigation bar, so the card reads as part of the app chrome
-    // rather than as another todo.
-    AppCard(modifier = modifier, containerColor = ShortNavigationBarDefaults.containerColor) {
-        // Extra padding on top of the card's own 8dp - 12dp total, same as the settings sections.
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AppSpacing.xs)
-        ) {
-            Text(
-                text = stringResource(Res.string.completed_summary_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(AppSpacing.s))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = stringResource(Res.string.completed_summary_today, todayCount),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Text(
-                    text = stringResource(Res.string.completed_summary_this_week, thisWeekCount),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Text(
-                    text = stringResource(Res.string.completed_summary_this_month, thisMonthCount),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
+    AppStatsCard(
+        title = stringResource(Res.string.completed_summary_title),
+        stats = listOf(
+            AppStat(stringResource(Res.string.completed_summary_today_label), todayCount),
+            AppStat(stringResource(Res.string.completed_summary_this_week_label), thisWeekCount),
+            AppStat(stringResource(Res.string.completed_summary_this_month_label), thisMonthCount)
+        ),
+        modifier = modifier
+    )
+}
+
+// Move to top / up / down / to bottom for one todo in the list as shown - each only where it'd
+// actually move it. Hands back the whole new order, same as a finished drag.
+@Composable
+private fun moveAccessibilityActions(
+    id: String,
+    orderedIds: List<String>,
+    onReorder: (List<String>) -> Unit
+): List<CustomAccessibilityAction> {
+    val index = orderedIds.indexOf(id)
+    if (index == -1) return emptyList()
+    val lastIndex = orderedIds.lastIndex
+    return buildList {
+        if (index > 0) {
+            add(CustomAccessibilityAction(stringResource(Res.string.action_move_to_top)) { onReorder(orderedIds.moved(index, 0)); true })
+            add(CustomAccessibilityAction(stringResource(Res.string.action_move_up)) { onReorder(orderedIds.moved(index, index - 1)); true })
+        }
+        if (index < lastIndex) {
+            add(CustomAccessibilityAction(stringResource(Res.string.action_move_down)) { onReorder(orderedIds.moved(index, index + 1)); true })
+            add(CustomAccessibilityAction(stringResource(Res.string.action_move_to_bottom)) { onReorder(orderedIds.moved(index, lastIndex)); true })
         }
     }
 }
+
+private fun List<String>.moved(from: Int, to: Int): List<String> = toMutableList().apply { add(to, removeAt(from)) }
 
 @Composable
 private fun SwipeableTodoRow(
@@ -752,7 +777,8 @@ private fun SwipeableTodoRow(
     modifier: Modifier = Modifier,
     swipeEnabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
-    cloudSegment: CloudSegment? = null
+    cloudSegment: CloudSegment? = null,
+    moveActions: List<CustomAccessibilityAction> = emptyList()
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -806,17 +832,22 @@ private fun SwipeableTodoRow(
             modifier = Modifier
                 .matchParentSize()
                 .padding(horizontal = AppSpacing.s)
-                .background(MaterialTheme.colorScheme.surfaceVariant, appListItemCardShape()),
+                .background(MaterialTheme.colorScheme.surfaceVariant, appListItemCardShape())
+                // Hidden under the card until swiped open - TalkBack would otherwise stop on them
+                // with no word of which todo they belong to. The card's own actions cover them.
+                .then(
+                    if (swipeState.currentValue == SwipeAnchor.Closed) Modifier.clearAndSetSemantics {} else Modifier
+                ),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
+            AppIconButton(
                 onClick = { onEditClick(); closeSwipe() },
                 modifier = Modifier.size(SWIPE_ACTION_WIDTH)
             ) {
                 Icon(imageVector = Icons.Filled.Edit, contentDescription = stringResource(Res.string.action_edit))
             }
-            IconButton(
+            AppIconButton(
                 onClick = { onDeleteClick() },
                 modifier = Modifier.size(SWIPE_ACTION_WIDTH)
             ) {
@@ -847,6 +878,12 @@ private fun SwipeableTodoRow(
             },
             onClick = onItemClick,
             onLongClick = onLongClick,
+            // Every swipe action, plus moving, without the gestures TalkBack can't do.
+            customActions = listOf(
+                CustomAccessibilityAction(stringResource(Res.string.action_edit)) { onEditClick(); true },
+                CustomAccessibilityAction(stringResource(Res.string.action_delete)) { onDeleteClick(); true },
+                CustomAccessibilityAction(stringResource(Res.string.share_title)) { onShareSwipe(); true }
+            ) + moveActions,
             modifier = Modifier
                 .padding(horizontal = AppSpacing.s)
                 .offset { IntOffset(x = swipeState.requireOffset().roundToInt(), y = 0) }

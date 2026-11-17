@@ -44,13 +44,12 @@ import org.jetbrains.compose.resources.stringResource
 // bounds (button + revealed items) as one block, so wherever it's placed, its trigger visibly
 // shifts as items appear/disappear. Here the trigger is a fully independent Box, always the same
 // fixed size regardless of whether the item list beside it is showing - it never moves.
-private val FAB_TRIGGER_SIZE = 56.dp
+internal val FAB_TRIGGER_SIZE = 56.dp
 private val FAB_TRIGGER_CORNER_RADIUS = 16.dp
 private val FAB_TRIGGER_ELEVATION = 6.dp
 private val FAB_MENU_ITEM_SPACING = 8.dp
 private val FAB_MENU_ITEM_CORNER_RADIUS = 16.dp
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MaterialFabMenu(
     expanded: Boolean,
@@ -60,6 +59,36 @@ fun MaterialFabMenu(
     items: List<FabMenuItem>,
     contentDescription: String?,
     modifier: Modifier = Modifier
+) {
+    FabMenuLayout(expanded, onExpandedChange, items, modifier) {
+        val containerColor = MaterialTheme.colorScheme.primaryContainer
+        Surface(
+            modifier = Modifier
+                .size(FAB_TRIGGER_SIZE)
+                .clip(RoundedCornerShape(FAB_TRIGGER_CORNER_RADIUS))
+                .fabMenuTriggerClicks(expanded, onExpandedChange, onClick),
+            shape = RoundedCornerShape(FAB_TRIGGER_CORNER_RADIUS),
+            color = containerColor,
+            contentColor = contentColorFor(containerColor),
+            shadowElevation = FAB_TRIGGER_ELEVATION
+        ) {
+            FabMenuTriggerIcon(icon, contentDescription, expanded)
+        }
+    }
+}
+
+/**
+ * The FAB menu's layout, shared by every style: [items] revealed above a fixed-size [trigger]
+ * that never moves. The trigger draws itself and handles its own clicks (see
+ * [fabMenuTriggerClicks]).
+ */
+@Composable
+internal fun FabMenuLayout(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    items: List<FabMenuItem>,
+    modifier: Modifier = Modifier,
+    trigger: @Composable () -> Unit
 ) {
     BackHandler(enabled = expanded) { onExpandedChange(false) }
 
@@ -83,32 +112,34 @@ fun MaterialFabMenu(
                 }
             )
         }
+        trigger()
+    }
+}
 
-        val containerColor = MaterialTheme.colorScheme.primaryContainer
-        Surface(
-            modifier = Modifier
-                .size(FAB_TRIGGER_SIZE)
-                .clip(RoundedCornerShape(FAB_TRIGGER_CORNER_RADIUS))
-                .combinedClickable(
-                    onClick = { if (expanded) onExpandedChange(false) else onClick() },
-                    onLongClick = { onExpandedChange(true) },
-                    onLongClickLabel = stringResource(Res.string.fab_open_menu),
-                    role = Role.Button
-                ),
-            shape = RoundedCornerShape(FAB_TRIGGER_CORNER_RADIUS),
-            color = containerColor,
-            contentColor = contentColorFor(containerColor),
-            shadowElevation = FAB_TRIGGER_ELEVATION
-        ) {
-            val rotation by animateFloatAsState(if (expanded) 45f else 0f)
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(FAB_TRIGGER_SIZE)) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = contentDescription,
-                    modifier = Modifier.graphicsLayer { rotationZ = rotation }
-                )
-            }
-        }
+/** A tap runs [onClick] (or closes the open menu); a long press opens the menu. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun Modifier.fabMenuTriggerClicks(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onClick: () -> Unit
+): Modifier = combinedClickable(
+    onClick = { if (expanded) onExpandedChange(false) else onClick() },
+    onLongClick = { onExpandedChange(true) },
+    onLongClickLabel = stringResource(Res.string.fab_open_menu),
+    role = Role.Button
+)
+
+/** The trigger's icon, turned into a close cross while the menu is open. */
+@Composable
+internal fun FabMenuTriggerIcon(icon: ImageVector, contentDescription: String?, expanded: Boolean) {
+    val rotation by animateFloatAsState(if (expanded) 45f else 0f)
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(FAB_TRIGGER_SIZE)) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            modifier = Modifier.graphicsLayer { rotationZ = rotation }
+        )
     }
 }
 

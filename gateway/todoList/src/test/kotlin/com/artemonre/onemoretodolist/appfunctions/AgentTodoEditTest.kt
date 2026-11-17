@@ -21,7 +21,7 @@ class AgentTodoEditTest {
 
     private val weekly = Recurrence(RecurrenceType.Every, 1, RecurrenceUnit.Week)
     private val checklist = listOf(ChecklistItem("a", "Step"))
-    private val tags = listOf(TodoTag("Work", TagColor.Blue))
+    private val tags = listOf(TodoTag("Work", TagColor.Color6))
     private val todo = TodoItem(
         id = "1",
         text = "Water the plants",

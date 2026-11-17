@@ -1,4 +1,5 @@
-- Turn a photo of printed text into todos: hold + and choose "Capture a note" - it even works offline
-- Now you can see the next reminder date/time on the todo card and in its details
-- We simplified setting up recurring reminders
-- Anonymous usage stats help us learn what to improve - they never include what you write
+- Try a whole new look: choose Holo in Settings → UI Style
+- Our mascot now looks out at you from the new app icon, eager to help
+- Closed the add form by accident? What you typed is still there
+- Clearer error messages help you find out what went wrong
+- Better TalkBack support

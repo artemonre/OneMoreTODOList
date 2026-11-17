@@ -1,0 +1,290 @@
+package com.artemonre.onemoretodolist.core.designsystem.components.holo
+
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
+import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
+import com.artemonre.onemoretodolist.core.designsystem.theme.toFontFamily
+import com.artemonre.onemoretodolist.core.theme.domain.FontOption
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
+import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
+import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
+
+private val SEGMENT_MIN_HEIGHT = 40.dp
+private val SEGMENT_CORNER_RADIUS = 8.dp
+private val SWITCH_TRACK_WIDTH = 44.dp
+private val SWITCH_TRACK_HEIGHT = 24.dp
+private val SWITCH_THUMB_SIZE = 20.dp
+private val SWITCH_THUMB_INSET = 2.dp
+private val BUTTON_ICON_BADGE_SIZE = 24.dp
+private val BUTTON_ICON_SIZE = 16.dp
+private val BUTTON_MIN_HEIGHT = 40.dp
+private val SUPPORTING_LINE_HEIGHT = 20.sp
+
+/**
+ * A Holo segmented control: separate rounded-rectangle segments in a soft track. The segments
+ * take the Material style's toggle-button colors, checked and unchecked; the track is a faded
+ * unchecked fill with a faded checked-color outline.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun <T> HoloSegmentedControl(
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    label: (T) -> String,
+    modifier: Modifier = Modifier
+) {
+    val colors = ToggleButtonDefaults.colors()
+    val segmentShape = RoundedCornerShape(SEGMENT_CORNER_RADIUS)
+    Row(
+        modifier = modifier
+            .clip(HoloControlShape)
+            .background(colors.containerColor.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA))
+            .border(HoloDefaults.ThinBorderWidth, colors.checkedContainerColor.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA), HoloControlShape)
+            .padding(AppSpacing.xs)
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
+    ) {
+        options.forEach { option ->
+            val selected = option == selectedOption
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minHeight = SEGMENT_MIN_HEIGHT)
+                    .clip(segmentShape)
+                    .background(if (selected) colors.checkedContainerColor else colors.containerColor)
+                    .selectable(selected = selected, onClick = { onOptionSelected(option) }, role = Role.RadioButton)
+                    .padding(horizontal = AppSpacing.s),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label(option),
+                    maxLines = 1,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (selected) colors.checkedContentColor else colors.contentColor
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A Holo switch: slimmer than Material's, a flat track with a round thumb and no outline, in
+ * Material3's switch colors (disabled ones included).
+ */
+@Composable
+fun HoloSwitch(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    val colors = SwitchDefaults.colors()
+    val trackColor = when {
+        enabled && checked -> colors.checkedTrackColor
+        enabled -> colors.uncheckedTrackColor
+        checked -> colors.disabledCheckedTrackColor
+        else -> colors.disabledUncheckedTrackColor
+    }
+    val thumbColor = when {
+        enabled && checked -> colors.checkedThumbColor
+        enabled -> colors.uncheckedThumbColor
+        checked -> colors.disabledCheckedThumbColor
+        else -> colors.disabledUncheckedThumbColor
+    }
+    val thumbOffset by animateDpAsState(
+        if (checked) SWITCH_TRACK_WIDTH - SWITCH_THUMB_SIZE - SWITCH_THUMB_INSET else SWITCH_THUMB_INSET
+    )
+    Box(
+        modifier = modifier
+            .then(
+                if (onCheckedChange != null) {
+                    Modifier
+                        .minimumInteractiveComponentSize()
+                        .toggleable(value = checked, onValueChange = onCheckedChange, enabled = enabled, role = Role.Switch)
+                } else {
+                    Modifier
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(SWITCH_TRACK_WIDTH, SWITCH_TRACK_HEIGHT)
+                .background(trackColor, CircleShape),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Box(
+                modifier = Modifier
+                    .offset(x = thumbOffset)
+                    .size(SWITCH_THUMB_SIZE)
+                    .background(thumbColor, CircleShape)
+            )
+        }
+    }
+}
+
+/**
+ * A Holo section title: `01 // TITLE` - the number in a small mono accent font, the title in
+ * capitals, both the same small size wherever they're used. The number and the capitals are
+ * decoration - TalkBack reads [title] as written, as a heading.
+ */
+@Composable
+fun HoloSectionTitle(
+    title: String,
+    number: Int?,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        if (number != null) {
+            Text(
+                text = "${number.toString().padStart(2, '0')} ${HoloDefaults.SECTION_SEPARATOR}",
+                style = MaterialTheme.typography.labelLarge.copy(fontFamily = FontOption.Monospace.toFontFamily()),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clearAndSetSemantics { }
+            )
+            Spacer(Modifier.width(AppSpacing.s))
+        }
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.titleSmall.copy(letterSpacing = HoloDefaults.LabelLetterSpacing),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clearAndSetSemantics {
+                heading()
+                text = AnnotatedString(title)
+            }
+        )
+    }
+}
+
+/**
+ * A Holo outlined button: a pill outline with [icon] set in a small filled circle before [text],
+ * in Material3's outlined-button colors (disabled ones included) - the circle in the content
+ * color, the icon on it in the matching on-color.
+ */
+@Composable
+fun HoloOutlinedButton(
+    onClick: () -> Unit,
+    text: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentPadding: PaddingValues = PaddingValues(horizontal = AppSpacing.l)
+) {
+    val buttonColors = ButtonDefaults.outlinedButtonColors()
+    val contentColor = if (enabled) buttonColors.contentColor else buttonColors.disabledContentColor
+    val iconColor = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.surface
+    Row(
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .clip(CircleShape)
+            .border(ButtonDefaults.outlinedButtonBorder(enabled), CircleShape)
+            .clickable(enabled = enabled, onClick = onClick, role = Role.Button)
+            .defaultMinSize(minHeight = BUTTON_MIN_HEIGHT)
+            .padding(contentPadding),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(BUTTON_ICON_BADGE_SIZE)
+                .background(contentColor, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(BUTTON_ICON_SIZE))
+        }
+        Spacer(Modifier.width(AppSpacing.s))
+        Text(text = text, style = MaterialTheme.typography.labelLarge, color = contentColor, maxLines = 1)
+    }
+}
+
+/** A thin Holo divider between the parts of a section. */
+@Composable
+fun HoloDivider(modifier: Modifier = Modifier) {
+    HorizontalDivider(modifier = modifier, color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+/** Holo's supporting text: small, in mono, with roomy lines. */
+@Composable
+fun holoSupportingTextStyle(): TextStyle = MaterialTheme.typography.bodySmall.copy(
+    fontFamily = FontOption.Monospace.toFontFamily(),
+    lineHeight = SUPPORTING_LINE_HEIGHT
+)
+
+@Preview(widthDp = 320, heightDp = 360)
+@Composable
+private fun HoloSettingsControlsPreview() {
+    HoloSettingsControlsPreviewContent(ThemeMode.Light)
+}
+
+@Preview(widthDp = 320, heightDp = 360)
+@Composable
+private fun HoloSettingsControlsDarkPreview() {
+    HoloSettingsControlsPreviewContent(ThemeMode.Dark)
+}
+
+@Composable
+private fun HoloSettingsControlsPreviewContent(mode: ThemeMode) {
+    AppTheme(themeConfig = ThemeConfig(mode = mode, uiStyle = UiStyleOption.Holo)) {
+        HoloCard(modifier = Modifier.fillMaxWidth().padding(AppSpacing.s)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.m), modifier = Modifier.padding(AppSpacing.xs)) {
+                HoloSectionTitle(title = "Theme", number = 1)
+                HoloSegmentedControl(listOf("System", "Light", "Dark"), "System", {}, { it }, Modifier.fillMaxWidth())
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Archive completed todos", modifier = Modifier.weight(1f))
+                    HoloSwitch(checked = true, onCheckedChange = {})
+                }
+                Text("When off, completing a todo deletes it.", style = holoSupportingTextStyle())
+                HoloDivider()
+                HoloOutlinedButton(onClick = {}, text = "Back up", icon = Icons.Filled.FileUpload)
+            }
+        }
+    }
+}

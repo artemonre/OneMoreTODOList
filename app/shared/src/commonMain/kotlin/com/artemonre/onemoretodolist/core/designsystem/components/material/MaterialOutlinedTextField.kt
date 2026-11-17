@@ -10,8 +10,10 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.isUnspecified
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppSpacing
@@ -26,8 +28,8 @@ private val COMPACT_MIN_HEIGHT = OutlinedTextFieldDefaults.MinHeight -
 
 /**
  * A stock Material3 [OutlinedTextField] (the [TextFieldState] overload) - default shape, colors,
- * and label behavior. [compact] shrinks the inner padding from 16dp to 8dp, and the minimum
- * height along with it.
+ * and label behavior unless [shape] or [colors] say otherwise. [compact] shrinks the inner padding
+ * from 16dp to 8dp, and the minimum height along with it.
  */
 @Composable
 fun MaterialOutlinedTextField(
@@ -40,7 +42,9 @@ fun MaterialOutlinedTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     onKeyboardAction: KeyboardActionHandler? = null,
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.Default,
-    compact: Boolean = false
+    compact: Boolean = false,
+    shape: Shape = OutlinedTextFieldDefaults.shape,
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
 ) {
     val contentPadding = when {
         !compact -> STOCK_CONTENT_PADDING
@@ -58,7 +62,9 @@ fun MaterialOutlinedTextField(
         keyboardOptions = keyboardOptions,
         onKeyboardAction = onKeyboardAction,
         lineLimits = lineLimits,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
+        shape = shape,
+        colors = colors
     )
 }
 

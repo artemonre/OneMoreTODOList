@@ -33,9 +33,11 @@
     <string name="todo_filter_active">Активные (%1$d)</string>
     <string name="todo_filter_done">Готово (%1$d)</string>
     <string name="completed_summary_title">Выполнено</string>
-    <string name="completed_summary_today">Сегодня %1$d</string>
-    <string name="completed_summary_this_week">За неделю %1$d</string>
-    <string name="completed_summary_this_month">За месяц %1$d</string>
+    <string name="completed_summary_today_label">Сегодня</string>
+    <string name="completed_summary_this_week_label">За неделю</string>
+    <string name="completed_summary_this_month_label">За месяц</string>
+    <!-- One stat as a single line: a label and its count ("Today 3"). -->
+    <string name="stat_label_value">%1$s %2$d</string>
     <string name="todo_list_empty_completed">Здесь появляются выполненные задачи.\nОтметь любую в списке активных, чтобы она оказалась здесь.</string>
 
     <string name="tags_title">Теги</string>
@@ -44,14 +46,7 @@
     <string name="tag_new_title">Новый тег</string>
     <string name="tag_name">Название тега</string>
     <string name="tag_color">Цвет</string>
-    <string name="tag_color_red">Красный</string>
-    <string name="tag_color_orange">Оранжевый</string>
-    <string name="tag_color_yellow">Жёлтый</string>
-    <string name="tag_color_green">Зелёный</string>
-    <string name="tag_color_teal">Бирюзовый</string>
-    <string name="tag_color_blue">Синий</string>
-    <string name="tag_color_purple">Фиолетовый</string>
-    <string name="tag_color_pink">Розовый</string>
+    <string name="tag_color_number">Цвет %1$d</string>
     <string name="checklist_title">Чек-лист</string>
     <string name="checklist_item_placeholder">Пункт</string>
     <string name="checklist_add_item">Добавить пункт</string>
@@ -85,6 +80,10 @@
     <string name="action_undo">Отменить</string>
     <string name="action_edit">Изменить</string>
     <string name="action_delete">Удалить</string>
+    <string name="action_move_to_top">Переместить в начало</string>
+    <string name="action_move_up">Переместить выше</string>
+    <string name="action_move_down">Переместить ниже</string>
+    <string name="action_move_to_bottom">Переместить в конец</string>
     <string name="action_close">Закрыть</string>
     <string name="snackbar_copied">Скопировано в буфер обмена</string>
     <string name="snackbar_todo_deleted">Задача удалена</string>
@@ -137,6 +136,7 @@
     <string name="form_allow_notifications">Разрешить уведомления</string>
     <string name="form_grant_permission">Выдать разрешение</string>
     <string name="form_ok">ОК</string>
+    <string name="form_reminder_and_repeat">Напоминание и повтор</string>
     <string name="form_repeat">Повторять</string>
     <string name="form_every">Раз в</string>
     <string name="form_only_after_completion">Только после выполнения</string>
@@ -155,7 +155,7 @@
     <string name="settings_theme_system">Системная</string>
     <string name="settings_theme_light">Светлая</string>
     <string name="settings_theme_dark">Тёмная</string>
-    <string name="settings_palette">Палитра</string>
+    <string name="settings_colors">Цвета</string>
     <string name="settings_palettes">Палитры</string>
     <string name="settings_dynamic_color">Цвета обоев</string>
     <string name="settings_dynamic_color_description">Цвета берутся из твоих обоев, а не из готовой палитры, и обновляются, когда ты меняешь обои.</string>
@@ -165,7 +165,7 @@
     <string name="settings_font_mono">Моноширинный</string>
     <string name="settings_ui_style">Стиль интерфейса</string>
     <string name="settings_ui_style_material">Material</string>
-    <string name="settings_ui_style_paper">Бумага</string>
+    <string name="settings_ui_style_holo">Holo</string>
     <string name="settings_todos">Задачи</string>
     <string name="settings_archive_completed">Архивировать выполненные</string>
     <string name="settings_archive_completed_description">Если выключено, выполненная в приложении задача сразу удаляется (её можно вернуть кнопкой «Отменить»). Флажок в виджете всегда архивирует задачу, чтобы нельзя было удалить задачу случайным нажатием.</string>
@@ -205,7 +205,7 @@
     <string name="photo_script_suggest_switch_cyrillic">Да, распознать кириллицу</string>
     <string name="photo_script_suggest_switch_latin">Да, распознать латиницу</string>
     <string name="photo_script_suggest_keep">Нет, всё в порядке</string>
-    <string name="snackbar_no_text_found">На фото не найден текст</string>
+    <string name="snackbar_photo_unreadable">Не удалось открыть фото. Сделай его заново или выбери другое.</string>
     <string name="scan_review_title">Распознанный текст</string>
     <string name="scan_review_mode_separate">Отдельные задачи</string>
     <string name="scan_review_mode_single">Одна задача</string>
@@ -230,16 +230,16 @@
     <string name="backup_export_dialog_title">Сохранить резервную копию</string>
     <string name="backup_import_dialog_title">Открыть резервную копию</string>
     <string name="backup_exported">Резервная копия сохранена</string>
-    <string name="backup_export_failed">Не удалось сохранить файл резервной копии</string>
-    <string name="backup_file_unreadable">Не удалось прочитать файл</string>
+    <string name="backup_export_failed">Не удалось сохранить файл резервной копии. Проверь, что на устройстве есть свободное место, или выбери другую папку.</string>
+    <string name="backup_file_unreadable">Не удалось открыть файл. Если он хранится в облаке, сначала скачай его на устройство и попробуй снова.</string>
     <string name="backup_import_mode_title">Импорт задач</string>
     <string name="backup_import_mode_message">«Объединить» оставит самую свежую версию каждой задачи и добавит недостающие. «Заменить» полностью заменит твой список копией — задачи, которых в ней нет, будут удалены.</string>
     <string name="backup_import_merge">Объединить</string>
     <string name="backup_import_replace">Заменить</string>
     <string name="backup_import_nothing_new">Нечего импортировать — список уже актуален</string>
-    <string name="backup_import_invalid">Это не файл резервной копии, или он повреждён</string>
+    <string name="backup_import_invalid">Это не резервная копия этого приложения, или файл повреждён. Выбери файл, сохранённый кнопкой «Сохранить».</string>
     <string name="backup_import_newer_format">Эта копия создана более новой версией приложения. Обнови приложение, чтобы импортировать её.</string>
-    <string name="backup_import_storage_error">Не удалось сохранить импортированные задачи</string>
+    <string name="backup_import_storage_error">Не удалось сохранить импортированные задачи, список не изменился. Освободи место на устройстве и попробуй снова.</string>
     <plurals name="backup_imported">
         <item quantity="one">Импортирована %1$d задача</item>
         <item quantity="few">Импортировано %1$d задачи</item>
@@ -256,9 +256,9 @@
     <string name="drive_needs_reconnect">Для ежедневной копии снова нужен доступ к Google Диску. Нажми «Сохранить», чтобы подключиться.</string>
     <string name="drive_disconnect">Отключить Google Диск</string>
     <string name="drive_backed_up">Копия сохранена на Google Диске</string>
-    <string name="drive_no_backup_found">В этом аккаунте Google ещё нет резервной копии</string>
-    <string name="drive_access_denied">Доступ к Google Диску не предоставлен</string>
+    <string name="drive_no_backup_found">В этом аккаунте Google ещё нет резервной копии. Сначала сохрани копию или проверь, что выбран тот аккаунт, в который ты её сохранял.</string>
+    <string name="drive_access_denied">Доступ к Google Диску не предоставлен. Попробуй снова и разреши доступ, когда Google спросит.</string>
     <string name="drive_not_configured">Резервное копирование на Google Диск недоступно в этой версии приложения</string>
-    <string name="drive_no_internet">Нет подключения к интернету</string>
-    <string name="drive_backup_failed">Что-то пошло не так с Google Диском. Попробуй позже.</string>
+    <string name="drive_no_internet">Нет подключения к интернету. Подключись к Wi-Fi или мобильной сети и попробуй снова.</string>
+    <string name="drive_backup_failed">Не удалось связаться с Google Диском. Проверь, что на устройстве выполнен вход в Google, и попробуй снова через несколько минут.</string>
 </resources>

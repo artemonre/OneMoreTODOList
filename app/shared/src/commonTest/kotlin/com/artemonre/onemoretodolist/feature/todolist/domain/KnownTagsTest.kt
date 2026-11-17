@@ -9,12 +9,12 @@ class KnownTagsTest {
     @Test
     fun `known tags are distinct by name ignoring case, keep the first color, and sort by name`() {
         val todos = listOf(
-            todoItem("1", TodoTag("work", TagColor.Blue), TodoTag("Home", TagColor.Orange)),
-            todoItem("2", TodoTag("Work", TagColor.Red), TodoTag("Errands", TagColor.Green))
+            todoItem("1", TodoTag("work", TagColor.Color6), TodoTag("Home", TagColor.Color2)),
+            todoItem("2", TodoTag("Work", TagColor.Color1), TodoTag("Errands", TagColor.Color4))
         )
 
         assertEquals(
-            listOf(TodoTag("Errands", TagColor.Green), TodoTag("Home", TagColor.Orange), TodoTag("work", TagColor.Blue)),
+            listOf(TodoTag("Errands", TagColor.Color4), TodoTag("Home", TagColor.Color2), TodoTag("work", TagColor.Color6)),
             todos.knownTags()
         )
     }

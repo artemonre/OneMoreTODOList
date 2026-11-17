@@ -16,9 +16,11 @@ data class ThemeConfig(
 enum class ThemeMode { System, Light, Dark }
 
 // The visual/component design language, independent of ThemeMode's light/dark color scheme -
-// e.g. Material is the flat, standard-elevation look with no customizations; Paper is the
-// press-flattening card look the todo list screen currently uses (designsystem/components/paper).
-enum class UiStyleOption { Material, Paper }
+// e.g. Material is the flat, standard-elevation look with no customizations;
+// Holo is the soft, outlined look with folded card corners and stat tiles
+// (designsystem/components/holo). Every style takes its colors from the current palette.
+// A stored value that's no longer here (the retired Paper style) falls back to Material when read.
+enum class UiStyleOption { Material, Holo }
 
 enum class ColorPaletteOption { Default, Slate, MaterialPaletteGreen, MaterialPaletteYellow }
 

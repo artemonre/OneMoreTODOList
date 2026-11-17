@@ -20,12 +20,9 @@ import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Merge
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
@@ -61,6 +60,10 @@ import onemoretodolist.app.shared.generated.resources.scan_review_todo_text
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import com.artemonre.onemoretodolist.core.designsystem.components.AppButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppIconButton
+import com.artemonre.onemoretodolist.core.designsystem.components.AppSegmentedButtonRow
+import com.artemonre.onemoretodolist.core.designsystem.components.AppTextButton
 
 // Separate: every row becomes its own todo. Single: the first row is the todo's text and the
 // rest become its checklist.
@@ -105,13 +108,15 @@ fun ScannedTextReviewDialog(
             Text(
                 text = stringResource(Res.string.scan_review_title),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .semantics { heading() }
             )
             Spacer(Modifier.height(16.dp))
-            EnumSegmentedRow(
+            AppSegmentedButtonRow(
                 options = ScannedTextMode.entries,
-                selected = mode,
-                onSelected = { mode = it },
+                selectedOption = mode,
+                onOptionSelected = { mode = it },
                 label = resourceLabels(ScannedTextMode.entries) { it.displayName() },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -121,7 +126,8 @@ fun ScannedTextReviewDialog(
                     if (index == 1) Spacer(Modifier.height(8.dp))
                     Text(
                         text = stringResource(if (index == 0) Res.string.scan_review_todo_text else Res.string.checklist_title),
-                        style = MaterialTheme.typography.titleSmall
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.semantics { heading() }
                     )
                     Spacer(Modifier.height(4.dp))
                 }
@@ -155,7 +161,7 @@ fun ScannedTextReviewDialog(
                         singleLine = false
                     )
                     if (row.parts.size > 1) {
-                        IconButton(onClick = { rows = rows.splitAt(index) }) {
+                        AppIconButton(onClick = { rows = rows.splitAt(index) }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.CallSplit,
                                 contentDescription = stringResource(Res.string.scan_review_split_line)
@@ -166,7 +172,7 @@ fun ScannedTextReviewDialog(
                     // line above. The first row has nothing above it, so it keeps an empty slot of
                     // the same size to stay aligned with the rest.
                     if (index > 0) {
-                        IconButton(onClick = { rows = rows.mergedIntoPrevious(index) }) {
+                        AppIconButton(onClick = { rows = rows.mergedIntoPrevious(index) }) {
                             Icon(
                                 imageVector = Icons.Filled.Merge,
                                 contentDescription = stringResource(Res.string.scan_review_merge_line)
@@ -175,7 +181,7 @@ fun ScannedTextReviewDialog(
                     } else {
                         Spacer(Modifier.minimumInteractiveComponentSize())
                     }
-                    IconButton(onClick = { rows = rows.filterNot { it.id == row.id } }) {
+                    AppIconButton(onClick = { rows = rows.filterNot { it.id == row.id } }) {
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(Res.string.scan_review_remove_line)
@@ -184,15 +190,14 @@ fun ScannedTextReviewDialog(
                 }
                 Spacer(Modifier.height(4.dp))
             }
-            TextButton(
+            AppTextButton(
                 onClick = {
                     val newRow = ScannedLine(id = Uuid.random().toString(), text = "")
                     justAddedId = newRow.id
                     rows = rows + newRow
-                }
+                },
+                leadingIcon = Icons.Filled.Add
             ) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
                 Text(stringResource(Res.string.scan_review_add_line))
             }
             Spacer(Modifier.height(20.dp))
@@ -200,11 +205,11 @@ fun ScannedTextReviewDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = requestDismiss) {
+                AppTextButton(onClick = requestDismiss) {
                     Text(stringResource(Res.string.scan_review_back))
                 }
                 Spacer(Modifier.width(8.dp))
-                Button(
+                AppButton(
                     onClick = {
                         when (mode) {
                             ScannedTextMode.Separate -> onConfirmSeparate(nonBlankLines)

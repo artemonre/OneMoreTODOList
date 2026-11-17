@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialFab
+import com.artemonre.onemoretodolist.core.designsystem.components.holo.HoloFab
 import com.artemonre.onemoretodolist.core.designsystem.theme.LocalUiStyle
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
@@ -21,7 +22,6 @@ fun AppFab(
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialFab(onClick, icon, contentDescription, modifier)
-        // No Paper FAB yet - fall back to Material.
-        UiStyleOption.Paper -> MaterialFab(onClick, icon, contentDescription, modifier)
+        UiStyleOption.Holo -> HoloFab(onClick, icon, contentDescription, modifier)
     }
 }

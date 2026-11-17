@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -26,8 +27,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -38,17 +41,46 @@ import kotlinx.coroutines.launch
  * A stock Material3 [ModalBottomSheet] - default shape, colors, and scrim all from
  * `BottomSheetDefaults`, no customizations.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaterialBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     showDragHandle: Boolean = true,
     onExpanded: () -> Unit = {},
-    // Drawn centered over the sheet's top edge, on top of it - sticks out above the sheet by
-    // topDecorationOverhang, and whatever's taller than that overlaps onto the sheet.
+    // Drawn over the sheet's top edge at its start, just past the rounded corner, on top of it -
+    // sticks out above the sheet by topDecorationOverhang, and whatever's taller than that overlaps
+    // onto the sheet.
     topDecoration: @Composable (() -> Unit)? = null,
     topDecorationOverhang: Dp = 0.dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    BottomSheetLayout(
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        showDragHandle = showDragHandle,
+        onExpanded = onExpanded,
+        topDecoration = topDecoration,
+        topDecorationOverhang = topDecorationOverhang,
+        content = content
+    )
+}
+
+/**
+ * The modal bottom sheet every style builds on: Material3's [ModalBottomSheet] and its behavior,
+ * with a style's own [dragHandle] and [sheetDecoration] - a modifier on the visible sheet, drawn
+ * within its [BottomSheetDefaults.ExpandedShape].
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun BottomSheetLayout(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    showDragHandle: Boolean = true,
+    onExpanded: () -> Unit = {},
+    topDecoration: @Composable (() -> Unit)? = null,
+    topDecorationOverhang: Dp = 0.dp,
+    dragHandle: @Composable () -> Unit = { BottomSheetDefaults.DragHandle() },
+    sheetDecoration: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     // The default partially-expanded state relies on a swipe-up-to-expand gesture that isn't
@@ -67,13 +99,9 @@ fun MaterialBottomSheet(
     if (topDecoration == null) {
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
-            modifier = modifier,
+            modifier = modifier.then(sheetDecoration),
             sheetState = sheetState,
-            dragHandle = if (showDragHandle) {
-                { BottomSheetDefaults.DragHandle() }
-            } else {
-                null
-            },
+            dragHandle = if (showDragHandle) dragHandle else null,
             content = content
         )
         return
@@ -81,6 +109,13 @@ fun MaterialBottomSheet(
 
     val scope = rememberCoroutineScope()
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
+    val density = LocalDensity.current
+    // The sheet's own top-start corner radius, so the decoration starts where the corner's curve ends.
+    val sheetShape = BottomSheetDefaults.ExpandedShape
+    val decorationStartPadding = (sheetShape as? CornerBasedShape)
+        ?.topStart
+        ?.let { with(density) { it.toPx(Size.Zero, density).toDp() } }
+        ?: 0.dp
 
     // The stock sheet clips its content to its own shape, so nothing can stick out above it. Instead
     // the stock sheet itself is left invisible and an identical-looking sheet is drawn inside it,
@@ -96,12 +131,13 @@ fun MaterialBottomSheet(
         dragHandle = null,
         contentWindowInsets = { WindowInsets(0) }
     ) {
-        // propagateMinConstraints keeps the visible sheet at full width - the decoration itself
-        // opts out of it via wrapContentSize.
+        // propagateMinConstraints keeps the visible sheet at full width.
         Box(propagateMinConstraints = true) {
             Surface(
-                modifier = Modifier.padding(top = topDecorationOverhang),
-                shape = BottomSheetDefaults.ExpandedShape,
+                modifier = Modifier
+                    .padding(top = topDecorationOverhang)
+                    .then(sheetDecoration),
+                shape = sheetShape,
                 color = BottomSheetDefaults.ContainerColor
             ) {
                 Column(
@@ -110,7 +146,7 @@ fun MaterialBottomSheet(
                         .windowInsetsPadding(BottomSheetDefaults.modalWindowInsets)
                 ) {
                     if (showDragHandle) {
-                        BottomSheetDefaults.DragHandle(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) { dragHandle() }
                     }
                     content()
                 }
@@ -132,7 +168,11 @@ fun MaterialBottomSheet(
                         }
                     }
             )
-            Box(Modifier.wrapContentSize(Alignment.TopCenter)) { topDecoration() }
+            Box(
+                Modifier
+                    .wrapContentSize(Alignment.TopStart)
+                    .padding(start = decorationStartPadding)
+            ) { topDecoration() }
         }
     }
 }
