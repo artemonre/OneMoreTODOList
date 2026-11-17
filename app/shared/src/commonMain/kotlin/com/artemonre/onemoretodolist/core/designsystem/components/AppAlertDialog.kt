@@ -14,7 +14,8 @@ import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
 
 /**
  * An alert dialog for the current [LocalUiStyle], falling back to [MaterialAlertDialog] for any
- * style without its own. See [MaterialAlertDialog] for the parameters.
+ * style without its own. See [MaterialAlertDialog] for the parameters. [foldedCorner] and [accent]
+ * give the card a folded corner like a list card's in styles that have one (Holo); others ignore them.
  */
 @Composable
 fun AppAlertDialog(
@@ -31,7 +32,9 @@ fun AppAlertDialog(
     topDecorationOverhang: Dp = 0.dp,
     bottomDecoration: @Composable (() -> Unit)? = null,
     bottomDecorationHeight: Dp = 0.dp,
-    properties: DialogProperties = DialogProperties()
+    properties: DialogProperties = DialogProperties(),
+    foldedCorner: Boolean = false,
+    accent: Boolean = false
 ) {
     when (LocalUiStyle.current) {
         UiStyleOption.Material -> MaterialAlertDialog(
@@ -40,7 +43,8 @@ fun AppAlertDialog(
         )
         UiStyleOption.Holo -> HoloAlertDialog(
             onDismissRequest, confirmButton, modifier, dismissButton, icon, title, text, contentPadding,
-            buttonsTopSpacing, topDecoration, topDecorationOverhang, bottomDecoration, bottomDecorationHeight, properties
+            buttonsTopSpacing, topDecoration, topDecorationOverhang, bottomDecoration, bottomDecorationHeight, properties,
+            foldedCorner, accent
         )
     }
 }

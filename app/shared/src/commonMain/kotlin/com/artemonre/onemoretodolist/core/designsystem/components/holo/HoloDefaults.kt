@@ -33,8 +33,6 @@ internal object HoloDefaults {
     val BorderWidth = 2.dp
     val ThinBorderWidth = 1.dp
     val CornerFoldSize = 12.dp
-    // How thick the static card's corner highlight is mid-corner - see HoloCard.
-    val CornerHighlightThickness = 6.dp
     val FabGlowElevation = 12.dp
     val HeroAccentBarWidth = 48.dp
     val HeroAccentBarThickness = 4.dp
@@ -53,7 +51,7 @@ internal object HoloDefaults {
 
 /**
  * A rounded rectangle with its top-end corner cut off diagonally - the dog-ear of a Holo list
- * card. [HoloListItemCard] draws the folded-over flap into the cut.
+ * card (and the todo details dialog). [holoCornerFlap] draws the folded-over flap into the cut.
  */
 internal class HoloFoldedCornerShape(
     private val cornerRadius: Dp,

@@ -45,7 +45,7 @@ private val DRAG_HANDLE_VERTICAL_PADDING = 16.dp
 
 /**
  * The Holo bottom sheet: Material3's sheet and behavior, with an accent line along its top edge
- * (following the rounded corners, like the navigation bar's line) and a short accent bar for a
+ * and both sides (following the rounded corners, like the navigation bar's line) and a short accent bar for a
  * drag handle. Same parameters as
  * [com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialBottomSheet].
  */
@@ -73,7 +73,7 @@ fun HoloBottomSheet(
         topDecoration = topDecoration,
         topDecorationOverhang = topDecorationOverhang,
         dragHandle = { HoloDragHandle() },
-        sheetDecoration = Modifier.holoTopEdgeLine(cornerRadius),
+        sheetDecoration = Modifier.holoEdgeLine(cornerRadius),
         content = content
     )
 }
@@ -90,11 +90,11 @@ private fun HoloDragHandle() {
 }
 
 /**
- * A line in [MaterialTheme.colorScheme.primary] along the top edge, following top corners of
- * [cornerRadius] down to where they meet the sides.
+ * A line in [MaterialTheme.colorScheme.primary] up the start side, along the top edge around top
+ * corners of [cornerRadius], and down the end side - the sheet's open bottom stays unlined.
  */
 @Composable
-private fun Modifier.holoTopEdgeLine(cornerRadius: Dp): Modifier {
+private fun Modifier.holoEdgeLine(cornerRadius: Dp): Modifier {
     val color = MaterialTheme.colorScheme.primary
     return drawWithContent {
         drawContent()
@@ -103,19 +103,23 @@ private fun Modifier.holoTopEdgeLine(cornerRadius: Dp): Modifier {
         val inset = stroke / 2
         val r = cornerRadius.toPx()
         val line = Path().apply {
-            moveTo(inset, r)
+            moveTo(inset, size.height)
+            lineTo(inset, r)
             arcTo(Rect(inset, inset, 2 * r - inset, 2 * r - inset), 180f, 90f, forceMoveTo = false)
             lineTo(size.width - r, inset)
             arcTo(Rect(size.width - 2 * r + inset, inset, size.width - inset, 2 * r - inset), 270f, 90f, forceMoveTo = false)
+            lineTo(size.width - inset, size.height)
         }
         drawPath(line, color, style = Stroke(width = stroke))
     }
 }
 
 /**
- * The Holo alert dialog: the static-card look (outline and highlighted corner), a `>` prompt
+ * The Holo alert dialog: the static-card look (rounded, outlined), a `>` prompt
  * before the title that TalkBack skips, and the text in Holo's mono supporting style. Same
- * parameters as [com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog].
+ * parameters as [com.artemonre.onemoretodolist.core.designsystem.components.material.MaterialAlertDialog],
+ * plus [foldedCorner] for the list cards' folded top-end corner, its flap in the accent color
+ * when [accent] is on (see [HoloListItemCard]).
  */
 @Composable
 fun HoloAlertDialog(
@@ -132,10 +136,17 @@ fun HoloAlertDialog(
     topDecorationOverhang: Dp,
     bottomDecoration: @Composable (() -> Unit)?,
     bottomDecorationHeight: Dp,
-    properties: DialogProperties
+    properties: DialogProperties,
+    foldedCorner: Boolean = false,
+    accent: Boolean = false
 ) {
-    val shape = RoundedCornerShape(HoloDefaults.HeroCardCornerRadius)
+    val shape = if (foldedCorner) {
+        HoloFoldedCornerShape(HoloDefaults.HeroCardCornerRadius, HoloDefaults.CornerFoldSize)
+    } else {
+        RoundedCornerShape(HoloDefaults.HeroCardCornerRadius)
+    }
     val colors = MaterialTheme.colorScheme
+    val flapColor = holoCornerFlapColor(accent)
     AlertDialogLayout(
         onDismissRequest, confirmButton, modifier, dismissButton, icon, title, text, contentPadding,
         buttonsTopSpacing, topDecoration, topDecorationOverhang, bottomDecoration, bottomDecorationHeight, properties,
@@ -144,7 +155,7 @@ fun HoloAlertDialog(
                 modifier = cardModifier
                     .clip(shape)
                     .border(HoloDefaults.BorderWidth, colors.outlineVariant, shape)
-                    .holoCornerHighlight(HoloDefaults.HeroCardCornerRadius),
+                    .then(if (foldedCorner) Modifier.holoCornerFlap(flapColor) else Modifier),
                 shape = shape,
                 color = AlertDialogDefaults.containerColor,
                 tonalElevation = AlertDialogDefaults.TonalElevation,

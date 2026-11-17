@@ -18,15 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.material3.LocalContentColor
 import com.artemonre.onemoretodolist.core.designsystem.components.AppListItemCardContentPadding
@@ -35,7 +32,6 @@ import com.artemonre.onemoretodolist.core.designsystem.theme.AppTheme
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeConfig
 import com.artemonre.onemoretodolist.core.theme.domain.ThemeMode
 import com.artemonre.onemoretodolist.core.theme.domain.UiStyleOption
-import kotlin.math.sqrt
 
 /**
  * A Holo list row: an outlined card with a folded top-end corner. The fold is drawn in
@@ -56,30 +52,13 @@ fun HoloListItemCard(
     val colors = MaterialTheme.colorScheme
     val fill = containerColor ?: colors.surface
     val borderColor = colors.outlineVariant
-    val foldColor = if (accent) colors.primary else borderColor
+    val foldColor = holoCornerFlapColor(accent)
     Box(
         modifier = modifier
             .clip(HoloCardShape)
             .background(fill)
             .border(HoloDefaults.BorderWidth, borderColor, HoloCardShape)
-            .drawWithContent {
-                drawContent()
-                val fold = HoloDefaults.CornerFoldSize.toPx()
-                // The flap folded over into the cut corner: the triangle under the cut's diagonal.
-                val flap = Path().apply {
-                    if (layoutDirection == LayoutDirection.Ltr) {
-                        moveTo(size.width - fold, 0f)
-                        lineTo(size.width - fold, fold)
-                        lineTo(size.width, fold)
-                    } else {
-                        moveTo(fold, 0f)
-                        lineTo(fold, fold)
-                        lineTo(0f, fold)
-                    }
-                    close()
-                }
-                drawPath(flap, foldColor)
-            }
+            .holoCornerFlap(foldColor)
             .combinedClickable(onLongClick = onLongClick, onClick = onClick)
             .semantics { this.customActions = customActions }
             .padding(AppListItemCardContentPadding)
@@ -92,9 +71,38 @@ fun HoloListItemCard(
 }
 
 /**
+ * The color of a folded corner's flap: [MaterialTheme.colorScheme.primary] when [accent] is on,
+ * the cards' border color otherwise.
+ */
+@Composable
+internal fun holoCornerFlapColor(accent: Boolean): Color =
+    if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+
+/**
+ * Draws the flap folded over into the cut corner of a [HoloFoldedCornerShape] - the triangle
+ * under the cut's diagonal - on top of the content.
+ */
+internal fun Modifier.holoCornerFlap(color: Color): Modifier = drawWithContent {
+    drawContent()
+    val fold = HoloDefaults.CornerFoldSize.toPx()
+    val flap = Path().apply {
+        if (layoutDirection == LayoutDirection.Ltr) {
+            moveTo(size.width - fold, 0f)
+            lineTo(size.width - fold, fold)
+            lineTo(size.width, fold)
+        } else {
+            moveTo(fold, 0f)
+            lineTo(fold, fold)
+            lineTo(0f, fold)
+        }
+        close()
+    }
+    drawPath(flap, color)
+}
+
+/**
  * A static Holo card for grouping non-interactive [content]: rounded, with a thin
- * [MaterialTheme.colorScheme.outlineVariant] border and a highlighted top-end corner - a crescent
- * along the corner's curve, unlike the list cards' folded corner.
+ * [MaterialTheme.colorScheme.outlineVariant] border.
  */
 @Composable
 fun HoloCard(
@@ -108,7 +116,6 @@ fun HoloCard(
             .clip(shape)
             .background(containerColor)
             .border(HoloDefaults.BorderWidth, MaterialTheme.colorScheme.outlineVariant, shape)
-            .holoCornerHighlight(HoloDefaults.CardCornerRadius)
             .padding(AppSpacing.s)
     ) {
         val onSurface = MaterialTheme.colorScheme.onSurface
@@ -117,47 +124,6 @@ fun HoloCard(
         }
     }
 }
-
-/**
- * Draws the static-card crescent (see [cornerHighlight]) over the top-end corner, for a shape
- * whose corners are [cornerRadius].
- */
-@Composable
-internal fun Modifier.holoCornerHighlight(cornerRadius: Dp): Modifier {
-    val highlight = MaterialTheme.colorScheme.primary
-    return drawWithContent {
-        drawContent()
-        val thickness = HoloDefaults.CornerHighlightThickness.toPx()
-        drawPath(cornerHighlight(size, cornerRadius.toPx(), thickness, layoutDirection), highlight)
-    }
-}
-
-/**
- * The crescent along a card's top-end rounded corner: the corner's own curve on the outside, and
- * a flatter curve between the same two ends on the inside - [thickness] apart mid-corner, meeting
- * at both ends.
- */
-private fun cornerHighlight(size: Size, radius: Float, thickness: Float, layoutDirection: LayoutDirection): Path {
-    // The inner curve is a quadratic through the corner's ends; its control point sits [pull] in
-    // from the card's corner along both edges. A quadratic's midpoint is a quarter of each end plus
-    // half the control point, and the circular corner's midpoint sits r(1 - 1/sqrt2) in from each
-    // edge - solving for the gap between the two along the diagonal gives this.
-    val pull = 2f * (thickness / SQRT_2 + radius * (1f - 1f / SQRT_2 - 0.25f))
-    return Path().apply {
-        if (layoutDirection == LayoutDirection.Ltr) {
-            moveTo(size.width - radius, 0f)
-            arcTo(Rect(size.width - 2 * radius, 0f, size.width, 2 * radius), -90f, 90f, forceMoveTo = false)
-            quadraticTo(size.width - pull, pull, size.width - radius, 0f)
-        } else {
-            moveTo(radius, 0f)
-            arcTo(Rect(0f, 0f, 2 * radius, 2 * radius), -90f, -90f, forceMoveTo = false)
-            quadraticTo(pull, pull, radius, 0f)
-        }
-        close()
-    }
-}
-
-private val SQRT_2 = sqrt(2f)
 
 @Preview(widthDp = 280, heightDp = 160)
 @Composable

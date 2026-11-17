@@ -149,6 +149,9 @@ fun TodoDetailDialog(
             )
         },
         bottomDecorationHeight = SHEEP_STRIP_HEIGHT,
+        // The same folded corner as the todo's card, accented the same way when it has a reminder.
+        foldedCorner = true,
+        accent = item.nextReminder != null,
         confirmButton = {
             AppTextButton(onClick = onDismiss, emphasized = true) {
                 Text(stringResource(Res.string.action_close))
