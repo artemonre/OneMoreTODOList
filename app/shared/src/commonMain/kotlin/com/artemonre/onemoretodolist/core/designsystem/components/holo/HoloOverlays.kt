@@ -78,14 +78,17 @@ fun HoloBottomSheet(
     )
 }
 
-/** The short accent bar the Holo sheet uses as its drag handle - like the stats card's accent. */
+/**
+ * The Holo sheet's drag handle: a short bar shaped like the stats card's accent, in the Material
+ * drag handle's color.
+ */
 @Composable
 private fun HoloDragHandle() {
     Box(
         modifier = Modifier
             .padding(vertical = DRAG_HANDLE_VERTICAL_PADDING)
             .size(HoloDefaults.HeroAccentBarWidth, HoloDefaults.HeroAccentBarThickness)
-            .background(MaterialTheme.colorScheme.primary, CircleShape)
+            .background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape)
     )
 }
 

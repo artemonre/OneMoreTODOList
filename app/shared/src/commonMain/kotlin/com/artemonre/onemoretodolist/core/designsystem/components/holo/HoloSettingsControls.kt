@@ -23,16 +23,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -65,9 +68,11 @@ private val BUTTON_MIN_HEIGHT = 40.dp
 private val SUPPORTING_LINE_HEIGHT = 20.sp
 
 /**
- * A Holo segmented control: separate rounded-rectangle segments in a soft track. The selected
- * segment is filled with [MaterialTheme.colorScheme.primary], the rest with its container color.
+ * A Holo segmented control: separate rounded-rectangle segments in a soft track. The segments
+ * take the Material style's toggle-button colors, checked and unchecked; the track is a faded
+ * unchecked fill with a faded checked-color outline.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun <T> HoloSegmentedControl(
     options: List<T>,
@@ -76,13 +81,13 @@ fun <T> HoloSegmentedControl(
     label: (T) -> String,
     modifier: Modifier = Modifier
 ) {
-    val colors = MaterialTheme.colorScheme
+    val colors = ToggleButtonDefaults.colors()
     val segmentShape = RoundedCornerShape(SEGMENT_CORNER_RADIUS)
     Row(
         modifier = modifier
             .clip(HoloControlShape)
-            .background(colors.primaryContainer.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA))
-            .border(HoloDefaults.ThinBorderWidth, colors.primary.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA), HoloControlShape)
+            .background(colors.containerColor.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA))
+            .border(HoloDefaults.ThinBorderWidth, colors.checkedContainerColor.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA), HoloControlShape)
             .padding(AppSpacing.xs)
             .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
@@ -94,7 +99,7 @@ fun <T> HoloSegmentedControl(
                     .weight(1f)
                     .defaultMinSize(minHeight = SEGMENT_MIN_HEIGHT)
                     .clip(segmentShape)
-                    .background(if (selected) colors.primary else colors.primaryContainer)
+                    .background(if (selected) colors.checkedContainerColor else colors.containerColor)
                     .selectable(selected = selected, onClick = { onOptionSelected(option) }, role = Role.RadioButton)
                     .padding(horizontal = AppSpacing.s),
                 contentAlignment = Alignment.Center
@@ -103,14 +108,17 @@ fun <T> HoloSegmentedControl(
                     text = label(option),
                     maxLines = 1,
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (selected) colors.onPrimary else colors.onPrimaryContainer
+                    color = if (selected) colors.checkedContentColor else colors.contentColor
                 )
             }
         }
     }
 }
 
-/** A Holo switch: slimmer than Material's, a flat track with a round thumb and no outline. */
+/**
+ * A Holo switch: slimmer than Material's, a flat track with a round thumb and no outline, in
+ * Material3's switch colors (disabled ones included).
+ */
 @Composable
 fun HoloSwitch(
     checked: Boolean,
@@ -118,7 +126,19 @@ fun HoloSwitch(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val colors = MaterialTheme.colorScheme
+    val colors = SwitchDefaults.colors()
+    val trackColor = when {
+        enabled && checked -> colors.checkedTrackColor
+        enabled -> colors.uncheckedTrackColor
+        checked -> colors.disabledCheckedTrackColor
+        else -> colors.disabledUncheckedTrackColor
+    }
+    val thumbColor = when {
+        enabled && checked -> colors.checkedThumbColor
+        enabled -> colors.uncheckedThumbColor
+        checked -> colors.disabledCheckedThumbColor
+        else -> colors.disabledUncheckedThumbColor
+    }
     val thumbOffset by animateDpAsState(
         if (checked) SWITCH_TRACK_WIDTH - SWITCH_THUMB_SIZE - SWITCH_THUMB_INSET else SWITCH_THUMB_INSET
     )
@@ -132,21 +152,20 @@ fun HoloSwitch(
                 } else {
                     Modifier
                 }
-            )
-            .alpha(if (enabled) 1f else HOLO_DISABLED_ALPHA),
+            ),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .size(SWITCH_TRACK_WIDTH, SWITCH_TRACK_HEIGHT)
-                .background(if (checked) colors.primary else colors.outlineVariant, CircleShape),
+                .background(trackColor, CircleShape),
             contentAlignment = Alignment.CenterStart
         ) {
             Box(
                 modifier = Modifier
                     .offset(x = thumbOffset)
                     .size(SWITCH_THUMB_SIZE)
-                    .background(colors.surface, CircleShape)
+                    .background(thumbColor, CircleShape)
             )
         }
     }
@@ -186,7 +205,9 @@ fun HoloSectionTitle(
 }
 
 /**
- * A Holo outlined button: a pill outline with [icon] set in a small filled circle before [text].
+ * A Holo outlined button: a pill outline with [icon] set in a small filled circle before [text],
+ * in Material3's outlined-button colors (disabled ones included) - the circle in the content
+ * color, the icon on it in the matching on-color.
  */
 @Composable
 fun HoloOutlinedButton(
@@ -197,14 +218,15 @@ fun HoloOutlinedButton(
     enabled: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(horizontal = AppSpacing.l)
 ) {
-    val colors = MaterialTheme.colorScheme
+    val buttonColors = ButtonDefaults.outlinedButtonColors()
+    val contentColor = if (enabled) buttonColors.contentColor else buttonColors.disabledContentColor
+    val iconColor = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.surface
     Row(
         modifier = modifier
             .minimumInteractiveComponentSize()
             .clip(CircleShape)
-            .border(HoloDefaults.ThinBorderWidth, colors.outline, CircleShape)
+            .border(ButtonDefaults.outlinedButtonBorder(enabled), CircleShape)
             .clickable(enabled = enabled, onClick = onClick, role = Role.Button)
-            .alpha(if (enabled) 1f else HOLO_DISABLED_ALPHA)
             .defaultMinSize(minHeight = BUTTON_MIN_HEIGHT)
             .padding(contentPadding),
         horizontalArrangement = Arrangement.Center,
@@ -213,13 +235,13 @@ fun HoloOutlinedButton(
         Box(
             modifier = Modifier
                 .size(BUTTON_ICON_BADGE_SIZE)
-                .background(colors.onSurface, CircleShape),
+                .background(contentColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = colors.surface, modifier = Modifier.size(BUTTON_ICON_SIZE))
+            Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(BUTTON_ICON_SIZE))
         }
         Spacer(Modifier.width(AppSpacing.s))
-        Text(text = text, style = MaterialTheme.typography.labelLarge, color = colors.onSurface, maxLines = 1)
+        Text(text = text, style = MaterialTheme.typography.labelLarge, color = contentColor, maxLines = 1)
     }
 }
 

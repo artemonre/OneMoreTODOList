@@ -3,6 +3,7 @@ package com.artemonre.onemoretodolist.core.designsystem.components.holo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,8 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Shared measurements for the Holo style. Holo has no colors of its own - every color comes from
- * the current [MaterialTheme.colorScheme], so it follows the palette, dark mode and dynamic color.
+ * Shared measurements for the Holo style. Holo has no colors of its own: every fill and content
+ * color is the one the Material style uses for the same component, and the extras Holo adds
+ * (outlines, accent lines, glyphs) each take a [MaterialTheme.colorScheme] role. Holo's effects -
+ * gradients, glows, frosted fills, soft borders - are built only from those same colors (a
+ * component's own fill fading into the surface, its outline color glowing or softened), never
+ * from a role the component doesn't already use.
  */
 internal object HoloDefaults {
     val CardCornerRadius = 16.dp
@@ -43,7 +48,7 @@ internal object HoloDefaults {
     const val TAG_GLYPH = "#"
     const val SECTION_SEPARATOR = "//"
 
-    // Low alphas for the frosted backgrounds and soft borders.
+    // Low alphas for the frosted backgrounds and soft borders - effects over a role's own color.
     const val FROST_ALPHA = 0.5f
     const val SOFT_BORDER_ALPHA = 0.4f
     const val TILE_ALPHA = 0.8f
@@ -91,9 +96,6 @@ internal class HoloFoldedCornerShape(
 
 internal val HoloCardShape: Shape = HoloFoldedCornerShape(HoloDefaults.CardCornerRadius, HoloDefaults.CornerFoldSize)
 
-// Material3's opacity for disabled content.
-internal const val HOLO_DISABLED_ALPHA = 0.38f
-
 internal val HoloControlShape = RoundedCornerShape(HoloDefaults.ControlCornerRadius)
 
 // Text fields and form section cards - rounder than chips and buttons.
@@ -101,23 +103,30 @@ internal val HoloFieldShape = RoundedCornerShape(HoloDefaults.FieldCornerRadius)
 internal val HoloSectionCardShape = RoundedCornerShape(HoloDefaults.CardCornerRadius)
 
 /**
- * The Holo look shared by chips and the tonal button: a rounded rectangle, filled with a darker
- * outline when [selected], frosted with a [MaterialTheme.colorScheme.primary] outline otherwise.
- * Clips to the shape, so a click ripple added after it stays inside.
+ * The Holo look shared by chips and the tonal button: a rounded rectangle in Material3's
+ * filter-chip colors - filled when [selected], frosted with [MaterialTheme.colorScheme.surface]
+ * otherwise - always outlined, in
+ * [MaterialTheme.colorScheme.outline] when [selected] and the chip's own
+ * [MaterialTheme.colorScheme.outlineVariant] otherwise. Clips to the shape, so a click ripple
+ * added after it stays inside.
  */
 @Composable
 internal fun Modifier.holoControl(selected: Boolean): Modifier {
-    val colors = MaterialTheme.colorScheme
-    val fill = if (selected) colors.secondaryContainer else colors.surface.copy(alpha = HoloDefaults.FROST_ALPHA)
-    val border = if (selected) colors.outline else colors.primary
+    val chipColors = FilterChipDefaults.filterChipColors()
+    // Unselected, Material's chip is see-through; Holo frosts it with the surface it sits on.
+    val fill = if (selected) chipColors.selectedContainerColor else MaterialTheme.colorScheme.surface.copy(alpha = HoloDefaults.FROST_ALPHA)
+    val border = if (selected) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant
     return this
         .clip(HoloControlShape)
         .background(fill, HoloControlShape)
         .border(HoloDefaults.BorderWidth, border, HoloControlShape)
 }
 
+/** The label color of a [holoControl]: Material3's filter-chip label colors. */
 @Composable
-internal fun holoControlContentColor(selected: Boolean): Color =
-    if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
+internal fun holoControlContentColor(selected: Boolean): Color {
+    val chipColors = FilterChipDefaults.filterChipColors()
+    return if (selected) chipColors.selectedLabelColor else chipColors.labelColor
+}
 
 internal val HoloTileShape = RoundedCornerShape(HoloDefaults.TileCornerRadius)

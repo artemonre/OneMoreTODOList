@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
@@ -50,7 +51,8 @@ fun HoloListItemCard(
     content: @Composable () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-    val fill = containerColor ?: colors.surface
+    // The Material list card's color unless the caller picked one.
+    val fill = containerColor ?: CardDefaults.elevatedCardColors().containerColor
     val borderColor = colors.outlineVariant
     val foldColor = holoCornerFlapColor(accent)
     Box(
@@ -107,7 +109,7 @@ internal fun Modifier.holoCornerFlap(color: Color): Modifier = drawWithContent {
 @Composable
 fun HoloCard(
     modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.surface,
+    containerColor: Color = CardDefaults.elevatedCardColors().containerColor,
     content: @Composable () -> Unit
 ) {
     val shape = RoundedCornerShape(HoloDefaults.CardCornerRadius)

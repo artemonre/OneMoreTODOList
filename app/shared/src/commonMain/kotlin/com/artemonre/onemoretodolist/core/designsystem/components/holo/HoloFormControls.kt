@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -73,10 +74,8 @@ fun HoloTextField(
 
 /**
  * Holo's compact single-choice row for picks inside a form: connected segments in one rounded
- * rectangle with thin lines between them, and a check mark on the selected one. Colors follow
- * Material3's segmented buttons: [MaterialTheme.colorScheme.outline] lines, a
- * [MaterialTheme.colorScheme.secondaryContainer] selected segment on a
- * [MaterialTheme.colorScheme.surface] row.
+ * rectangle with thin lines between them, and a check mark on the selected one. Colors are
+ * Material3's segmented-button colors, from [SegmentedButtonDefaults.colors].
  */
 @Composable
 fun <T> HoloSegmentedButtonRow(
@@ -86,22 +85,22 @@ fun <T> HoloSegmentedButtonRow(
     label: (T) -> String,
     modifier: Modifier = Modifier
 ) {
-    val colors = MaterialTheme.colorScheme
+    val colors = SegmentedButtonDefaults.colors()
     Row(
         modifier = modifier
             .height(IntrinsicSize.Min)
             .clip(HoloControlShape)
-            .border(HoloDefaults.ThinBorderWidth, colors.outline, HoloControlShape)
+            .border(HoloDefaults.ThinBorderWidth, colors.activeBorderColor, HoloControlShape)
             .selectableGroup()
     ) {
         options.forEachIndexed { index, option ->
-            if (index > 0) VerticalDivider(thickness = HoloDefaults.ThinBorderWidth, color = colors.outline)
+            if (index > 0) VerticalDivider(thickness = HoloDefaults.ThinBorderWidth, color = colors.activeBorderColor)
             val selected = option == selectedOption
-            val contentColor = holoControlContentColor(selected)
+            val contentColor = if (selected) colors.activeContentColor else colors.inactiveContentColor
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .background(if (selected) colors.secondaryContainer else colors.surface)
+                    .background(if (selected) colors.activeContainerColor else colors.inactiveContainerColor)
                     .selectable(selected = selected, onClick = { onOptionSelected(option) }, role = Role.RadioButton)
                     .heightIn(min = SEGMENT_ROW_HEIGHT)
                     .padding(horizontal = AppSpacing.xs),

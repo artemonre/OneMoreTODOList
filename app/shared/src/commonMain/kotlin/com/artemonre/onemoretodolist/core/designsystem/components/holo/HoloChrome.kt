@@ -16,13 +16,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarDefaults
 import androidx.compose.material3.ShortNavigationBarItem
-import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -31,9 +34,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -41,8 +45,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.platform.LocalLayoutDirection
 import com.artemonre.onemoretodolist.core.designsystem.components.AppStat
 import com.artemonre.onemoretodolist.core.designsystem.components.FabMenuItem
 import com.artemonre.onemoretodolist.core.designsystem.components.material.FAB_TRIGGER_SIZE
@@ -59,19 +61,29 @@ import onemoretodolist.app.shared.generated.resources.stat_label_value
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The Holo FAB look: a rounded square with a soft gradient, an outline and a glow in
- * [MaterialTheme.colorScheme.tertiary].
+ * The Holo FAB look: a rounded square with a soft gradient from Material's FAB color into
+ * [MaterialTheme.colorScheme.surface], and an outline and glow in the bright tone of the accent
+ * (see [brightPrimary]) so the edge reads as lit rather than drawn.
  */
 @Composable
 private fun Modifier.holoFab(shape: Shape): Modifier {
     val colors = MaterialTheme.colorScheme
+    val glow = colors.brightPrimary()
     return this
         .size(FAB_TRIGGER_SIZE)
-        .shadow(HoloDefaults.FabGlowElevation, shape, ambientColor = colors.tertiary, spotColor = colors.tertiary)
+        .shadow(HoloDefaults.FabGlowElevation, shape, ambientColor = glow, spotColor = glow)
         .clip(shape)
-        .background(Brush.verticalGradient(listOf(colors.tertiaryContainer, colors.surface)))
-        .border(HoloDefaults.BorderWidth, colors.tertiary, shape)
+        .background(Brush.verticalGradient(listOf(FloatingActionButtonDefaults.containerColor, colors.surface)))
+        .border(HoloDefaults.BorderWidth, glow, shape)
 }
+
+/**
+ * The bright tone of the accent in either mode: [ColorScheme.primary] in dark mode,
+ * [ColorScheme.inversePrimary] (the dark scheme's primary) in light mode - whichever is lighter,
+ * so it holds for every palette and for dynamic color without checking the mode.
+ */
+private fun ColorScheme.brightPrimary(): Color =
+    if (inversePrimary.luminance() > primary.luminance()) inversePrimary else primary
 
 /** A Holo floating action button. */
 @Composable
@@ -88,7 +100,11 @@ fun HoloFab(
             .clickable(onClick = onClick, role = Role.Button),
         contentAlignment = Alignment.Center
     ) {
-        Icon(imageVector = icon, contentDescription = contentDescription, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = contentColorFor(FloatingActionButtonDefaults.containerColor)
+        )
     }
 }
 
@@ -111,7 +127,7 @@ fun HoloFabMenu(
                 .fabMenuTriggerClicks(expanded, onExpandedChange, onClick),
             contentAlignment = Alignment.Center
         ) {
-            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onTertiaryContainer) {
+            CompositionLocalProvider(LocalContentColor provides contentColorFor(FloatingActionButtonDefaults.containerColor)) {
                 FabMenuTriggerIcon(icon, contentDescription, expanded)
             }
         }
@@ -119,8 +135,8 @@ fun HoloFabMenu(
 }
 
 /**
- * The Holo navigation bar: Material3's compact bar over a frosted background, with a line along
- * its top edge and spaced-out capital labels.
+ * The Holo navigation bar: Material3's compact bar over a frosted version of its own background,
+ * with a line along its top edge and spaced-out capital labels.
  */
 @Composable
 fun <T> HoloNavigationBar(
@@ -137,7 +153,7 @@ fun <T> HoloNavigationBar(
             val line = HoloDefaults.BorderWidth.toPx()
             drawLine(colors.primary, Offset(0f, line / 2), Offset(size.width, line / 2), strokeWidth = line)
         },
-        containerColor = colors.primaryContainer.copy(alpha = HoloDefaults.FROST_ALPHA)
+        containerColor = ShortNavigationBarDefaults.containerColor.copy(alpha = HoloDefaults.FROST_ALPHA)
     ) {
         items.forEachIndexed { index, item ->
             val text = label(item)
@@ -152,15 +168,16 @@ fun <T> HoloNavigationBar(
                         letterSpacing = HoloDefaults.LabelLetterSpacing,
                         modifier = Modifier.clearAndSetSemantics { contentDescription = text }
                     )
-                },
-                colors = ShortNavigationBarItemDefaults.colors(selectedIndicatorColor = colors.secondaryContainer)
+                }
             )
         }
     }
 }
 
 /**
- * The Holo stats card: a frosted gradient card with a `> TITLE` heading and one tile per stat,
+ * The Holo stats card: a frosted gradient from the Material stats card's color into
+ * [MaterialTheme.colorScheme.surface], softly outlined in its accent's
+ * [MaterialTheme.colorScheme.primary], with a `> TITLE` heading and one frosted tile per stat,
  * label above a big number. TalkBack reads the title and each "label value" as given, without the
  * glyph or the capitals.
  */
@@ -172,73 +189,64 @@ fun HoloStatsCard(
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(HoloDefaults.HeroCardCornerRadius)
-    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-    Column(
-        modifier = modifier
-            .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        colors.primaryContainer.copy(alpha = HoloDefaults.FROST_ALPHA),
-                        colors.tertiaryContainer.copy(alpha = HoloDefaults.FROST_ALPHA)
+    // The same color as the Material stats card (the navigation bar's).
+    val containerColor = ShortNavigationBarDefaults.containerColor
+    CompositionLocalProvider(LocalContentColor provides contentColorFor(containerColor)) {
+        Column(
+            modifier = modifier
+                .clip(shape)
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            containerColor.copy(alpha = HoloDefaults.FROST_ALPHA),
+                            colors.surface.copy(alpha = HoloDefaults.FROST_ALPHA)
+                        )
                     )
                 )
-            )
-            .border(HoloDefaults.BorderWidth, colors.primary.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA), shape)
-            .drawBehind {
-                // The short accent bar along the top-end edge.
-                val bar = HoloDefaults.HeroAccentBarWidth.toPx()
-                val thickness = HoloDefaults.HeroAccentBarThickness.toPx()
-                val inset = HoloDefaults.HeroCardCornerRadius.toPx()
-                val startX = if (isLtr) size.width - inset - bar else inset
-                drawRect(colors.primary, Offset(startX, 0f), Size(bar, thickness))
-            }
-            .padding(AppSpacing.l)
-    ) {
-        Row(
-            modifier = Modifier.clearAndSetSemantics {
-                contentDescription = title
-                heading()
-            },
-            verticalAlignment = Alignment.CenterVertically
+                .border(HoloDefaults.BorderWidth, colors.primary.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA), shape)
+                .padding(AppSpacing.l)
         ) {
-            Text(
-                text = HoloDefaults.PROMPT_GLYPH,
-                style = MaterialTheme.typography.titleLarge,
-                color = colors.tertiary,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.width(AppSpacing.s))
-            Text(text = title.uppercase(), style = MaterialTheme.typography.titleLarge)
-        }
-        Spacer(Modifier.height(AppSpacing.m))
-        Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.s), modifier = Modifier.fillMaxWidth()) {
-            // The numbers take turns through these colors, like the mockup's dark / cyan / violet.
-            val valueColors = listOf(colors.onSurface, colors.primary, colors.tertiary)
-            stats.forEachIndexed { index, stat ->
-                val spoken = stringResource(Res.string.stat_label_value, stat.label, stat.value)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clearAndSetSemantics { contentDescription = spoken }
-                        .clip(HoloTileShape)
-                        .background(colors.surface.copy(alpha = HoloDefaults.TILE_ALPHA))
-                        .border(HoloDefaults.ThinBorderWidth, colors.primary.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA), HoloTileShape)
-                        .padding(vertical = AppSpacing.m, horizontal = AppSpacing.s),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stat.label.uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = colors.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                    Text(
-                        text = stat.value.toString(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = valueColors[index % valueColors.size],
-                        fontWeight = FontWeight.Bold
-                    )
+            Row(
+                modifier = Modifier.clearAndSetSemantics {
+                    contentDescription = title
+                    heading()
+                },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = HoloDefaults.PROMPT_GLYPH,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = colors.tertiary,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.width(AppSpacing.s))
+                Text(text = title.uppercase(), style = MaterialTheme.typography.titleLarge)
+            }
+            Spacer(Modifier.height(AppSpacing.m))
+            Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.s), modifier = Modifier.fillMaxWidth()) {
+                stats.forEach { stat ->
+                    val spoken = stringResource(Res.string.stat_label_value, stat.label, stat.value)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clearAndSetSemantics { contentDescription = spoken }
+                            .clip(HoloTileShape)
+                            .background(colors.surface.copy(alpha = HoloDefaults.TILE_ALPHA))
+                            .border(HoloDefaults.ThinBorderWidth, colors.primary.copy(alpha = HoloDefaults.SOFT_BORDER_ALPHA), HoloTileShape)
+                            .padding(vertical = AppSpacing.m, horizontal = AppSpacing.s),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stat.label.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = stat.value.toString(),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

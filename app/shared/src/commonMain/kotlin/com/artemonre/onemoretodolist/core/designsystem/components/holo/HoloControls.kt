@@ -239,7 +239,8 @@ fun HoloTextButton(
 }
 
 /**
- * A Holo tag label: `# NAME` in capitals with a soft outline. TalkBack reads [text] as given,
+ * A Holo tag label: `# NAME` in capitals, in the same colors as Material's tag, with a soft
+ * outline in its text color. TalkBack reads [text] as given,
  * without the glyph or the capitals. [onClick], [trailingIcon] and [trailingIconDescription] work
  * as in [com.artemonre.onemoretodolist.core.designsystem.components.AppTagChip].
  */
